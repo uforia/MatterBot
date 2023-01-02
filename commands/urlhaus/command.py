@@ -1,0 +1,93 @@
+#!/usr/bin/env python3
+
+import httpx
+import json
+import re
+from pathlib import Path
+try:
+    from commands.urlhaus import defaults as settings
+except ModuleNotFoundError: # local test run
+    import defaults as settings
+    if Path('settings.py').is_file():
+        import settings
+else:
+    if Path('commands/urlhaus/settings.py').is_file():
+        try:
+            from commands.urlhaus import settings
+        except ModuleNotFoundError: # local test run
+            import settings
+
+async def process(connection, channel, username, params):
+    if len(params)>0:
+        params = params[0]
+        headers = {
+            'Content-Type': settings.CONTENTTYPE,
+        }
+        try:
+            message = "URLhaus search for `%s`:\n" % params
+            type = None
+            if re.search(r"^[A-Za-z0-9]{32}$", params):
+                hash_algo = 'md5_hash'
+                data = { hash_algo: params }
+                type = 'hash'
+            elif re.search(r"^[A-Za-z0-9]{40}$", params):
+                hash_algo = 'sha1_hash'
+                data = { hash_algo: params }
+                type = 'hash'
+            elif re.search(r"^[A-Za-z0-9]{64}$", params):
+                hash_algo = 'sha256_hash'
+                data = { hash_algo: params }
+                type = 'hash'
+            elif re.search(r"^[hH][tT][tT][pP]([sS])?\:\/\/.+", params):
+                data = { 'url': params }
+                type = 'url'
+            if type == 'url':
+                async with httpx.AsyncClient() as session:
+                    response = await session.post(settings.APIURL['urlhaus']['url'], data=data)
+                    json_response = response.json()
+                    if json_response['query_status'] == 'ok':
+                        urlhaus_reference = json_response['urlhaus_reference']
+                        id = json_response['id']
+                        threat = json_response['threat']
+                        url_status = json_response['url_status']
+                        host = json_response['host']
+                        payloads = json_response['payloads']
+                        tags = json_response['tags']
+                        message += '- Threat: `%s`' % threat
+                        if tags:
+                            message += ' | Tags: `' + '`, `'.join(tags) + '`'
+                        if payloads:
+                            filenames = set()
+                            message += ' | Payload(s): '
+                            for payload in payloads:
+                                filename = payload['filename']
+                                if filename not in filenames:
+                                    filenames.add(filename)
+                                    message += '`%s` ' % filename
+                        message += ' | Status: `%s`' % url_status
+                        message += ' | Reference: [URLhaus ID %s](%s)' % (id, urlhaus_reference)
+                        message += '\n'
+                    else:
+                        message = 'URLhaus search for `%s` returned no results.' % params
+                    return message.strip()
+            if type == 'hash':
+                async with httpx.AsyncClient() as session:
+                    response = await session.post(APIURL['urlhaus']['payload'], data=data)
+                    json_response = response.json()
+                    if json_response['query_status'] == 'ok':
+                        urls = json_response['urls']
+                        file_type = json_response['file_type']
+                        if urls:
+                            for url in urls:
+                                id = url['url_id']
+                                urlhaus_reference = url['urlhaus_reference']
+                                link = url['url']
+                                filename = url['filename']
+                                message += '- URL: `%s`' % link
+                                message += ' | Payload: `%s` (%s)' % (filename, file_type)
+                                message += ' | Reference: [URLhaus ID %s](%s)' % (id, urlhaus_reference)
+                    else:
+                        message = 'URLhaus search for `%s` returned no results.' % params
+                    return message.strip()
+        except Exception as e:
+            return "An error occurred searching for `%s`:\nError: `%s`" % (params, e.message)

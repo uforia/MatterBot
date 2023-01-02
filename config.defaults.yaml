@@ -1,0 +1,20 @@
+Matterbot:
+  host: "<your-mattermost-host>"
+  port: 443
+  scheme: "https"
+  username: "<mattermost bot account name>"
+  password: "<mattermost bot password>"
+  teamname: "<mattermost team identifier>"
+  logfile: "matterfeed.log"
+  channelmap:
+    news: "newsfeed"
+    debug: "debug"
+
+Modules:
+  moduledir: "modules"
+  commanddir: "commands"
+  lookback: 20
+  window: 5
+  timer: 600
+
+debug: False

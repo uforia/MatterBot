@@ -1,0 +1,57 @@
+#!/usr/bin/env python3
+#
+# General information
+#
+# This is an example module that responds to various forms of 'hello'. It describes the basics
+# needed to create your own Mattermost channel binds and handlers. Nearly every function your
+# own module implements will need to use AsyncIO (await ..., etc.). If you intend to do HTTP
+# requests from your own module, it is strongly recommended to use HTTPX, as AIOHTTP has known
+# issues with mangling a POST body, certain headers/cookies, etc. This may cause unpredictable
+# behaviour when communicating with APIs that are not 'lenient' with the requests they accept.
+# Please note: the AsyncIO nature of this bot means that you cannot use library imports that
+# do not support asynchronous operation, such as the Python 'requests' module.
+#
+# Basic setup:
+#
+# 1) Every command must set a list() of binds to indicate what commands to listen for.
+# 2) Every command must set a list() of channels to indicate what channels to listen in.
+# 3) Every module must implement the process(connection, channel, username, params) function.
+#    This process() function is called by the main worker and only returns the message to be
+#    sent back to the channel/user.
+# 4) Make sure to modify the 'pathlib' construct below to reflect the correct (directory)
+#    name for your module: 'commands.<modulename>' and 'commands/<modulename>/settings.py'
+#    should be set correctly. This is used for dynamically loading defaults and overwriting
+#    them with your own configuration in the 'settings.py' file.
+#
+# Variables:
+#
+# 1) BINDS: Python list(): which channel messages to listen to. **MANDATORY**
+# 2) CHANS: Python list(): which channel(s) to listen in. **MANDATORY**
+# 3) If you have custom settings for your module, put them in 'settings.py' so you can
+#    access them via the 'settings.<your-setting>' construct. This should be the file
+#    for defining sensitive information such as API tokens, passwords, internal URLs,
+#    etc. See the 'pathlib' config parser description/code above and below respectively.
+#
+# Function parameters:
+#
+# 1) Connection: The active 'mattermostdriver' connection (careful when using this)
+# 2) Channel:    Channel name were the command was triggered
+# 3) Username:   Username that triggered the command
+# 4) Params:     Parameters to the command, as a Python list()
+
+from pathlib import Path
+try:
+    from commands.hello import defaults as settings
+except ModuleNotFoundError: # local test run
+    import defaults as settings
+    if Path('settings.py').is_file():
+        import settings
+else:
+    if Path('commands/hello/settings.py').is_file():
+        try:
+            from commands.hello import settings
+        except ModuleNotFoundError: # local test run
+            import settings
+
+async def process(connection, channel, username, params):
+    return "Hello %s!" % username
