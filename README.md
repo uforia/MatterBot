@@ -56,8 +56,7 @@ MatterBot consists of two parts that can be run independently: matterbot and mat
 
 - `matterbot.py` is a fully asynchronous setup, which has both advantages and limitations. The `example` command is a good place to learn more and start developing your own command handler. Pay particular attention to the description in the `commands/example/command.py` file for more information on how to get started and to avoid common pitfalls.
 
-## Known issues / To-Do
+## General known issues and to-do's
 
-- Code cleanups
+- Code cleanups and optimizations
 - Better (generalized) logging and error handling
-- `matterfeed.py` needs better exit (SIGTERM) cleanup
