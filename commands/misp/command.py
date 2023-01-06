@@ -22,25 +22,29 @@ async def process(connection, channel, username, params):
         params = ' '.join(params)
         headers = {
             "Content-Type": settings.CONTENTTYPE,
-            "Authorization": "%s" % settings.APIKEY,
+            "Authorization": "%s" % (settings.APIKEY,),
             "Accept": settings.CONTENTTYPE,
             "enforceWarninglist": "1",
         }
-        data = '{"returnformat":"json", "value":"%s"}' % params
+        data = '{"returnformat":"json", "value":"%s"}' % (params,)
         async with aiohttp.ClientSession(headers=headers) as session:
             async with session.post(settings.APIENDPOINT, data=data) as response:
                 answer = await response.json()
                 results = answer['response']['Attribute']
                 resultset = set()
                 if len(results)>0:
-                    message = 'MISP search for `%s`:\n' % params
+                    message = 'MISP search for `%s`:\n' % (params,)
                     for result in results:
                         line = '- `' + result['Event']['info'].replace('\n', ' ') + '`: ' + settings.APIURL + '/events/view/' + result['event_id'] + '\n'
                         if line not in resultset:
                             resultset.add(line)
                             message += line
                 else:
-                    message = 'MISP search for `%s` returned no results.' % params
-                return message.strip()
+                    message = 'MISP search for `%s` returned no results.' % (params,)
+                return {'messages': [
+                    {'text': message.strip()},
+                ]}
     else:
-        return "At least ask me something, %s!" % username
+        return {'messages': [
+            {'text': 'At least ask me something, %s!' % (username,)}
+        ]}

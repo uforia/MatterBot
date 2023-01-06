@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-BINDS = ['@whois', '@ioc']
+BINDS = ['@ipwhois', '@ioc']
 CHANS = ['debug']
 APIURL = {
     'ipwhois':   {'url': 'https://ipwho.is/'},

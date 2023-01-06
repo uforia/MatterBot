@@ -38,8 +38,14 @@ async def process(connection, channel, username, params):
         message = "Search term `" + " AND ".join(params) + "` was found in:\n"
         message += '\n'.join(answers)
         if len(answers)>0:
-            return message
+            return {'messages': [
+                {'text': message.strip()},
+            ]}
         else:
-            return "Couldn't find anything for `" + " AND ".join(params) + "`, %s!" % username
+            return {'messages': [
+                {'text': 'WikiJS search for `%s` returned no results.' % (params,)},
+            ]}
     else:
-        return "At least search for something, %s!" % username
+        return {'messages': [
+            {'text': 'At least search for something, %s!' % (username,)}
+        ]}

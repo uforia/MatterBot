@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 
+import aiofiles
+import ast
+import asyncio
+import configargparse
+import fnmatch
+import importlib.util
+import json
 import logging
 import os
 import sys
-import fnmatch
-import importlib.util
-import configargparse
-import ast
-import asyncio
-import json
+import tempfile
 
 from mattermostdriver import Driver
 
@@ -30,7 +32,7 @@ class MattermostManager(object):
             'basepath'  : '/api/v4',
             'keepalive' : True,
             'keepalive_delay': 30,
-            'scheme'    : 'https',
+            'scheme'    : options.Matterbot['scheme'],
             'websocket_kw_args': {'ping_interval': 5},
         })
         self.mmDriver.login()
@@ -71,12 +73,12 @@ class MattermostManager(object):
         except json.JSONDecodeError as e:
             print(('ERROR'), e)
 
-    async def send_message(self, channel, content):
+    async def send_message(self, channel, text):
         try:
             channelname = channel.lower()
-            await self.mmDriver.posts.create_post( options={'channel_id': channel,
-                                                            'message': content,
-                                                            })
+            await self.mmDriver.posts.create_post(options={'channel_id': channel,
+                                                           'message': text,
+                                                           })
         except:
             return
 
@@ -105,11 +107,33 @@ class MattermostManager(object):
                                 commands.add('`' + bind + '`')
                         if command in self.commands[module]['binds']:
                             result = await self.commands[module]['process'](self.mmDriver, channelname, username, params)
-                            if result:
-                                await self.send_message(channelid, result)
+                            if result and 'messages' in result:
+                                for message in result['messages']:
+                                    text = message['text']
+                                    if 'uploads' in message:
+                                        if message['uploads'] != None:
+                                            file_ids = []
+                                            for upload in message['uploads']:
+                                                filename = upload['filename']
+                                                payload = upload['bytes']
+                                                if not isinstance(payload, (bytes, bytearray)):
+                                                    payload = payload.encode()
+                                                file_id = self.mmDriver.files.upload_file(
+                                                    channel_id=channelid,
+                                                    files={'files': (filename, payload)}
+                                                )['file_infos'][0]['id']
+                                                file_ids.append(file_id)
+                                            self.mmDriver.posts.create_post(options={'channel_id': channelid,
+                                                                                     'message': text,
+                                                                                     'file_ids': file_ids,
+                                                                                     })
+                                        else:
+                                            await self.send_message(channelid, text)
+                                    else:
+                                        await self.send_message(channelid, text)
             if command == '!help' and not params:
-                result = username + " I know about: `!help`, " + ', '.join(commands) + " here. Remember that not every command works everywhere: this depends on the configuration. Modules may offer additional help via `!help <command>`."
-                await self.send_message(channelid, result)
+                text = username + " I know about: `!help`, " + ', '.join(sorted(commands)) + " here. Remember that not every command works everywhere: this depends on the configuration. Modules may offer additional help via `!help <command>`."
+                await self.send_message(channelid, text)
 
 if __name__ == '__main__' :
     '''

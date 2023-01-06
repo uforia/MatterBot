@@ -28,10 +28,10 @@ async def process(connection, channel, username, params):
                 async with httpx.AsyncClient() as session:
                     response = await session.get(settings.APIURL['ipwhois']['url'] + data)
                     json_response = response.json()
-                    message = 'IPWHOIS lookup for `%s`' % data
+                    message = 'IPWHOIS lookup for `%s`' % (data,)
                     if 'success' in json_response:
                         if json_response['success'] != True:
-                            return "IPWHOIS errored out while searching for `%s`" % (params,)
+                            return ("IPWHOIS errored out while searching for `%s`" % (params,),)
                         if 'connection' in json_response:
                             if 'isp' in json_response['connection']:
                                 message += ' | ISP: `' + json_response['connection']['isp'] + '`'
@@ -48,8 +48,14 @@ async def process(connection, channel, username, params):
                                 message += ' ' + json_response['flag']['emoji']
                         if 'continent' in json_response:
                                 message += ', `' + json_response['continent'] + '`'
-                        return message.strip()
+                        return {'messages': [
+                            {'text': message.strip()},
+                        ]}
                     else:
-                        return 'IPWHOIS search for `%s` returned no results.' % (params,)
+                        return {'messages': [
+                            {'text': 'IPWHOIS search for `%s` returned no results.' % (params,)},
+                        ]}
         except Exception as e:
-            return "An error occurred searching for `%s`:\nError: `%s`" % (params, e.message)
+            return {'messages': [
+                {'text': "An error occurred searching IPWHOIS for `%s`:\nError: `%s`" % (params, e.message)},
+            ]}

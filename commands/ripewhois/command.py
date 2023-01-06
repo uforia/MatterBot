@@ -31,10 +31,10 @@ async def process(connection, channel, username, params):
                 async with httpx.AsyncClient() as session:
                     response = await session.get(settings.APIURL['ripewhois']['url'] + data)
                     json_response = response.json()
-                    message = 'RIPE WHOIS lookup for `%s`' % data
+                    message = 'RIPE WHOIS lookup for `%s`' % (data,)
                     if 'status' in json_response:
                         if json_response['status'] == 'error':
-                            return "RIPE WHOIS errored out while searching for `%s`" % (params,)
+                            return ("RIPE WHOIS errored out while searching for `%s`" % (params,),)
                     elif 'data' in json_response:
                         data = json_response['data']
                         ranges = set()
@@ -65,8 +65,14 @@ async def process(connection, channel, username, params):
                         message += ' | Orgs: `' + '`, `'.join(orgs) + '`'
                         message += ' | CIDR: `' + '`, `'.join(ranges) + '`'
                         message += ' | Geo: `' + '`, `'.join(countries) + '`'
-                        return message.strip()
+                        return {'messages': [
+                            {'text': message.strip()},
+                        ]}
                     else:
-                        return 'RIPE WHOIS search for `%s` returned no results.' % (params,)
+                        return {'messages': [
+                            {'text': 'RIPE WHOIS search for `%s` returned no results.' % (params,)}
+                        ]}
         except Exception as e:
-            return "An error occurred searching for `%s`:\nError: `%s`" % (params, e.message)
+            return {'messages': [
+                {'text': 'An error occurred searching RIPE WHOIS for `%s`:\nError: `%s`' % (params, e.message)},
+            ]}

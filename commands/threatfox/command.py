@@ -23,7 +23,7 @@ async def process(connection, channel, username, params):
         headers = {
             'Content-Type': settings.CONTENTTYPE,
         }
-        message = "ThreatFox search for `%s`:\n" % params
+        message = "ThreatFox search for `%s`:\n" % (params,)
         try:
             data = None
             hash_algo = None
@@ -59,12 +59,18 @@ async def process(connection, channel, username, params):
                                 if 'tags' in sample:
                                     tags = sample['tags']
                                     message += ' | Tags: `' + '`, `'.join(tags) + '`'
-                                threatfox_reference = 'https://threatfox.abuse.ch/ioc/%s' % id
+                                threatfox_reference = 'https://threatfox.abuse.ch/ioc/%s' % (id,)
                                 message += ' | Reference: [ThreatFox ID %s](%s)' % (id, threatfox_reference)
                                 message += '\n'
                             if len(data)>0:
-                                return message.strip()
+                                return {'messages': [
+                                    {'text': message.strip()},
+                                ]}
                     else:
-                        return 'ThreatFox search for `%s` returned no results.' % params
+                        return {'messages': [
+                            {'text': 'ThreatFox search for `%s` returned no results.' % (params,)}
+                        ]}
         except Exception as e:
-            return "An error occurred searching for `%s`:\nError: `%s`" % (params, e.message)
+            return {'messages': [
+                {'text': 'An error occurred searching ThreatFox for `%s`:\nError: `%s`' % (params, e.message)},
+            ]}

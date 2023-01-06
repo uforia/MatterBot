@@ -24,7 +24,7 @@ async def process(connection, channel, username, params):
             'Content-Type': settings.CONTENTTYPE,
         }
         try:
-            message = "URLhaus search for `%s`:\n" % params
+            message = "URLhaus search for `%s`:\n" % (params,)
             type = None
             if re.search(r"^[A-Za-z0-9]{32}$", params):
                 hash_algo = 'md5_hash'
@@ -53,7 +53,7 @@ async def process(connection, channel, username, params):
                         host = json_response['host']
                         payloads = json_response['payloads']
                         tags = json_response['tags']
-                        message += '- Threat: `%s`' % threat
+                        message += '- Threat: `%s`' % (threat,)
                         if tags:
                             message += ' | Tags: `' + '`, `'.join(tags) + '`'
                         if payloads:
@@ -63,13 +63,15 @@ async def process(connection, channel, username, params):
                                 filename = payload['filename']
                                 if filename not in filenames:
                                     filenames.add(filename)
-                                    message += '`%s` ' % filename
-                        message += ' | Status: `%s`' % url_status
+                                    message += '`%s` ' % (filename,)
+                        message += ' | Status: `%s`' % (url_status,)
                         message += ' | Reference: [URLhaus ID %s](%s)' % (id, urlhaus_reference)
                         message += '\n'
                     else:
-                        message = 'URLhaus search for `%s` returned no results.' % params
-                    return message.strip()
+                        message = 'URLhaus search for `%s` returned no results.' % (params,)
+                    return {'messages': [
+                        {'text': message.strip()},
+                    ]}
             if type == 'hash':
                 async with httpx.AsyncClient() as session:
                     response = await session.post(APIURL['urlhaus']['payload'], data=data)
@@ -83,11 +85,15 @@ async def process(connection, channel, username, params):
                                 urlhaus_reference = url['urlhaus_reference']
                                 link = url['url']
                                 filename = url['filename']
-                                message += '- URL: `%s`' % link
+                                message += '- URL: `%s`' % (link,)
                                 message += ' | Payload: `%s` (%s)' % (filename, file_type)
                                 message += ' | Reference: [URLhaus ID %s](%s)' % (id, urlhaus_reference)
                     else:
-                        message = 'URLhaus search for `%s` returned no results.' % params
-                    return message.strip()
+                        message = 'URLhaus search for `%s` returned no results.' % (params,)
+                    return {'messages': [
+                        {'text': message.strip()},
+                    ]}
         except Exception as e:
-            return "An error occurred searching for `%s`:\nError: `%s`" % (params, e.message)
+            return {'messages': [
+                {'text': 'An error occurred searching URLhaus for `%s`:\nError: `%s`' % (params, e.message)},
+            ]}

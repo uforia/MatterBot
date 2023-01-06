@@ -22,7 +22,7 @@ async def process(connection, channel, username, params):
         params = ' '.join(params)
         headers = {
             "Content-Type": settings.CONTENTTYPE,
-            "Authorization": "Bearer %s" % settings.APIKEY,
+            "Authorization": "Bearer %s" % (settings.APIKEY,),
         }
         data = {
             "model": settings.MODEL,
@@ -35,7 +35,11 @@ async def process(connection, channel, username, params):
                 answer = await response.json()
                 if 'choices' in answer:
                     aitext = answer['choices'][0]['text'][1:]
-                    reply = 'Well ' + username + ',\n```%s\n```' % aitext
-                    return reply
+                    reply = 'Well ' + username + ',\n```%s\n```' % (aitext,)
+                    return {'messages': [
+                        {'text': reply},
+                    ]}
     else:
-        return "At least ask me something, %s!" % username
+        return {'messages': [
+            {'text': 'At least ask me something, %s!' % (username,)},
+        ]}

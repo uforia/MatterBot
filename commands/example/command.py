@@ -22,6 +22,20 @@
 #    name for your module: 'commands.<modulename>' and 'commands/<modulename>/settings.py'
 #    should be set correctly. This is used for dynamically loading defaults and overwriting
 #    them with your own configuration in the 'settings.py' file.
+# 5) The module should return a dictionary with a 'messages' key, which contains a list of
+#    messages to be sent back to the caller, with a 'text' and optionally an 'uploads' key
+#    per message. If populated, the 'uploads' key should contain a list of dictionaries,
+#    specifying the 'filename' and 'bytes' keys. Every upload will be attached to that
+#    message.
+#
+#    {'messages': [
+#       {'text': 'This is a plain message, without any attachments.', 'uploads': None},
+#       {'text': 'This is just a plain message, without any attachments.', },
+#       {'text': 'One file is attached to this message.', 'uploads': [{'filename': 'XXX', 'bytes': 'ZZZ'}]},
+#       {'text': 'Two files are attached to this message.', 'uploads': [{'filename': 'ABC', 'bytes': 'DEF'}, {'filename': 'GHI', 'bytes': 'JKL'}]},
+#       ]
+#    }
+#
 #
 # Variables:
 #
@@ -41,17 +55,19 @@
 
 from pathlib import Path
 try:
-    from commands.hello import defaults as settings
+    from commands.example import defaults as settings
 except ModuleNotFoundError: # local test run
     import defaults as settings
     if Path('settings.py').is_file():
         import settings
 else:
-    if Path('commands/hello/settings.py').is_file():
+    if Path('commands/example/settings.py').is_file():
         try:
-            from commands.hello import settings
+            from commands.example import settings
         except ModuleNotFoundError: # local test run
             import settings
 
 async def process(connection, channel, username, params):
-    return "Hello %s!" % username
+    return {'message': [
+        {'text': "Hello %s!" % (username,)},
+    ]}
