@@ -108,7 +108,7 @@ async def process(connection, channel, username, params):
                     result['messages'].append(
                         {'text': text},
                     )
-                print(result)
+                return result
         except Exception as e:
             return {'messages': [
                 {'text': 'An error occurred searching Malpedia for `%s`:\nError: `%s`' % (params, str(e))},
