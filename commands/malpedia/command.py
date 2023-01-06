@@ -48,7 +48,6 @@ async def process(connection, channel, username, params):
                         # We found a sample!
                         filename = params
                         bytes = base64.b64decode(json_response['zipped'].encode())
-                        text += 'ZIP-file attached.'
                     else:
                         text += 'returned no results.'
                     if filename and bytes:
@@ -63,10 +62,51 @@ async def process(connection, channel, username, params):
             else:
                 apipath = 'find/actor/%s' % (params,)
                 async with httpx.AsyncClient(headers=headers) as session:
-                    actor = await session.get(settings.APIURL['malpedia']['url'] + apipath)
+                    response = await session.get(settings.APIURL['malpedia']['url'] + apipath)
+                    actors = response.json()
                 apipath = 'find/family/%s' % (params,)
                 async with httpx.AsyncClient(headers=headers) as session:
-                    family = await session.get(settings.APIURL['malpedia']['url'] + apipath)
+                    response = await session.get(settings.APIURL['malpedia']['url'] + apipath)
+                    families = response.json()
+                if actors:
+                    for actor in actors:
+                        actornames = []
+                        actornames.append(actor['common_name'])
+                        actornames.extend(actor['synonyms'])
+                        # Now find the common tools this actor uses
+                        text += '\n- Actor names/synonyms: `' + '`, `'.join(sorted(actornames)) + '`'
+                        for actorname in actornames:
+                            if re.search(r"^G[0-9]{4}$", actorname):
+                                async with httpx.AsyncClient(headers=headers) as session:
+                                    response = await session.get(settings.APIURL['mitre']['url'] + 'Enterprise/Actors/' + actorname)
+                                    mitre = response.json()
+                                    if mitre:
+                                        mitre = mitre['Enterprise']['Actors'][actorname]
+                                        for subtree in 'Malwares', 'Subtechniques', 'Techniques':
+                                            if subtree in mitre:
+                                                items = set()
+                                                for mitrecode in mitre[subtree]:
+                                                    name = mitre[subtree][mitrecode]['name']
+                                                    entry = '`' + mitrecode + '` '
+                                                    entry += '[' + settings.APIURL['mitre']['url'] + 'Enterprise/' + subtree + '/' + mitrecode + ']'
+                                                    entry += '(' + name + ')'
+                                                    items.add(entry)
+                                                text += '\n  - `' + subtree + '`: '
+                                                text += ', '.join(sorted(items))
+                        result['messages'].append(
+                            {'text': text},
+                        )
+                if families:
+                    for family in families:
+                        familynames = []
+                        familynames.append(family['name'])
+                        familynames.extend(family['alt_names'])
+                        # Now find the common tools this actor uses
+                        text += '\n- Malware names/synonyms: `' + '`, `'.join(sorted(familynames)) + '`'
+                        result['messages'].append(
+                            {'text': text},
+                    )
+                print(result)
         except Exception as e:
             return {'messages': [
                 {'text': 'An error occurred searching Malpedia for `%s`:\nError: `%s`' % (params, e.message)},
