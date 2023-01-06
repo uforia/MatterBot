@@ -63,7 +63,7 @@ async def process(connection, channel, username, params):
                                                 countries.add('`' + value + '` :flag-' + value.lower() + ':')
                         orgs = orgs if len(orgs) > 0 else ["Unknown"]
                         ranges = ranges if len(ranges) > 0 else ["Unknown"]
-                        countries = countries if len(countries) > 0 else ["Unknown"]
+                        countries = countries if len(countries) > 0 else ["`Unknown`"]
                         message += ' | Orgs: `' + '`, `'.join(orgs) + '`'
                         message += ' | CIDR: `' + '`, `'.join(ranges) + '`'
                         message += ' | Geo: ' + ', '.join(countries)
