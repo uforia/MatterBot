@@ -47,9 +47,9 @@ async def process(connection, channel, username, params):
                         # We found a sample!
                         filename = params
                         bytes = base64.b64decode(json_response['zipped'].encode())
-                        text = 'Malpedia search for `%s`:\n' % (params,)
+                        text = 'Malpedia hash search for `%s`:\n' % (params,)
                     else:
-                        text = "Malpedia search for `%s` returned no results." % (params,)
+                        text = "Malpedia hash search for `%s` returned no results." % (params,)
                     if filename and bytes:
                         result['messages'].append(
                             {'text': text, 'uploads': [{'filename': filename, 'bytes': bytes}]}
@@ -73,7 +73,7 @@ async def process(connection, channel, username, params):
                     subtrees = ('Malwares', 'Subtechniques', 'Techniques')
                     for subtree in subtrees:
                         items[subtree] = set()
-                    text = 'Malpedia search for `%s`:\n' % (params,)
+                    text = 'Malpedia actor search for `%s`:\n' % (params,)
                     for actor in actors:
                         actornames = []
                         actornames.append(actor['common_name'])
@@ -103,7 +103,7 @@ async def process(connection, channel, username, params):
                         {'text': text[:-2]},
                     )
                 if families:
-                    text = 'Malpedia search for `%s`:' % (params,)
+                    text = 'Malpedia malware search for `%s`:' % (params,)
                     for family in families:
                         malwarenames = []
                         malwarenames.append(family['name'])
