@@ -59,7 +59,7 @@ async def process(connection, channel, username, params):
                             {'text': text}
                         )
                 return result
-            else:
+            if re.search(r"^[A-Za-z0-9]+$", params):
                 apipath = 'find/actor/%s' % (params,)
                 async with httpx.AsyncClient(headers=headers) as session:
                     response = await session.get(settings.APIURL['malpedia']['url'] + apipath)
