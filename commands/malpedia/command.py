@@ -69,13 +69,13 @@ async def process(connection, channel, username, params):
                     response = await session.get(settings.APIURL['malpedia']['url'] + apipath)
                     families = response.json()
                 if actors:
+                    text = 'Malpedia search for `%s`:\n' % (params,)
                     for actor in actors:
                         actornames = []
                         actornames.append(actor['common_name'])
                         actornames.extend(actor['synonyms'])
                         # Now find the common tools this actor uses
-                        text = 'Malpedia search for `%s`:\n' % (params,)
-                        text += '- Actor names/synonyms: `' + '`, `'.join(sorted(actornames)) + '`'
+                        text += '\n- Actor names/synonyms: `' + '`, `'.join(sorted(actornames)) + '`'
                         for actorname in actornames:
                             if re.search(r"^G[0-9]{4}$", actorname):
                                 async with httpx.AsyncClient(headers=headers) as session:
@@ -88,15 +88,15 @@ async def process(connection, channel, username, params):
                                                 items = set()
                                                 for mitrecode in mitre[subtree]:
                                                     name = mitre[subtree][mitrecode]['name']
-                                                    entry = '`' + mitrecode + '` '
-                                                    entry += '[' + settings.APIURL['mitre']['url'] + 'Enterprise/' + subtree + '/' + mitrecode + ']'
-                                                    entry += '(' + name + ')'
+                                                    entry = '`' + name + '`: '
+                                                    entry += '[' +  mitrecode + ']'
+                                                    entry += '(' + settings.APIURL['mitre']['url'] + 'Enterprise/' + subtree + '/' + mitrecode + ')'
                                                     items.add(entry)
                                                 text += '\n  - `' + subtree + '`: '
                                                 text += ', '.join(sorted(items))
-                        result['messages'].append(
-                            {'text': text},
-                        )
+                    result['messages'].append(
+                        {'text': text},
+                    )
                 if families:
                     text = 'Malpedia search for `%s`:' % (params,)
                     for family in families:
@@ -104,7 +104,7 @@ async def process(connection, channel, username, params):
                         malwarenames.append(family['name'])
                         malwarenames.extend(family['alt_names'])
                         entry = '`, `'.join(sorted(malwarenames))
-                        text += '\n- Malware names/synonyms: `' + entry + '`'
+                        text += '\n- Malware family: `' + entry + '`'
                     result['messages'].append(
                         {'text': text},
                     )
