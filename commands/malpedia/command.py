@@ -25,7 +25,6 @@ async def process(connection, channel, username, params):
             'Content-Type': settings.CONTENTTYPE,
             'Authorization': 'apitoken %s' % (settings.APIURL['malpedia']['key'],),
         }
-        text = "Malpedia search for `%s`: " % (params,)
         try:
             hash_algo = None
             bytes = None
@@ -48,8 +47,9 @@ async def process(connection, channel, username, params):
                         # We found a sample!
                         filename = params
                         bytes = base64.b64decode(json_response['zipped'].encode())
+                        text = 'Malpedia search for `%s`:\n' % (params,)
                     else:
-                        text += 'returned no results.'
+                        text = "Malpedia search for `%s` returned no results." % (params,)
                     if filename and bytes:
                         result['messages'].append(
                             {'text': text, 'uploads': [{'filename': filename, 'bytes': bytes}]}
@@ -74,7 +74,8 @@ async def process(connection, channel, username, params):
                         actornames.append(actor['common_name'])
                         actornames.extend(actor['synonyms'])
                         # Now find the common tools this actor uses
-                        text += '\n- Actor names/synonyms: `' + '`, `'.join(sorted(actornames)) + '`'
+                        text = 'Malpedia search for `%s`:\n' % (params,)
+                        text += '- Actor names/synonyms: `' + '`, `'.join(sorted(actornames)) + '`'
                         for actorname in actornames:
                             if re.search(r"^G[0-9]{4}$", actorname):
                                 async with httpx.AsyncClient(headers=headers) as session:
@@ -97,17 +98,18 @@ async def process(connection, channel, username, params):
                             {'text': text},
                         )
                 if families:
+                    text = 'Malpedia search for `%s`:' % (params,)
                     for family in families:
-                        familynames = []
-                        familynames.append(family['name'])
-                        familynames.extend(family['alt_names'])
-                        # Now find the common tools this actor uses
-                        text += '\n- Malware names/synonyms: `' + '`, `'.join(sorted(familynames)) + '`'
-                        result['messages'].append(
-                            {'text': text},
+                        malwarenames = []
+                        malwarenames.append(family['name'])
+                        malwarenames.extend(family['alt_names'])
+                        entry = '`, `'.join(sorted(malwarenames))
+                        text += '\n- Malware names/synonyms: `' + entry + '`'
+                    result['messages'].append(
+                        {'text': text},
                     )
                 print(result)
         except Exception as e:
             return {'messages': [
-                {'text': 'An error occurred searching Malpedia for `%s`:\nError: `%s`' % (params, e.message)},
+                {'text': 'An error occurred searching Malpedia for `%s`:\nError: `%s`' % (params, str(e))},
             ]}
