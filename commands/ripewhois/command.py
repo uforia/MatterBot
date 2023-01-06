@@ -31,14 +31,16 @@ async def process(connection, channel, username, params):
                 async with httpx.AsyncClient() as session:
                     response = await session.get(settings.APIURL['ripewhois']['url'] + data)
                     json_response = response.json()
-                    message = 'RIPE WHOIS lookup for `%s`' % (data,)
+                    message = 'RIPE WHOIS lookup for `%s`' % (params,)
                     if 'status' in json_response:
                         if json_response['status'] == 'error':
-                            return ("RIPE WHOIS errored out while searching for `%s`" % (params,),)
-                    elif 'data' in json_response:
+                            return {'messages': [
+                                {'text': 'RIPE WHOIS errored out while searching for `%s`' % (params,)}
+                            ]}
+                    if 'data' in json_response:
                         data = json_response['data']
-                        ranges = set()
                         orgs = set()
+                        ranges = set()
                         countries = set()
                         for subtree in ['records', 'irr_records']:
                             if subtree in data:
@@ -61,12 +63,12 @@ async def process(connection, channel, username, params):
                                                 countries.add(value)
                         orgs = orgs if len(orgs) > 0 else ["Unknown"]
                         ranges = ranges if len(ranges) > 0 else ["Unknown"]
-                        countries = orgs if len(countries) > 0 else ["Unknown"]
+                        countries = countries if len(countries) > 0 else ["Unknown"]
                         message += ' | Orgs: `' + '`, `'.join(orgs) + '`'
                         message += ' | CIDR: `' + '`, `'.join(ranges) + '`'
                         message += ' | Geo: `' + '`, `'.join(countries) + '`'
                         return {'messages': [
-                            {'text': message.strip()},
+                            {'text': message.strip()}
                         ]}
                     else:
                         return {'messages': [
@@ -74,5 +76,5 @@ async def process(connection, channel, username, params):
                         ]}
         except Exception as e:
             return {'messages': [
-                {'text': 'An error occurred searching RIPE WHOIS for `%s`:\nError: `%s`' % (params, e.message)},
+                {'text': 'An error occurred searching RIPE WHOIS for `%s`:\nError: `%s`' % (params, e.message)}
             ]}
