@@ -11,6 +11,7 @@ import logging
 import os
 import sys
 import tempfile
+import textwrap
 
 from mattermostdriver import Driver
 
@@ -76,11 +77,31 @@ class MattermostManager(object):
     async def send_message(self, channel, text):
         try:
             channelname = channel.lower()
-            await self.mmDriver.posts.create_post(options={'channel_id': channel,
-                                                           'message': text,
-                                                           })
-        except:
+            if len(text) > 4000: # Mattermost message limit
+                blocks = []
+                lines = text.split('\n')
+                blocksize = 0
+                block = ''
+                for line in lines:
+                    lensize = len(line)
+                    if (blocksize + lensize) < 4000:
+                        blocksize += lensize
+                        block += line + '\n'
+                    else:
+                        blocks.append(block.strip())
+                        blocksize = 0
+                        block = ''
+            else:
+                blocks = [text]
+            for block in blocks:
+                print(block)
             return
+            for block in blocks:
+                self.mmDriver.posts.create_post(options={'channel_id': channel,
+                                                         'message': block,
+                                                         })
+        except:
+            raise
 
     async def handle_post(self, data: dict):
         my_id = self.me['id']

@@ -70,10 +70,10 @@ async def process(connection, channel, username, params):
                     families = response.json()
                 if actors:
                     items = {}
-                    subtrees = ('Malwares', 'Subtechniques', 'Techniques')
+                    subtrees = ('Malwares', 'Subtechniques', 'Techniques', 'Tools')
                     for subtree in subtrees:
                         items[subtree] = set()
-                    text = 'Malpedia actor search for `%s`:\n' % (params,)
+                    text = 'Malpedia actor search for `%s`:' % (params,)
                     for actor in actors:
                         actornames = []
                         actornames.append(actor['common_name'])
@@ -94,14 +94,13 @@ async def process(connection, channel, username, params):
                                                 for mitrecode in sorted(mitre[subtree], key=str.lower):
                                                     name = mitre[subtree][mitrecode]['name']
                                                     link = '[' +  mitrecode + '](' + settings.APIURL['mitre']['url'] + 'Enterprise/' + subtree + '/' + mitrecode + ')'
-                                                    items[subtree].add((name, link))
+                                                    description = mitre[subtree][mitrecode]['description'].split('. ')[0].split('\n')[0]
+                                                    items[subtree].add((link, name, description))
                     for subtree in subtrees:
-                        text += '\n  - ' + subtree + ': '
-                        for name, link in sorted(items[subtree]):
-                            text += '`' + name + '`: ' + link + ', '
-                    result['messages'].append(
-                        {'text': text[:-2]},
-                    )
+                        text += '\n  - ' + subtree + ':'
+                        for link, name, description in sorted(items[subtree]):
+                            text += '\n    - ' + link + ' `' + name + '`: ' + description
+                    result['messages'].append({'text': text},)
                 if families:
                     text = 'Malpedia malware search for `%s`:' % (params,)
                     for family in families:
