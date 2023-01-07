@@ -94,7 +94,7 @@ async def process(connection, channel, username, params):
                                                 for mitrecode in sorted(mitre[subtree], key=str.lower):
                                                     name = mitre[subtree][mitrecode]['name']
                                                     link = '[' +  mitrecode + '](' + settings.APIURL['mitre']['url'] + 'Enterprise/' + subtree + '/' + mitrecode + ')'
-                                                    description = mitre[subtree][mitrecode]['description'].split('. ')[0].split('\n')[0]
+                                                    description = mitre[subtree][mitrecode]['description'].split('. ')[0].split('\n')[0].split('.(')[0] + '.'
                                                     items[subtree].add((link, name, description))
                     for subtree in subtrees:
                         text += '\n**' + subtree + '**:'
