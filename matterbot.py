@@ -90,6 +90,7 @@ class MattermostManager(object):
                         blocks.append(block.strip())
                         blocksize = 0
                         block = ''
+                blocks.append(block.strip())
             else:
                 blocks = [text]
             for block in blocks:
