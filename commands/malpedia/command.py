@@ -79,7 +79,7 @@ async def process(connection, channel, username, params):
                         actornames.append(actor['common_name'])
                         actornames.extend(actor['synonyms'])
                         # Now find the common tools this actor uses
-                        text += '\nActor names/synonyms: `' + '`, `'.join(sorted(actornames, key=str.lower)) + '`'
+                        text += '\n**Actor names/synonyms**: `' + '`, `'.join(sorted(actornames, key=str.lower)) + '`'
                         for actorname in actornames:
                             if re.search(r"^G[0-9]{4}$", actorname):
                                 async with httpx.AsyncClient(headers=headers) as session:
@@ -97,7 +97,7 @@ async def process(connection, channel, username, params):
                                                     description = mitre[subtree][mitrecode]['description'].split('. ')[0].split('\n')[0]
                                                     items[subtree].add((link, name, description))
                     for subtree in subtrees:
-                        text += '\n' + subtree + ':'
+                        text += '\n**' + subtree + '**:'
                         for link, name, description in sorted(items[subtree]):
                             text += '\n- ' + link + ' `' + name + '`: ' + description
                     result['messages'].append({'text': text},)
