@@ -97,9 +97,9 @@ async def process(connection, channel, username, params):
                                                     description = mitre[subtree][mitrecode]['description'].split('. ')[0].split('\n')[0]
                                                     items[subtree].add((link, name, description))
                     for subtree in subtrees:
-                        text += '\n  - ' + subtree + ':'
+                        text += '\n- ' + subtree + ':'
                         for link, name, description in sorted(items[subtree]):
-                            text += '\n    - ' + link + ' `' + name + '`: ' + description
+                            text += '\n  - ' + link + ' `' + name + '`: ' + description
                     result['messages'].append({'text': text},)
                 if families:
                     text = 'Malpedia malware search for `%s`:' % (params,)
