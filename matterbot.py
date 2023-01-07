@@ -11,7 +11,6 @@ import logging
 import os
 import sys
 import tempfile
-import textwrap
 
 from mattermostdriver import Driver
 
@@ -93,9 +92,6 @@ class MattermostManager(object):
                         block = ''
             else:
                 blocks = [text]
-            for block in blocks:
-                print(block)
-            return
             for block in blocks:
                 self.mmDriver.posts.create_post(options={'channel_id': channel,
                                                          'message': block,
