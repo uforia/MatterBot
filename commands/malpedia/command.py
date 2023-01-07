@@ -108,7 +108,7 @@ async def process(connection, channel, username, params):
                         malwarenames.append(family['name'])
                         malwarenames.extend(family['alt_names'])
                         entry = '`, `'.join(sorted(malwarenames, key=str.lower))
-                        text += '\n- Malware family: `' + entry + '`'
+                        text += '\nMalware family: `' + entry + '`'
                     result['messages'].append(
                         {'text': text},
                     )
