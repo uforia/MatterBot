@@ -68,6 +68,6 @@ else:
             import settings
 
 async def process(connection, channel, username, params):
-    return {'message': [
-        {'text': 'Hello %s!' % (username,)},
+    return {'messages': [
+        {'text': 'Hello %s!' % (username,)}
     ]}
