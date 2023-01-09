@@ -153,9 +153,13 @@ async def process(connection, channel, username, params):
                                     if 'oid' in last_https_certificate['public_key'][algorithm.lower()]:
                                         key_size = last_https_certificate['public_key'][algorithm.lower()]['oid']
                                     signature_algorithm = last_https_certificate['signature_algorithm']
-                                    issuer_cn = last_https_certificate['issuer']['CN']
+                                    issuers = set()
+                                    issuers.add(last_https_certificate['issuer']['O'])
+                                    issuers.add(last_https_certificate['issuer']['CN'])
+                                    issuers.add(last_https_certificate['issuer']['C'])
+                                    issuer = ', '.join(issuers)
                                     text += '\n - Domain Name(s): `' + '`, `'.join(domains) + '`'
-                                    text += '\n - Key: `' + algorithm + '-' + str(key_size) + '`, Sig: `' + signature_algorithm + '`, Issuer: `' + issuer_cn + '`'
+                                    text += '\n - Key: `' + algorithm + '-' + str(key_size) + '`, Sig: `' + signature_algorithm + '`, Issuer: `' + issuer + '`'
                                 if 'last_analysis_stats' in attributes:
                                     last_analysis_stats = attributes['last_analysis_stats']
                                     count = 0.0
@@ -248,9 +252,13 @@ async def process(connection, channel, username, params):
                                     if 'oid' in last_https_certificate['public_key'][algorithm.lower()]:
                                         key_size = last_https_certificate['public_key'][algorithm.lower()]['oid']
                                     signature_algorithm = last_https_certificate['signature_algorithm']
-                                    issuer_cn = last_https_certificate['issuer']['CN']
+                                    issuers = set()
+                                    issuers.add(last_https_certificate['issuer']['O'])
+                                    issuers.add(last_https_certificate['issuer']['CN'])
+                                    issuers.add(last_https_certificate['issuer']['C'])
+                                    issuer = ', '.join(issuers)
                                     text += '\n - Domain Name(s): `' + '`, `'.join(domains) + '`'
-                                    text += '\n - Key: `' + algorithm + '-' + str(key_size) + '`, Sig: `' + signature_algorithm + '`, Issuer: `' + issuer_cn + '`'
+                                    text += '\n - Key: `' + algorithm + '-' + str(key_size) + '`, Sig: `' + signature_algorithm + '`, Issuer: `' + issuer + '`'
                                 if 'last_analysis_stats' in attributes:
                                     last_analysis_stats = attributes['last_analysis_stats']
                                     count = 0.0
