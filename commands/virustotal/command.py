@@ -236,7 +236,7 @@ async def process(connection, channel, username, params):
                                         if type in dns_records:
                                             dns_records[type].add(value)
                                     for type in dns_records:
-                                        if dns_records[type]:
+                                        if len(dns_records[type])>0:
                                             text += '**' + type + '**: `' + '`, `'.join(dns_records[type]) + '` | '
                                     text = text[:-2]
                                 if 'last_https_certificate' in attributes:
