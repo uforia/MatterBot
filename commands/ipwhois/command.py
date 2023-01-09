@@ -31,7 +31,9 @@ async def process(connection, channel, username, params):
                     message = 'IPWHOIS lookup for `%s`' % (data,)
                     if 'success' in json_response:
                         if json_response['success'] != True:
-                            return ("IPWHOIS errored out while searching for `%s`" % (params,),)
+                            return {'messages': [
+                                {'text': 'IPWHOIS errored out while searching for `%s`' % (params,)}
+                            ]}
                         if 'connection' in json_response:
                             if 'isp' in json_response['connection']:
                                 message += ' | ISP: `' + json_response['connection']['isp'] + '`'

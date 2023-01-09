@@ -101,7 +101,6 @@ async def process(connection, channel, username, params):
                         for link, name, description in sorted(items[subtree]):
                             text += '\n- ' + link + ' `' + name + '`: ' + description
                     result['messages'].append({'text': text},)
-                    print(result['messages'])
                 if families:
                     text = 'Malpedia malware search for `%s`:' % (params,)
                     for family in families:

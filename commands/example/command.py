@@ -69,5 +69,5 @@ else:
 
 async def process(connection, channel, username, params):
     return {'message': [
-        {'text': "Hello %s!" % (username,)},
+        {'text': 'Hello %s!' % (username,)},
     ]}

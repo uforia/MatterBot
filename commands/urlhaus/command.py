@@ -24,7 +24,7 @@ async def process(connection, channel, username, params):
             'Content-Type': settings.CONTENTTYPE,
         }
         try:
-            message = "URLhaus search for `%s`:\n" % (params,)
+            message = 'URLhaus search for `%s`:\n' % (params,)
             type = None
             if re.search(r"^[A-Za-z0-9]{32}$", params):
                 hash_algo = 'md5_hash'

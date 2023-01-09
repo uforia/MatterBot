@@ -23,7 +23,7 @@ async def process(connection, channel, username, params):
         headers = {
             'Content-Type': settings.CONTENTTYPE,
         }
-        message = "ThreatFox search for `%s`:\n" % (params,)
+        message = 'ThreatFox search for `%s`:\n' % (params,)
         try:
             data = None
             hash_algo = None
