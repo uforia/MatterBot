@@ -34,8 +34,8 @@ async def process(connection, channel, username, params):
             content = result['content']
             url = settings.WIKIURL + '/' + result['path']
             if all(param in content for param in params):
-                answers.append("[" + description + "](" + url + ")")
-        message = 'Search term `" + " AND ".join(params) + "` was found in:\n'
+                answers.append('[' + description + '](' + url + ')')
+        message = 'Search term `' + ' AND '.join(params) + '` was found in:\n'
         message += '\n'.join(answers)
         if len(answers)>0:
             return {'messages': [
