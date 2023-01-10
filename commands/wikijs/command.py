@@ -43,7 +43,7 @@ async def process(connection, channel, username, params):
             ]}
         else:
             return {'messages': [
-                {'text': 'WikiJS search for `%s` returned no results.' % (params,)},
+                {'text': 'WikiJS search for `%s` returned no results.' % (' '.join(params),)},
             ]}
     else:
         return {'messages': [
