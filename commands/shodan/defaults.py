@@ -8,8 +8,5 @@ APIURL = {
 }
 CONTENTTYPE = 'application/json'
 
-# Note: if you use multiple VirusTotal API keys to circumvent their API usage restrictions,
-# you're breaking VT's terms of service. You're on your own.
-
-# Enable the Malpedia settings to attempt to automatically grab accompanying YARA rulesets
-# when you look up an IoC. You need a valid API key to be able to do this, in some cases.
+# Note: if you use multiple Shodan API keys to circumvent their API usage restrictions,
+# you're probably breaking Shodan's terms of service. You're on your own.
