@@ -24,14 +24,14 @@ async def process(connection, channel, username, params):
     # Currently implemented Shodan module methods
     shodanquerytypes = ['count', 'domain', 'host', 'ip', 'search']
     querytypes = accountquerytypes + shodanquerytypes
-    stripchars = '\n`\'\"\'\r'
+    stripchars = '\n`\'\"\r'
     regex = re.compile('[%s]' % stripchars)
     if len(params)>0:
         querytype = params[0]
         params = params[1:]
         if not querytype in querytypes:
             return {'messages': [
-                {'text': 'Please specify one of these query types: `%s`'} % ('`, `'.join(querytypes),)
+                {'text': 'Please specify one of these query types: `' + '`, `'.join(querytypes) + '`'}
             ]}
         headers = {
             'Content-Type': settings.CONTENTTYPE,
@@ -52,6 +52,10 @@ async def process(connection, channel, username, params):
                                 return {'messages': [{'text': 'No results found.'}]}
                             else:
                                 return {'messages': [{'text': 'An error occurred searching Shodan: ' + error}]}
+                        if 'total' in json_response:
+                            total = json_response['total']
+                            if total==0:
+                                return {'messages': [{'text': 'No results found.'}]}
                         if 'hostnames' in json_response:
                             hostnames = json_response['hostnames']
                             text += '\n - **Hostname(s)**: `' + '`, `'.join(hostnames) + '`'
@@ -90,6 +94,10 @@ async def process(connection, channel, username, params):
                     async with httpx.AsyncClient(headers=headers) as session:
                         response = await session.get(APIENDPOINT)
                         json_response = response.json()
+                        if 'total' in json_response:
+                            total = json_response['total']
+                            if total==0:
+                                return {'messages': [{'text': 'No results found.'}]}
                         if 'error' in json_response:
                             error = json_response['error']
                             if 'No information available' in error:
@@ -110,7 +118,7 @@ async def process(connection, channel, username, params):
                                     if len(match['data'])>60:
                                         banner += ' [...]'
                                 if 'product' in match:
-                                    product = regex.sub('|', match['product'][:80])
+                                    product = regex.sub('', match['product'][:80])
                                     if len(match['product'])>80:
                                         product += ' [...]'
                                 if 'ssl' in match:
@@ -133,6 +141,9 @@ async def process(connection, channel, username, params):
                 async with httpx.AsyncClient(headers=headers) as session:
                     response = await session.get(APIENDPOINT)
                     json_response = response.json()
+                    if 'error' in json_response:
+                        error = json_response['error']
+                        return {'messages': [{'text': 'An error occurred, wrong/missing API key? Error: ' + error}]}
                     usage_limits = json_response['usage_limits']
                     plan = json_response['plan']
                     https = 'Yes' if json_response['https'] else 'No'
