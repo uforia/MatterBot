@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# General information
+# GENERAL INFORMATION
 #
 # This is an example module that responds to various forms of 'hello'. It describes the basics
 # needed to create your own Mattermost channel binds and handlers. Nearly every function your
@@ -8,16 +8,16 @@
 # requests from your own module, it is strongly recommended to use HTTPX, as AIOHTTP has known
 # issues with mangling a POST body, certain headers/cookies, etc. This may cause unpredictable
 # behaviour when communicating with APIs that are not 'lenient' with the requests they accept.
-# Please note: the AsyncIO nature of this bot means that you cannot use library imports that
-# do not support asynchronous operation, such as the Python 'requests' module.
+# Please note: the AsyncIO nature of this bot means that you should not use library functions
+# that are 'blocking (do not support async operation), such as the Python 'requests' module.
 #
-# Basic setup:
+# BASIC SETUP
 #
-# 1) Every command must set a list() of binds to indicate what commands to listen for.
-# 2) Every command must set a list() of channels to indicate what channels to listen in.
+# 1) Every module must set a list() of binds to configure what commands to listen for.
+# 2) Every module must set a list() of channels to configure what channels to listen in.
 # 3) Every module must implement the process(connection, channel, username, params) function.
-#    This process() function is called by the main worker and only returns the message to be
-#    sent back to the channel/user.
+#    This process() function is called by the main worker thread and returns a dict that tells
+#    the main worker thread what to do, such as sending messages to the channel/user.
 # 4) Make sure to modify the 'pathlib' construct below to reflect the correct (directory)
 #    name for your module: 'commands.<modulename>' and 'commands/<modulename>/settings.py'
 #    should be set correctly. This is used for dynamically loading defaults and overwriting
@@ -36,19 +36,33 @@
 #       ]
 #    }
 #
-#
-# Variables:
+# VARIABLES
 #
 # 1) BINDS: Python list(): which channel messages to listen to. **MANDATORY**
 # 2) CHANS: Python list(): which channel(s) to listen in. **MANDATORY**
-# 3) If you have custom settings for your module, put them in 'settings.py' so you can
-#    access them via the 'settings.<your-setting>' construct. This should be the file
-#    for defining sensitive information such as API tokens, passwords, internal URLs,
-#    etc. See the 'pathlib' config parser description/code above and below respectively.
+# 3) HELP: Python dict(): provides context-sensitive help for your module. The bot will
+#    traverse the dictionary and explain all commands. Use the 'DEFAULT' key to let the
+#    bot provide a default answer to a generic !help request as well. **OPTIONAL**
 #
-# Function parameters:
+#       Example: HELP = {
+#                           'DEFAULT': {
+#                               'args': None,
+#                               'desc': 'The bot will reply to your greeting!',
+#                           },
+#                           '<subcommand>' {
+#                               'args': '<value>',
+#                               'desc': '<subcommand> does XYZ with <value>',
+#                           }
+#                       }
 #
-# 1) Connection: The active 'mattermostdriver' connection (careful when using this)
+# Note: If you need custom settings for your module, put them in 'settings.py' so the
+#       bot will overload the defaults through its import loader. This should be the
+#       file for defining sensitive information such as API tokens, passwords,
+#       internal URLs, etc. See the 'pathlib' config parser description/code below.
+#
+# PROCESS() FUNCTION PARAMETERS/MEANING
+#
+# 1) Command:    The command that triggered the module (e.g. '@ioc' or '!help')
 # 2) Channel:    Channel name were the command was triggered
 # 3) Username:   Username that triggered the command
 # 4) Params:     Parameters to the command, as a Python list()
@@ -67,7 +81,7 @@ else:
         except ModuleNotFoundError: # local test run
             import settings
 
-async def process(connection, channel, username, params):
+async def process(command, channel, username, params):
     return {'messages': [
         {'text': 'Hello %s!' % (username,)}
     ]}

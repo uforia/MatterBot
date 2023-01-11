@@ -19,7 +19,7 @@ else:
         except ModuleNotFoundError: # local test run
             import settings
 
-async def process(connection, channel, username, params):
+async def process(command, channel, username, params):
     if len(params)>0:
         credential = AzureKeyCredential(settings.APIKEY)
         client = SearchClient(endpoint=settings.APIENDPOINT,

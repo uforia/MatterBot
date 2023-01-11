@@ -10,6 +10,13 @@ APIURL = {
                      'enabled': True},
 }
 CONTENTTYPE = 'application/json'
+HELP = {
+    'DEFAULT': {
+        'args': 'Any IoC, e.g. an IP address, hostname, URL, hash, etc.',
+        'desc': 'Query VirusTotal for the given IoC.',
+    },
+}
+
 
 # Note: if you use multiple VirusTotal API keys to circumvent their API usage restrictions,
 # you're breaking VT's terms of service. You're on your own.

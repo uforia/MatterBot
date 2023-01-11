@@ -53,7 +53,10 @@ class MattermostManager(object):
             for module in fnmatch.filter(files, "command.py"):
                 module_name = root.split('/')[-1].lower()
                 module = importlib.import_module(module_name + '.' + 'command')
-                self.commands[module_name] = {'binds': module.settings.BINDS, 'chans': module.settings.CHANS, 'process': getattr(module, 'process')}
+                defaults = importlib.import_module(module_name + '.' + 'defaults')
+                if defaults.HELP:
+                    HELP = defaults.HELP
+                self.commands[module_name] = {'binds': module.settings.BINDS, 'chans': module.settings.CHANS, 'help': HELP, 'process': getattr(module, 'process')}
         # Start the websocket
         self.mmDriver.init_websocket(self.handle_raw_message)
 
@@ -112,22 +115,64 @@ class MattermostManager(object):
         message = post['message'].split(' ')
         commands = set()
         if userid != my_id:
-            command = message[0].lower()
+            command = message[0].lower().strip()
             try:
                 params = message[1:]
             except IndexError:
                 params = None
+            if command == '!help' and not params:
+                for module in self.commands:
+                    for chan in self.commands[module]['chans']:
+                        for bind in self.commands[module]['binds']:
+                            if channelname == chan or (((my_id and userid) in channelname) and chan in userchannels):
+                                commands.add('`' + bind + '`')
+                text = username + " I know about: `!help`, " + ', '.join(sorted(commands)) + " here. Remember that not every command works everywhere: this depends on the configuration. Modules may offer additional help via `!help <command>`."
+                await self.send_message(channelid, text)
             for module in self.commands:
                 for chan in self.commands[module]['chans']:
                     if channelname == chan or (((my_id and userid) in channelname) and chan in userchannels):
-                        if command == '!help' and not params:
-                            for bind in self.commands[module]['binds']:
-                                commands.add('`' + bind + '`')
+                        if command == '!help' and params and params[0] in self.commands[module]['binds']:
+                            try:
+                                text = ''
+                                HELP = self.commands[module]['help']
+                                if len(params)==1:
+                                    if 'DEFAULT' in HELP:
+                                        # Trigger the default help message
+                                        args = HELP['DEFAULT']['args'] if HELP['DEFAULT']['args'] else None
+                                        desc = HELP['DEFAULT']['desc']
+                                        text += '**Module**: `' + module + '`'
+                                        text += '\n**Description**: '
+                                        text += desc
+                                        if args:
+                                            text += '\n**Arguments**: `' + args + '`'
+                                        subcommands = set()
+                                        if len(HELP)>1:
+                                            text += '\n**Subcommmands**: '
+                                        for subcommand in HELP:
+                                            if subcommand != 'DEFAULT':
+                                                subcommands.add(subcommand)
+                                        if len(subcommands)>0:
+                                            text += '`' + '`, `'.join(subcommands) + '`'
+                                else:
+                                    subcommand = params[1]
+                                    if subcommand in HELP:
+                                        args = HELP[subcommand]['args'] if HELP[subcommand]['args'] else None
+                                        desc = HELP[subcommand]['desc']
+                                        text += '**Module**: `' + module + '`/`' + subcommand + '`'
+                                        text += '\n**Description**: '
+                                        text += desc
+                                        if args:
+                                            text += '\n**Arguments**: `' + args + '`'
+                                if len(text)>0:
+                                    await self.send_message(channelid, text)
+                            except NameError:
+                                await self.send_message(channelid, 'No additional help available for the `' + module + '` module.')
                         if command in self.commands[module]['binds']:
-                            result = await self.commands[module]['process'](self.mmDriver, channelname, username, params)
+                            result = await self.commands[module]['process'](command, channelname, username, params)
                             if result and 'messages' in result:
                                 for message in result['messages']:
-                                    text = message['text']
+                                    if 'text' in message:
+                                        text = message['text']
                                     if 'uploads' in message:
                                         if message['uploads'] != None:
                                             file_ids = []
@@ -149,9 +194,6 @@ class MattermostManager(object):
                                             await self.send_message(channelid, text)
                                     else:
                                         await self.send_message(channelid, text)
-            if command == '!help' and not params:
-                text = username + " I know about: `!help`, " + ', '.join(sorted(commands)) + " here. Remember that not every command works everywhere: this depends on the configuration. Modules may offer additional help via `!help <command>`."
-                await self.send_message(channelid, text)
 
 if __name__ == '__main__' :
     '''

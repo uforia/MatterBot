@@ -6,3 +6,9 @@ APIURL = '<your-MISP-instance>'
 APIENDPOINT = APIURL + '/attributes/restSearch'
 APIKEY = '<your-API-key>'
 CONTENTTYPE = 'application/json'
+HELP = {
+    'DEFAULT': {
+        'args': '<IP address|Host|Domain|URL|Hash|...>',
+        'desc': 'Performs a wildcard match on your MISP instance for the given IoC and lists the correlating MISP Event(s).',
+    },
+}

@@ -6,8 +6,12 @@ import pymisp
 from pathlib import Path
 try:
     from commands.misp import defaults as settings
+    if settings.HELP:
+        HELP = settings.HELP
 except ModuleNotFoundError: # local test run
     import defaults as settings
+    if settings.HELP:
+        HELP = settings.HELP
     if Path('settings.py').is_file():
         import settings
 else:
@@ -17,7 +21,7 @@ else:
         except ModuleNotFoundError: # local test run
             import settings
 
-async def process(connection, channel, username, params):
+async def process(command, channel, username, params):
     if len(params)>0:
         params = ' '.join(params)
         headers = {
