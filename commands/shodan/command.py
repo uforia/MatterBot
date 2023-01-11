@@ -169,12 +169,12 @@ async def process(command, channel, username, params):
                     if 'total' in json_response:
                         total = json_response['total']
                         if total>0:
-                            text += ' `' + str(total) + '` results:\n'
+                            text += ', results: `' + str(total) + '`\n:'
                     if 'facets' in json_response:
                         facets = json_response['facets']
                         for facet in facets:
                             if len(facets[facet]):
-                                text += '\n**Facet**: `' + facet + '`\n\n'
+                                text += '\n**Group**: `' + facet + '`\n\n'
                                 text += '| Value | Count |\n'
                                 text += '| ----- | -----:|\n'
                                 for entry in facets[facet]:
