@@ -213,13 +213,10 @@ if __name__ == '__main__' :
     options, unknown = parser.parse_known_args()
     options.Matterbot = ast.literal_eval(options.Matterbot)
     options.Modules = ast.literal_eval(options.Modules)
-
     if not options.debug:
         logging.basicConfig(filename=options.Matterbot['logfile'], format='%(levelname)s - %(name)s - %(asctime)s - %(message)s')
     else:
         logging.basicConfig(format='%(levelname)s - %(name)s - %(asctime)s - %(message)s')
     log = logging.getLogger( 'MatterAPI' )
-    log.info('Starting MatterAPI')
+    log.info('Starting MatterBot')
     mm = MattermostManager()
-    modules = mm.loadCommands()
-    mm.startWebsocket()
