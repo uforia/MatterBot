@@ -170,7 +170,7 @@ async def process(command, channel, username, params):
                 for param in params:
                     if param.startswith('query:'):
                         for value in param.replace('query:', '').split(','):
-                            query.add(value..replace('[', '').replace(']', '').replace('hxxp','http'))
+                            query.add(value.replace('[', '').replace(']', '').replace('hxxp','http'))
                     if param.startswith('filters:'):
                         for value in param.replace('filters:', '').split(','):
                             query.add(value)
