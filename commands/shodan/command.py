@@ -255,5 +255,5 @@ async def process(command, channel, username, params):
             return {'messages': messages}
         except Exception as e:
             return {'messages': [
-                {'text': 'A Python error occurred searching Shodan:\nError: `%s`' % (e,)}
+                {'text': 'A Python error occurred searching Shodan:\nError:' + e}
             ]}
