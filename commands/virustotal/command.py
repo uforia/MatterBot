@@ -37,7 +37,7 @@ async def process(command, channel, username, params):
         # Domain report: https://www.virustotal.com/api/v3/domains/{domain}
         try:
             querytype = None
-            if re.search(r"^[A-Za-z0-9]{32}$", params) or re.search(r"^[A-Za-z0-9]{40}$", params) or re.search(r"^[A-Za-z0-9]{64}$", params):
+            if re.search(r"^[A-Fa-f0-9]{32}$", params) or re.search(r"^[A-Fa-f0-9]{40}$", params) or re.search(r"^[A-Fa-f0-9]{64}$", params):
                 querytype = 'file'
                 APIENDPOINT = settings.APIURL['virustotal']['url'] + 'files/%s' % (params,)
             elif re.search(r"^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(\:[0-65535]*)?$", params):

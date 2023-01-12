@@ -30,34 +30,30 @@ async def process(command, channel, username, params):
             bytes = None
             filename = None
             result = {'messages': []}
-            if re.search(r"^[A-Za-z0-9]{32}$", params):
+            if re.search(r"^[A-Fa-f0-9]{32}$", params):
                 hash_algo = 'md5'
-            elif re.search(r"^[A-Za-z0-9]{64}$", params):
+            elif re.search(r"^[A-Fa-f0-9]{64}$", params):
                 hash_algo = 'sha256'
             if hash_algo:
                 apipath = 'get/sample/%s/zip' % (params,)
+                uploads = None
                 async with httpx.AsyncClient(headers=headers) as session:
                     response = await session.get(settings.APIURL['malpedia']['url'] + apipath)
                     json_response = response.json()
                     if 'detail' in json_response:
                         # You don't have a registered account/API key to get samples!
-                        if json_response['detail'] == 'Authentication credentials were not provided.':
-                            return ("An error occured searching Malpedia: you need a registered account/API key to search for hashes!",)
+                        detail = json_response['detail']
+                        text = 'Malpedia hash search for `%s`: %s' % (params, detail)
                     elif 'zipped' in json_response:
                         # We found a sample!
                         filename = params
                         bytes = base64.b64decode(json_response['zipped'].encode())
                         text = 'Malpedia hash search for `%s`:\n' % (params,)
-                    else:
-                        text = "Malpedia hash search for `%s` returned no results." % (params,)
-                    if filename and bytes:
-                        result['messages'].append(
-                            {'text': text, 'uploads': [{'filename': filename, 'bytes': bytes}]}
-                        )
-                    else:
-                        result['messages'].append(
-                            {'text': text}
-                        )
+                        if filename and bytes:
+                            uploads = [{'filename': filename, 'bytes': bytes}]
+                    result['messages'].append(
+                        {'text': text, 'uploads': uploads}
+                    )
                 return result
             if re.search(r"^[A-Za-z0-9]+$", params):
                 apipath = 'find/actor/%s' % (params,)

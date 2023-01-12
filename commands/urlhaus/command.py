@@ -26,15 +26,15 @@ async def process(command, channel, username, params):
         try:
             message = 'URLhaus search for `%s`:\n' % (params,)
             type = None
-            if re.search(r"^[A-Za-z0-9]{32}$", params):
+            if re.search(r"^[A-Fa-f0-9]{32}$", params):
                 hash_algo = 'md5_hash'
                 data = { hash_algo: params }
                 type = 'hash'
-            elif re.search(r"^[A-Za-z0-9]{40}$", params):
+            elif re.search(r"^[A-Fa-f0-9]{40}$", params):
                 hash_algo = 'sha1_hash'
                 data = { hash_algo: params }
                 type = 'hash'
-            elif re.search(r"^[A-Za-z0-9]{64}$", params):
+            elif re.search(r"^[A-Fa-f0-9]{64}$", params):
                 hash_algo = 'sha256_hash'
                 data = { hash_algo: params }
                 type = 'hash'
@@ -74,7 +74,7 @@ async def process(command, channel, username, params):
                     ]}
             if type == 'hash':
                 async with httpx.AsyncClient() as session:
-                    response = await session.post(APIURL['urlhaus']['payload'], data=data)
+                    response = await session.post(settings.APIURL['urlhaus']['payload'], data=data)
                     json_response = response.json()
                     if json_response['query_status'] == 'ok':
                         urls = json_response['urls']
@@ -95,5 +95,5 @@ async def process(command, channel, username, params):
                     ]}
         except Exception as e:
             return {'messages': [
-                {'text': 'An error occurred searching URLhaus for `%s`:\nError: `%s`' % (params, e.message)},
+                {'text': 'An error occurred searching URLhaus for `%s`:\nError: `%s`' % (params, e)},
             ]}

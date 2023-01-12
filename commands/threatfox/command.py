@@ -27,11 +27,11 @@ async def process(command, channel, username, params):
         try:
             data = None
             hash_algo = None
-            if re.search(r"^[A-Za-z0-9]{32}$", params):
+            if re.search(r"^[A-Fa-f0-9]{32}$", params):
                 hash_algo = 'md5_hash'
-            elif re.search(r"^[A-Za-z0-9]{40}$", params):
+            elif re.search(r"^[A-Fa-f0-9]{40}$", params):
                 hash_algo = 'sha1_hash'
-            elif re.search(r"^[A-Za-z0-9]{64}$", params):
+            elif re.search(r"^[A-Fa-f0-9]{64}$", params):
                 hash_algo = 'sha256_hash'
             elif re.search(r"^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(\:[0-65535]*)?$", params):
                 data = {
