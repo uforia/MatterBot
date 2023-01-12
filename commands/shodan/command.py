@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import datetime
 import httpx
 import json
 import random
@@ -36,6 +37,7 @@ async def process(command, channel, username, params):
         }
         apikey = random.choice(settings.APIURL['shodan']['key'])
         try:
+            messages = []
             if querytype == 'ip':
                 ip = params[0].split(':')[0]
                 text = 'Shodan `%s` search for `%s`:' % (querytype, ip)
@@ -82,8 +84,13 @@ async def process(command, channel, username, params):
                                     text += '| **Product**: `' + product + '`'
                                 if banner:
                                     text += '| **Banner**: `' + banner + '`'
+                        messages.append({'text': text})
+                        messages.append({'text': 'Shodan JSON output:', 'uploads': [
+                                            {'filename': 'shodan-'+querytype+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content}
+                                        ]})
                 else:
                     text += ' invalid IP address!'
+                    messages.append({'text': text})
             if querytype == 'host':
                 host = params[0].split(':')[0]
                 text = 'Shodan `%s` search for `%s`:' % (querytype, host)
@@ -134,8 +141,13 @@ async def process(command, channel, username, params):
                                     text += '| **Product**: `' + product + '`'
                                 if banner:
                                     text += '| **Banner**: `' + banner + '`'
+                        messages.append({'text': text})
+                        messages.append({'text': 'Shodan JSON output:', 'uploads': [
+                                            {'filename': 'shodan-'+querytype+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content}
+                                        ]})
                 else:
                     text += ' invalid hostname!'
+                    messages.append({'text': text})
             if querytype == 'count':
                 APIENDPOINT = settings.APIURL['shodan']['url'] + '/shodan/host/count?key=%s' % (apikey,)
                 if not len(params):
@@ -212,6 +224,10 @@ async def process(command, channel, username, params):
                                 text += '| **Product**: `' + product + '`'
                             if banner:
                                 text += '| **Banner**: `' + banner + '`'
+                    messages.append({'text': text})
+                    messages.append({'text': 'Shodan JSON output:', 'uploads': [
+                                        {'filename': 'shodan-'+querytype+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content}
+                                    ]})
             if querytype == 'credits':
                 text = 'Shodan API account credits (remaining/total):'
                 APIENDPOINT = settings.APIURL['shodan']['url'] + '/api-info?key=%s' % (apikey,)
@@ -235,9 +251,8 @@ async def process(command, channel, username, params):
                     monitored_ips_remaining = str(json_response['monitored_ips'])
                     monitored_ips_limit = str(usage_limits['monitored_ips'])
                     text += '\n**Monitor**: ' + monitored_ips_remaining + '/' + monitored_ips_limit
-            return {'messages': [
-                {'text': text}
-            ]}
+                    messages.append({'text': text})
+            return {'messages': messages}
         except Exception as e:
             return {'messages': [
                 {'text': 'A Python error occurred searching Shodan:\nError: `%s`' % (e,)}
