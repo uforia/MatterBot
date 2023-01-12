@@ -114,38 +114,39 @@ async def process(command, channel, username, params):
                                 return {'messages': [{'text': 'No results found.'}]}
                             else:
                                 return {'messages': [{'text': 'An error occurred searching Shodan: ' + error}]}
+                        text += '\n\n'
+                        text += '| Hostname(s) | Service | Port | Proto | SSL/TLS | Product | Banner |\n'
+                        text += '| -----------:|--------:| ----:| -----:| -------:|:------- |:-------|\n'
                         if 'matches' in json_response:
                             matches = json_response['matches']
                             for match in matches:
-                                data = None
-                                banner = None
-                                product = None
-                                ssl = None
-                                name = match['_shodan']['module']
-                                port = str(match['port'])
-                                transport = match['transport']
-                                if 'hostnames' in match:
-                                    hostnames = match['hostnames']
-                                if 'data' in match:
-                                    banner = regex.sub('|', match['data'][:60])
-                                    if len(match['data'])>60:
-                                        banner += ' [...]'
-                                if 'product' in match:
-                                    product = regex.sub('', match['product'][:80])
-                                    if len(match['product'])>80:
-                                        product += ' [...]'
+                                result = {}
+                                fields = ('hostnames', 'port', 'transport', 'product', 'data')
+                                for field in fields:
+                                    if field in match:
+                                        if isinstance(match[field],list):
+                                            if len(match[field]):
+                                                result[field] = ', '.join(match[field])
+                                            else:
+                                                result[field] = ' - '
+                                        else:
+                                            result[field] = str(match[field])
+                                    else:
+                                        result[field] = ' - '
+                                result['name'] = match['_shodan']['module']
                                 if 'ssl' in match:
-                                    ssl = True
-                                text += '\n**Service**: ' + name.upper() + ' '
-                                text += '| **Port**: `' + port + '`/`' + transport + '` '
-                                if hostnames:
-                                    text += '| **Hostname(s)**: `' + '`, `'.join(hostnames) + '` '
-                                if ssl:
-                                    text += '(SSL/TLS) '
-                                if product:
-                                    text += '| **Product**: `' + product + '`'
-                                if banner:
-                                    text += '| **Banner**: `' + banner + '`'
+                                    result['ssl'] = match['ssl']['cipher']['version']
+                                else:
+                                    result['ssl'] = ' No '
+                                for field in ('product', 'data'):
+                                    if field in result:
+                                        result[field] = regex.sub(' ', result[field])
+                                        if len(result[field])>60:
+                                            result[field] = result[field][:60] + ' [...]'
+                                fields = ('hostnames', 'name', 'port', 'transport', 'ssl', 'product', 'data')
+                                for field in fields:
+                                    text += '| ' + result[field] + ' '
+                                text += ' |\n'
                         messages.append({'text': text})
                         messages.append({'text': 'Shodan JSON output:', 'uploads': [
                                             {'filename': 'shodan-'+querytype+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content}
