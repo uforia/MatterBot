@@ -46,7 +46,7 @@ async def process(command, channel, username, params):
         try:
             messages = []
             if querytype == 'ip':
-                ip = params[0].split(':')[0].replace('[.]','.')
+                ip = params[0].split(':')[0].replace('[', '').replace(']', '')
                 text = 'Shodan `%s` search for `%s`:' % (querytype, ip)
                 if re.search(r"^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(\:[0-65535]*)?$", ip):
                     APIENDPOINT = settings.APIURL['shodan']['url'] + '/shodan/host/%s?key=%s' % (ip, apikey)
@@ -104,7 +104,7 @@ async def process(command, channel, username, params):
                     text += ' invalid IP address!'
                     messages.append({'text': text})
             if querytype == 'host':
-                host = params[0].split(':')[0].replace('[.]','.')
+                host = params[0].split(':')[0].replace('[', '').replace(']', '')
                 text = 'Shodan `%s` search for `%s`:' % (querytype, host)
                 if re.search(r"^(((?!\-))(xn\-\-)?[a-z0-9\-_]{0,61}[a-z0-9]{1,1}\.)*(xn\-\-)?([a-z0-9\-]{1,61}|[a-z0-9\-]{1,30})\.[a-z]{2,}$", host):
                     APIENDPOINT = settings.APIURL['shodan']['url'] + '/shodan/host/search?key=%s&query=%s' % (apikey, host)
@@ -170,7 +170,7 @@ async def process(command, channel, username, params):
                 for param in params:
                     if param.startswith('query:'):
                         for value in param.replace('query:', '').split(','):
-                            query.add(value.replace('[.]','.'))
+                            query.add(value..replace('[', '').replace(']', '').replace('hxxp','http'))
                     if param.startswith('filters:'):
                         for value in param.replace('filters:', '').split(','):
                             query.add(value)

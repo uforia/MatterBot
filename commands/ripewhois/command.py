@@ -19,7 +19,7 @@ else:
 
 async def process(command, channel, username, params):
     if len(params)>0:
-        params = params[0].replace('[.]','.')
+        params = params[0].replace('[', '').replace(']', '').replace('hxxp','http')
         headers = {
             'Content-Type': settings.CONTENTTYPE,
         }
