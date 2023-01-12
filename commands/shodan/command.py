@@ -27,7 +27,14 @@ async def process(command, channel, username, params):
     regex = re.compile('[%s]' % stripchars)
     if len(params)>0:
         querytype = params[0]
-        params = params[1:]
+        if re.search(r"^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(\:[0-65535]*)?$", querytype):
+            querytype = 'ip'
+            params = params[2:]
+        elif re.search(r"^(((?!\-))(xn\-\-)?[a-z0-9\-_]{0,61}[a-z0-9]{1,1}\.)*(xn\-\-)?([a-z0-9\-]{1,61}|[a-z0-9\-]{1,30})\.[a-z]{2,}$", querytype):
+            querytype = 'host'
+            params = params[2:]
+        else:
+            params = params[1:]
         if not querytype in querytypes:
             return {'messages': [
                 {'text': 'Please specify one of these query types: `' + '`, `'.join(querytypes) + '`'}

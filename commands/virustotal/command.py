@@ -21,7 +21,7 @@ else:
 
 async def process(command, channel, username, params):
     if len(params)>0:
-        params = params[0].replace('[.]','.')
+        params = params[0].replace('[.]','.').replace('hxxp','http')
         headers = {
             'Content-Type': settings.CONTENTTYPE,
             'x-apikey': random.choice(settings.APIURL['virustotal']['key']),
@@ -105,7 +105,7 @@ async def process(command, channel, username, params):
                                     elif probability>60:
                                         verdict = 'highly likely'
                                     elif probability>20:
-                                        verdict = 'potentially'
+                                        verdict = 'probably'
                                     elif probability>0:
                                         verdict = 'possibly'
                                     else:
