@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-BINDS = ['@abusech', '@ioc']
+BINDS = ['@urlhaus', '@ioc', '@uh']
 CHANS = ['debug']
 APIURL = {
     'urlhaus':  {'url': 'https://urlhaus-api.abuse.ch/v1/url/', 'payload': 'https://urlhaus-api.abuse.ch/v1/payload/'},

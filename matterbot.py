@@ -79,6 +79,7 @@ class MattermostManager(object):
     async def send_message(self, channel, text):
         try:
             channelname = channel.lower()
+            log.info('Channel:' + channelname + ' <- Message: (' + str(len(text)) + ' chars)')
             if len(text) > 4000: # Mattermost message limit
                 blocks = []
                 lines = text.split('\n')
@@ -168,6 +169,7 @@ class MattermostManager(object):
                             except NameError:
                                 await self.send_message(channelid, 'No additional help available for the `' + module + '` module.')
                         if command in self.commands[module]['binds']:
+                            log.info('Trigger: ' + command + ' -> ' + module)
                             result = await self.commands[module]['process'](command, channelname, username, params)
                             if result and 'messages' in result:
                                 for message in result['messages']:
@@ -186,6 +188,7 @@ class MattermostManager(object):
                                                     files={'files': (filename, payload)}
                                                 )['file_infos'][0]['id']
                                                 file_ids.append(file_id)
+                                                log.info('File upload:' + filename + ' (' + str(len(bytes)) + ' bytes)')
                                             self.mmDriver.posts.create_post(options={'channel_id': channelid,
                                                                                      'message': text,
                                                                                      'file_ids': file_ids,

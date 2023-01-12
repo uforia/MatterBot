@@ -25,7 +25,7 @@ async def process(command, channel, username, params):
         client = SearchClient(endpoint=settings.APIENDPOINT,
                               index_name=settings.INDEX,
                               credential=credential)
-        query = ' '.join(params)
+        query = ' '.join(params).replace('[.]','.')
         results = client.search(search_text=query)
         answers = []
         for result in results:

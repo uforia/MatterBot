@@ -19,7 +19,7 @@ else:
 
 async def process(command, channel, username, params):
     if len(params)>0:
-        params = params[0]
+        params = params[0].replace('[.]','.')
         headers = {
             'Content-Type': settings.CONTENTTYPE,
         }
@@ -57,8 +57,10 @@ async def process(command, channel, username, params):
                                 malware_printable = sample['malware_printable']
                                 message += '- Threat: `%s`: `%s`' % (malware_printable, threat)
                                 if 'tags' in sample:
-                                    tags = sample['tags']
-                                    message += ' | Tags: `' + '`, `'.join(tags) + '`'
+                                    if sample['tags']:
+                                        tags = sample['tags']
+                                        tags = '`, `'.join(tags) if isinstance(tags,list) else '`' + tags + '`'
+                                        message += ' | Tags: `' + tags + '`'
                                 threatfox_reference = 'https://threatfox.abuse.ch/ioc/%s' % (id,)
                                 message += ' | Reference: [ThreatFox ID %s](%s)' % (id, threatfox_reference)
                                 message += '\n'

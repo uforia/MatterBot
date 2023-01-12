@@ -20,7 +20,7 @@ else:
 
 async def process(command, channel, username, params):
     if len(params)>0:
-        params = params[0]
+        params = params[0].replace('[.]','.')
         headers = {
             'Content-Type': settings.CONTENTTYPE,
             'Authorization': 'apitoken %s' % (settings.APIURL['malpedia']['key'],),

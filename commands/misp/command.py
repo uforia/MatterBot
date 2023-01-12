@@ -23,7 +23,7 @@ else:
 
 async def process(command, channel, username, params):
     if len(params)>0:
-        params = ' '.join(params)
+        params = ' '.join(params).replace('[.]','.')
         headers = {
             "Content-Type": settings.CONTENTTYPE,
             "Authorization": "%s" % (settings.APIKEY,),
