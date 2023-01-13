@@ -106,7 +106,11 @@ class MattermostManager(object):
 
     async def handle_post(self, data: dict):
         my_id = self.me['id']
-        username = data['sender_name']
+        if 'sender_name' in data:
+            username = data['sender_name']
+        else:
+            # We're currently not handling users editing messages
+            return
         post = json.loads(data['post'])
         userid = post['user_id']
         channelinfo = self.mmDriver.channels.get_channel(post['channel_id'])

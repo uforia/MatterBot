@@ -27,13 +27,13 @@ HELP = {
         'desc': 'Display the Shodan account credits and status.',
     },
     'count': {
-        'args': 'query:<text1,text2,...> [filters:<...,...>] [facets:<...,...>] ',
-        'desc': 'The provided `text#N` fields are used to search the database of banners in Shodan, '
+        'args': 'query:<word1,word2,...> [filters:<...,...>] [facets:<...,...>] ',
+        'desc': 'The provided `word#N` fields are used to search the database of banners in Shodan, '
                 'with additional options for filters and facets inside the search query using a '
                 '`type:value` format for every `filter#N` entry and a list of facets in a `facets:'
-                'facet#1,facet#2,...` format. For example, '
-                '`shodan count query:apache filters:country:DE facets:org` would '
-                'the number of Apache Web servers located in Germany, grouped by `organization`.\n'
+                'facet#1,facet#2,...` format. Replace spaces with a comma. For example, '
+                '`... count query:cobalt,strike filters:country:DE facets:org` would count '
+                'the number of Cobalt Strike beacons in Germany, grouped by `organization`.\n'
                 'This search does not return any host results; it only returns the '
                 'total number of results that matched the query and any facet information that was '
                 'requested. As a result, this method does not consume query credits.\n'
@@ -45,11 +45,11 @@ HELP = {
         'desc': 'The provided `text#N` fields are used to search the database of banners in Shodan, '
                 'with additional options for filters and facets inside the search query using a '
                 '`type:value` format for every `filter#N` entry and a list of facets in a `facets:'
-                'facet#1,facet#2,...` format. For example, '
-                '`shodan search query:apache filters:country:NL limit:200` would '
-                'return the first 200 Apache Web servers located in the Netherlands.\n'
+                'facet#1,facet#2,...` format. Replace spaces with a comma. For example, '
+                '`... search query:cobalt,strike filters:country:NL limit:200` would return the'
+                'first 200 Cobalt Strike beacons in the Netherlands.\n'
                 'This search returns detailed host results and consumes credits. Every 100 results '
-                '(every Shodan \'page\') will cost 1 credit.\n'
+                '(every Shodan \'page\') beyond the first will cost 1 credit.\n'
                 'List of Shodan filters: [Shodan filters](https://beta.shodan.io/search/filters)\n'
                 'List of Shodan facets: [Shodan facets](https://beta.shodan.io/search/facet)\n'
                 'Default `limit` setting: `100` results (meaning: first page only)',

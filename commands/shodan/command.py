@@ -184,12 +184,18 @@ async def process(command, channel, username, params):
                             facets.add(value)
                 if not len(query):
                     return {'messages': [{'text': 'Please specify what to search for.'}]}
-                else:
-                    APIENDPOINT += '&query=' + urllib.parse.quote(' '.join(query)) + '%20' + urllib.parse.quote(' '.join(filters))
-                    text = 'Shodan `' + querytype + '` search for query: `' + '`, `'.join(query) + '`, filters: `' + '`, `'.join(filters) + '`'
+                query = urllib.parse.quote(' '.join(query))
+                APIENDPOINT += '&query=' + query
+                text = 'Shodan `' + querytype + '` search for query: `' + urllib.parse.unquote(query) + '`'
+                if len(filters):
+                    filters = urllib.parse.quote(' '.join(filters))
+                    APIENDPOINT += '%20'
+                    APIENDPOINT += filters
+                    text += ', filters: `' + urllib.parse.unquote(filters) + '`'
                 if len(facets):
-                    APIENDPOINT += '&facets=' + urllib.parse.quote(','.join(facets))
-                    text += ', facets: `' + '`, `'.join(facets) + '`'
+                    facets = urllib.parse.quote(','.join(facets))
+                    APIENDPOINT += '&facets=' + facets
+                    text += ', facets: `' + urllib.parse.unquote(facets) + '`'
                 async with httpx.AsyncClient(headers=headers) as session:
                     response = await session.get(APIENDPOINT)
                     json_response = response.json()
@@ -278,12 +284,18 @@ async def process(command, channel, username, params):
                     return {'messages': [{'text': 'Invalid limit.'}]}
                 if not len(query):
                     return {'messages': [{'text': 'Please specify what to search for.'}]}
-                else:
-                    APIENDPOINT += '&query=' + urllib.parse.quote(' '.join(query)) + '%20' + urllib.parse.quote(' '.join(filters))
-                    text = 'Shodan `' + querytype + '` search for query: `' + '`, `'.join(query) + '`, filters: `' + '`, `'.join(filters) + '`'
+                query = urllib.parse.quote(' '.join(query))
+                APIENDPOINT += '&query=' + query
+                text = 'Shodan `' + querytype + '` search for query: `' + urllib.parse.unquote(query) + '`'
+                if len(filters):
+                    filters = urllib.parse.quote(' '.join(filters))
+                    APIENDPOINT += '%20'
+                    APIENDPOINT += filters
+                    text += ', filters: `' + urllib.parse.unquote(filters) + '`'
                 if len(facets):
-                    APIENDPOINT += '&facets=' + urllib.parse.quote(','.join(facets))
-                    text += ', facets: `' + '`, `'.join(facets) + '`'
+                    facets = urllib.parse.quote(','.join(facets))
+                    APIENDPOINT += '&facets=' + facets
+                    text += ', facets: `' + urllib.parse.unquote(facets) + '`'
                 table_header_displayed = False
                 for page in range(1,pages+1):
                     PAGEENDPOINT = APIENDPOINT+'&page='+str(page) if page>1 else APIENDPOINT
