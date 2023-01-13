@@ -46,7 +46,7 @@ HELP = {
                 'with additional options for filters and facets inside the search query using a '
                 '`type:value` format for every `filter#N` entry and a list of facets in a `facets:'
                 'facet#1,facet#2,...` format. Replace spaces with a comma. For example, '
-                '`... search query:cobalt,strike filters:country:NL limit:200` would return the'
+                '`... search query:cobalt,strike filters:country:NL limit:200` would return the '
                 'first 200 Cobalt Strike beacons in the Netherlands.\n'
                 'This search returns detailed host results and consumes credits. Every 100 results '
                 '(every Shodan \'page\') beyond the first will cost 1 credit.\n'
