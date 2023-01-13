@@ -318,12 +318,13 @@ async def process(command, channel, username, params):
                         if 'matches' in json_response:
                             matches = json_response['matches']
                             if len(matches) and page==1 and not table_header_displayed:
-                                text += '\nReturning maximum of 5 matches from first page only, check JSON(s) for complete output:'
+                                total = json_response['total']
+                                text += '\nReturning up to 10 matches from the first page only; download the JSON file(s) for all ' + str(total) + ' results:'
                                 text += '\n\n'
                                 text += '| Hostname(s) | Service | Port | Proto | SSL/TLS | Product | Banner |\n'
                                 text += '| -----------:|--------:| ----:| -----:| -------:|:------- |:-------|\n'
                                 table_header_displayed = True
-                            for match in matches[:5]:
+                            for match in matches[:10]:
                                 result = {}
                                 fields = ('hostnames', 'port', 'transport', 'product', 'data')
                                 for field in fields:
@@ -351,8 +352,9 @@ async def process(command, channel, username, params):
                                 for field in fields:
                                     text += '| ' + result[field] + ' '
                                 text += ' |\n'
-                            uploads.append({'filename': 'shodan-'+querytype+'-'+str(page)+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content})
-                            messages.append({'text': text + '\nShodan JSON output:', 'uploads': uploads})
+                            uploads.append({'filename': 'shodan-'+querytype+'-page-'+str(page)+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content})
+                            messages.append({'text': text})
+                            messages.append({'text': 'Shodan JSON output:', 'uploads': uploads})
                         elif page==1:
                             messages.append({'text': '\nNo matches.'})
             if querytype == 'credits':
