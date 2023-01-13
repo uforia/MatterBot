@@ -75,12 +75,11 @@ async def process(command, channel, username, params):
                                 for field in fields:
                                     if field in service:
                                         if isinstance(service[field],list):
-                                            if len(service[field]):
-                                                result[field] = ', '.join(service[field])
-                                            else:
-                                                result[field] = ' - '
+                                            result[field] = ', '.join(service[field])
                                         else:
                                             result[field] = str(service[field])
+                                        if not len(result[field]):
+                                            result[field] = ' - '
                                     else:
                                         result[field] = ' - '
                                 result['name'] = service['_shodan']['module']
@@ -330,12 +329,11 @@ async def process(command, channel, username, params):
                                 for field in fields:
                                     if field in match:
                                         if isinstance(match[field],list):
-                                            if len(match[field]):
-                                                result[field] = ', '.join(match[field])
-                                            else:
-                                                result[field] = ' - '
+                                            result[field] = ', '.join(match[field])
                                         else:
                                             result[field] = str(match[field])
+                                        if not len(match[field]):
+                                            result = ' - '
                                     else:
                                         result[field] = ' - '
                                 result['name'] = match['_shodan']['module']
