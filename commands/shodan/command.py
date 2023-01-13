@@ -3,6 +3,7 @@
 import datetime
 import httpx
 import json
+import math
 import random
 import re
 import urllib
@@ -126,7 +127,191 @@ async def process(command, channel, username, params):
                         text += '| -----------:|--------:| ----:| -----:| -------:|:------- |:-------|\n'
                         if 'matches' in json_response:
                             matches = json_response['matches']
+                            if len(matches):
+                                for match in matches:
+                                    result = {}
+                                    fields = ('hostnames', 'port', 'transport', 'product', 'data')
+                                    for field in fields:
+                                        if field in match:
+                                            if isinstance(match[field],list):
+                                                if len(match[field]):
+                                                    result[field] = ', '.join(match[field])
+                                                else:
+                                                    result[field] = ' - '
+                                            else:
+                                                result[field] = str(match[field])
+                                        else:
+                                            result[field] = ' - '
+                                    result['name'] = match['_shodan']['module']
+                                    if 'ssl' in match:
+                                        result['ssl'] = match['ssl']['cipher']['version']
+                                    else:
+                                        result['ssl'] = ' No '
+                                    for field in ('product', 'data'):
+                                        if field in result:
+                                            result[field] = regex.sub(' ', result[field])
+                                            if len(result[field])>60:
+                                                result[field] = result[field][:60] + ' [...]'
+                                    fields = ('hostnames', 'name', 'port', 'transport', 'ssl', 'product', 'data')
+                                    for field in fields:
+                                        text += '| ' + result[field] + ' '
+                                    text += ' |\n'
+                            else:
+                                text += '\nNo matches.'
+                        messages.append({'text': text})
+                        messages.append({'text': 'Shodan JSON output:', 'uploads': [
+                                            {'filename': 'shodan-'+querytype+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content}
+                                        ]})
+                else:
+                    text += ' invalid hostname!'
+                    messages.append({'text': text})
+            if querytype == 'count':
+                APIENDPOINT = settings.APIURL['shodan']['url'] + '/shodan/host/count?key=%s' % (apikey,)
+                if not len(params):
+                    return {'messages': [{'text': 'Please specify what to search for.'}]}
+                query = set()
+                facets = set()
+                filters = set()
+                for param in params:
+                    if param.startswith('query:'):
+                        for value in param.replace('query:', '').split(','):
+                            query.add(value.replace('[', '').replace(']', '').replace('hxxp','http'))
+                    if param.startswith('filters:'):
+                        for value in param.replace('filters:', '').split(','):
+                            filters.add(value)
+                    if param.startswith('facets:'):
+                        for value in param.replace('facets:', '').split(','):
+                            facets.add(value)
+                if not len(query):
+                    return {'messages': [{'text': 'Please specify what to search for.'}]}
+                else:
+                    APIENDPOINT += '&query=' + urllib.parse.quote(' '.join(query)) + '%20' + urllib.parse.quote(' '.join(filters))
+                    text = 'Shodan `' + querytype + '` search for query: `' + '`, `'.join(query) + '`, filters: `' + '`, `'.join(filters) + '`'
+                if len(facets):
+                    APIENDPOINT += '&facets=' + urllib.parse.quote(','.join(facets))
+                    text += ', facets: `' + '`, `'.join(facets) + '`'
+                async with httpx.AsyncClient(headers=headers) as session:
+                    response = await session.get(APIENDPOINT)
+                    json_response = response.json()
+                    if 'error' in json_response:
+                        error = json_response['error']
+                        return {'messages': [{'text': 'An error occurred, wrong/missing API key? Error: ' + error}]}
+                    if 'total' in json_response:
+                        total = json_response['total']
+                        if total>0:
+                            text += ', results: `' + str(total) + '`:\n'
+                    if 'facets' in json_response:
+                        facets = json_response['facets']
+                        for facet in facets:
+                            if len(facets[facet]):
+                                text += '\n**Grouped by**: `' + facet + '`\n\n'
+                                text += '| Value | Count |\n'
+                                text += '| ----- | -----:|\n'
+                                for entry in facets[facet]:
+                                    count, value = entry['count'], entry['value']
+                                    text += '| ' + value + ' | ' + str(count) + ' |\n'
+                    if 'matches' in json_response:
+                        matches = json_response['matches']
+                        if len(matches):
                             for match in matches:
+                                data = None
+                                banner = None
+                                product = None
+                                ssl = None
+                                name = match['_shodan']['module']
+                                port = str(match['port'])
+                                transport = match['transport']
+                                if 'hostnames' in match:
+                                    hostnames = match['hostnames']
+                                if 'data' in match:
+                                    banner = regex.sub('|', match['data'][:60])
+                                    if len(match['data'])>60:
+                                        banner += ' [...]'
+                                if 'product' in match:
+                                    product = regex.sub('', match['product'][:80])
+                                    if len(match['product'])>80:
+                                        product += ' [...]'
+                                if 'ssl' in match:
+                                    ssl = True
+                                text += '\n**Service**: ' + name.upper() + ' '
+                                text += '| **Port**: `' + port + '`/`' + transport + '` '
+                                if hostnames:
+                                    text += '| **Hostname(s)**: `' + '`, `'.join(hostnames) + '` '
+                                if ssl:
+                                    text += '(SSL/TLS) '
+                                if product:
+                                    text += '| **Product**: `' + product + '`'
+                                if banner:
+                                    text += '| **Banner**: `' + banner + '`'
+                        else:
+                            text += 'No details.'
+                    messages.append({'text': text})
+                    messages.append({'text': 'Shodan JSON output:', 'uploads': [
+                                        {'filename': 'shodan-'+querytype+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content}
+                                    ]})
+            if querytype == 'search':
+                APIENDPOINT = settings.APIURL['shodan']['url'] + '/shodan/host/search?key=%s' % (apikey,)
+                if not len(params):
+                    return {'messages': [{'text': 'Please specify what to search for.'}]}
+                query = set()
+                facets = set()
+                filters = set()
+                limit = 100
+                uploads = []
+                for param in params:
+                    if param.startswith('query:'):
+                        for value in param.replace('query:', '').split(','):
+                            query.add(value.replace('[', '').replace(']', '').replace('hxxp','http'))
+                    if param.startswith('filters:'):
+                        for value in param.replace('filters:', '').split(','):
+                            filters.add(value)
+                    if param.startswith('facets:'):
+                        for value in param.replace('facets:', '').split(','):
+                            facets.add(value)
+                    if param.startswith('limit:'):
+                        limit = param.split(':')[1]
+                try:
+                    pages = math.floor(int(limit)/100)
+                    if int(limit) % 100:
+                        pages += 1
+                except ValueError:
+                    return {'messages': [{'text': 'Invalid limit.'}]}
+                if not len(query):
+                    return {'messages': [{'text': 'Please specify what to search for.'}]}
+                else:
+                    APIENDPOINT += '&query=' + urllib.parse.quote(' '.join(query)) + '%20' + urllib.parse.quote(' '.join(filters))
+                    text = 'Shodan `' + querytype + '` search for query: `' + '`, `'.join(query) + '`, filters: `' + '`, `'.join(filters) + '`'
+                if len(facets):
+                    APIENDPOINT += '&facets=' + urllib.parse.quote(','.join(facets))
+                    text += ', facets: `' + '`, `'.join(facets) + '`'
+                table_header_displayed = False
+                for page in range(1,pages+1):
+                    PAGEENDPOINT = APIENDPOINT+'&page='+str(page) if page>1 else APIENDPOINT
+                    async with httpx.AsyncClient(headers=headers) as session:
+                        response = await session.get(PAGEENDPOINT)
+                        json_response = response.json()
+                        if 'error' in json_response:
+                            error = json_response['error']
+                            return {'messages': [{'text': 'An error occurred, wrong/missing API key? Error: ' + error}]}
+                        if 'facets' in json_response:
+                            facets = json_response['facets']
+                            for facet in facets:
+                                if len(facets[facet]):
+                                    text += '\n**Grouped by**: `' + facet + '`\n\n'
+                                    text += '| Value | Count |\n'
+                                    text += '| ----- | -----:|\n'
+                                    for entry in facets[facet]:
+                                        count, value = entry['count'], entry['value']
+                                        text += '| ' + value + ' | ' + str(count) + ' |\n'
+                        if 'matches' in json_response:
+                            matches = json_response['matches']
+                            if len(matches) and page==1 and not table_header_displayed:
+                                text += '\nReturning maximum of 5 matches from first page only, check JSON(s) for complete output:'
+                                text += '\n\n'
+                                text += '| Hostname(s) | Service | Port | Proto | SSL/TLS | Product | Banner |\n'
+                                text += '| -----------:|--------:| ----:| -----:| -------:|:------- |:-------|\n'
+                                table_header_displayed = True
+                            for match in matches[:5]:
                                 result = {}
                                 fields = ('hostnames', 'port', 'transport', 'product', 'data')
                                 for field in fields:
@@ -154,93 +339,10 @@ async def process(command, channel, username, params):
                                 for field in fields:
                                     text += '| ' + result[field] + ' '
                                 text += ' |\n'
-                        messages.append({'text': text})
-                        messages.append({'text': 'Shodan JSON output:', 'uploads': [
-                                            {'filename': 'shodan-'+querytype+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content}
-                                        ]})
-                else:
-                    text += ' invalid hostname!'
-                    messages.append({'text': text})
-            if querytype == 'count':
-                APIENDPOINT = settings.APIURL['shodan']['url'] + '/shodan/host/count?key=%s' % (apikey,)
-                if not len(params):
-                    return {'messages': [{'text': 'Please specify what to search for.'}]}
-                query = set()
-                facets = set()
-                for param in params:
-                    if param.startswith('query:'):
-                        for value in param.replace('query:', '').split(','):
-                            query.add(value.replace('[', '').replace(']', '').replace('hxxp','http'))
-                    if param.startswith('filters:'):
-                        for value in param.replace('filters:', '').split(','):
-                            query.add(value)
-                    if param.startswith('facets:'):
-                        for value in param.replace('facets:', '').split(','):
-                            facets.add(value)
-                if not len(query):
-                    return {'messages': [{'text': 'Please specify what to search for.'}]}
-                else:
-                    APIENDPOINT += '&query=' + urllib.parse.quote(' '.join(query))
-                    text = 'Shodan `' + querytype + '` search for banners/filters: `' + '`, `'.join(query) + '`'
-                if len(facets):
-                    APIENDPOINT += '&facets=' + urllib.parse.quote(','.join(facets))
-                    text += ', facets: `' + '`, `'.join(facets) + '`'
-                async with httpx.AsyncClient(headers=headers) as session:
-                    response = await session.get(APIENDPOINT)
-                    json_response = response.json()
-                    if 'error' in json_response:
-                        error = json_response['error']
-                        return {'messages': [{'text': 'An error occurred, wrong/missing API key? Error: ' + error}]}
-                    if 'total' in json_response:
-                        total = json_response['total']
-                        if total>0:
-                            text += ', results: `' + str(total) + '`:\n'
-                    if 'facets' in json_response:
-                        facets = json_response['facets']
-                        for facet in facets:
-                            if len(facets[facet]):
-                                text += '\n**Grouped by**: `' + facet + '`\n\n'
-                                text += '| Value | Count |\n'
-                                text += '| ----- | -----:|\n'
-                                for entry in facets[facet]:
-                                    count, value = entry['count'], entry['value']
-                                    text += '| ' + value + ' | ' + str(count) + ' |\n'
-                    if 'matches' in json_response:
-                        matches = json_response['matches']
-                        for match in matches:
-                            data = None
-                            banner = None
-                            product = None
-                            ssl = None
-                            name = match['_shodan']['module']
-                            port = str(match['port'])
-                            transport = match['transport']
-                            if 'hostnames' in match:
-                                hostnames = match['hostnames']
-                            if 'data' in match:
-                                banner = regex.sub('|', match['data'][:60])
-                                if len(match['data'])>60:
-                                    banner += ' [...]'
-                            if 'product' in match:
-                                product = regex.sub('', match['product'][:80])
-                                if len(match['product'])>80:
-                                    product += ' [...]'
-                            if 'ssl' in match:
-                                ssl = True
-                            text += '\n**Service**: ' + name.upper() + ' '
-                            text += '| **Port**: `' + port + '`/`' + transport + '` '
-                            if hostnames:
-                                text += '| **Hostname(s)**: `' + '`, `'.join(hostnames) + '` '
-                            if ssl:
-                                text += '(SSL/TLS) '
-                            if product:
-                                text += '| **Product**: `' + product + '`'
-                            if banner:
-                                text += '| **Banner**: `' + banner + '`'
-                    messages.append({'text': text})
-                    messages.append({'text': 'Shodan JSON output:', 'uploads': [
-                                        {'filename': 'shodan-'+querytype+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content}
-                                    ]})
+                            uploads.append({'filename': 'shodan-'+querytype+'-'+str(page)+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content})
+                            messages.append({'text': text + '\nShodan JSON output:', 'uploads': uploads})
+                        elif page==1:
+                            messages.append({'text': '\nNo matches.'})
             if querytype == 'credits':
                 text = 'Shodan API account credits (remaining/total):'
                 APIENDPOINT = settings.APIURL['shodan']['url'] + '/api-info?key=%s' % (apikey,)
