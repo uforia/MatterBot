@@ -66,7 +66,7 @@ async def process(command, channel, username, params):
                                 return {'messages': [{'text': 'No results found.'}]}
                         text += '\n\n'
                         text += '| Hostname(s) | Service | Port | Proto | SSL/TLS | Product | Banner |\n'
-                        text += '| -----------:|--------:| ----:| -----:| -------:|:------- |:-------|\n'
+                        text += '|:----------- |--------:| ----:| -----:| -------:|:------- |:-------|\n'
                         if 'data' in json_response:
                             json_data = json_response['data']
                             for service in json_data:
@@ -123,7 +123,7 @@ async def process(command, channel, username, params):
                                 return {'messages': [{'text': 'An error occurred searching Shodan: ' + error}]}
                         text += '\n\n'
                         text += '| Hostname(s) | Service | Port | Proto | SSL/TLS | Product | Banner |\n'
-                        text += '| -----------:|--------:| ----:| -----:| -------:|:------- |:-------|\n'
+                        text += '|:----------- |--------:| ----:| -----:| -------:|:------- |:-------|\n'
                         if 'matches' in json_response:
                             matches = json_response['matches']
                             if len(matches):
@@ -321,7 +321,7 @@ async def process(command, channel, username, params):
                                 text += '\nReturning up to 10 matches from the first page only; download the JSON file(s) for all ' + str(total) + ' results:'
                                 text += '\n\n'
                                 text += '| Hostname(s) | Service | Port | Proto | SSL/TLS | Product | Banner |\n'
-                                text += '| -----------:|--------:| ----:| -----:| -------:|:------- |:-------|\n'
+                                text += '|:----------- |--------:| ----:| -----:| -------:|:------- |:-------|\n'
                                 table_header_displayed = True
                             for match in matches[:10]:
                                 result = {}
