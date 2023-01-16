@@ -128,7 +128,7 @@ async def process(command, channel, username, params):
                         if 'result' in json_response:
                             uploads = []
                             result = json_response['result']
-                            text = '\n**SHA256 Certificate Fingerprint search for**: `%s`' % (sha256,)
+                            text = '\n**Censys SHA256 certificate fingerprint search for**: `%s`' % (sha256,)
                             if 'hosts' in result:
                                 hosts = result['hosts']
                                 if len(hosts):
@@ -178,7 +178,7 @@ async def process(command, channel, username, params):
                                     messages.append({'text': 'No results.'})
 
                 else:
-                    messages.append({'text': 'Invalid SHA256 fingerprint: `%s`' % (params,)})
+                    messages.append({'text': 'Censys error: invalid SHA256 fingerprint `%s`' % (params,)})
             if querytype == 'credits':
                 APIENDPOINT = settings.APIURL['censys']['url'].replace('/v2', '/v1') + '/account'
                 async with httpx.AsyncClient(headers=headers) as session:
