@@ -46,7 +46,7 @@ MatterBot consists of two parts that can be run independently: matterbot and mat
 - MalwareBazaar: search for MD5/SHA1/SHA256 hashes
 - MISP: query your MISP instance for any IoC type (*)
 - RIPE WHOIS: query RIPE for WHOIS information
-- Shodan: search for IP or hostname information, and performing `count` and `search` queries (*)
+- Shodan: search for IP or hostname information, run `count` and `search` queries (*)
 - ThreatFox: search for MD5/SHA1/SHA256 hashes, IP addresses
 - URLHaus: search for MD5/SHA1/SHA256 hashes, URLs
 - VirusTotal: search for IPs, MD5/SHA1/SHA256 hashes, URLs, domains (*)
