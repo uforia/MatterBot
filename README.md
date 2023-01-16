@@ -13,6 +13,47 @@ Initial release. Code is probably still buggy, but at least it's in a 'works for
 
 MatterBot consists of two parts that can be run independently: matterbot and matterfeed. Both parts should be run within tmux or screen; the code itself is not daemonized (this may happen at some point in the future).
 
+### Currently supported by `matterfeed`
+
+- Bruce Schneier's blog (RSS)
+- CISA.gov Security Announcements (RSS)
+- Cqure blog (RSS)
+- DarkReading news (RSS)
+- GBHackers news (RSS)
+- Kitploit tools (RSS)
+- Knowbe4 news (RSS)
+- KrebsOnSecurity blog (RSS)
+- MajorLeagueHacking news (RSS)
+- Microsoft Vulnerability reports (RSS)
+- NCSC NL (Netherlands) Vulnerability reports (RSS)
+- NCSC UK Vulnerability reports (RSS)
+- SecureList news (RSS)
+- TheHackerNews news (RSS)
+- Threatpost news (RSS)
+- Twitter users' posts, as followed by the account configured
+- Velociraptor news/updates (RSS)
+- WeLiveSecurity news (RSS)
+- WikiJS (Monitoring changes to the popular Wiki software)
+
+### Currently supported by `matterbot`
+
+- Censys: search for IPs, SHA256 certificate fingerprints (*)
+- ChatGPT: ask OpenAI's ChatGPT individual questions (no history) (*)
+- Diceroll: rolling dice
+- Example: module with instructions for developing your own
+- IPWHOIS: query IP WHOIS for IP address information
+- Malpedia: search for MD5/SHA256 malware hashes, malware families or threat actors (*)
+- MalwareBazaar: search for MD5/SHA1/SHA256 hashes
+- MISP: query your MISP instance for any IoC type (*)
+- RIPE WHOIS: query RIPE for WHOIS information
+- Shodan: search for IP or hostname information, and performing `count` and `search` queries (*)
+- ThreatFox: search for MD5/SHA1/SHA256 hashes, IP addresses
+- URLHaus: search for MD5/SHA1/SHA256 hashes, URLs
+- VirusTotal: search for IPs, MD5/SHA1/SHA256 hashes, URLs, domains (*)
+- WikiJS: search your WikiJS instance for information (*)
+
+(*): Module requires (paid) API access for partial or full functionality
+
 ## Requirements
 
 ### Python
