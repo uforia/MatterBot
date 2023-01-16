@@ -24,7 +24,9 @@ else:
 
 async def process(command, channel, username, params):
     # Methods to query the current API account info (credits etc.)
-    querytypes = ['ip', 'cert', 'credits']
+    querytypes = [key for key in settings.HELP]
+    if 'DEFAULT' in querytypes:
+        querytypes.remove('DEFAULT')
     stripchars = '`\n\r\'\"'
     regex = re.compile('[%s]' % stripchars)
     if len(params)>0:
@@ -80,6 +82,8 @@ async def process(command, channel, username, params):
                                                     value = 'unknown'
                                                 else:
                                                     value = regex.sub(' ', value)
+                                                    if len(value)>60:
+                                                        value = value[:60] + ' [...]'
                                                 if field == 'tls':
                                                     value = service[field]['version_selected']
                                                 if field == 'software':
