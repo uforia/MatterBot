@@ -6,6 +6,6 @@ ConfigArgParse==1.5.3
 feedparser==6.0.10
 httpx==0.23.3
 mattermostdriver==7.3.2
-pymisp==2.4.167
-requests==2.28.1
+pymisp==2.4.167.1
+requests==2.28.2
 tweepy==4.10.1
