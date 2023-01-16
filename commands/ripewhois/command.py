@@ -76,5 +76,5 @@ async def process(command, channel, username, params):
                         ]}
         except Exception as e:
             return {'messages': [
-                {'text': 'An error occurred searching RIPE WHOIS for `%s`:\nError: `%s`' % (params, e.message)}
+                {'text': 'An error occurred searching RIPE WHOIS:\nError: ' + str(e)}
             ]}
