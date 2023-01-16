@@ -43,7 +43,7 @@ async def process(command, channel, username, params):
             if querytype == 'ip':
                 ip = params[0].split(':')[0].replace('[', '').replace(']', '')
                 if re.search(r"^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(\:[0-65535]*)?$", ip):
-                    text = 'Censys `%s` search for `%s`:' % (querytype, ip)
+                    text = 'Censys `%s` search for `%s`: ' % (querytype, ip)
                     APIENDPOINT = settings.APIURL['censys']['url'] + '/hosts/%s' % (ip,)
                     async with httpx.AsyncClient(headers=headers) as session:
                         response = await session.get(APIENDPOINT, auth=(settings.APIURL['censys']['key'], settings.APIURL['censys']['secret']))
@@ -107,16 +107,17 @@ async def process(command, channel, username, params):
                                 if 'reverse_dns' in dns:
                                     reverses = dns['reverse_dns']['names']
                                     text += '**Reverse DNS names**: `' + '`, `'.join(reverses) + '`\n'
-                        messages.append({'text': text})
-                        messages.append({'text': 'Censys JSON output:', 'uploads': [
-                                            {'filename': 'censys-'+querytype+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content}
-                                        ]})
+                            messages.append({'text': text})
+                            messages.append({'text': 'Censys JSON output:', 'uploads': [
+                                                {'filename': 'censys-'+querytype+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content}
+                                            ]})
                 else:
                     text += ' invalid IP address!'
                     messages.append({'text': text})
             if querytype == 'cert':
                 sha256 = params[0]
                 if (re.search(r"^[A-Fa-f0-9]{64}$", sha256)):
+                    text = '\n**Censys SHA256 certificate fingerprint search for**: `%s`' % (sha256,)
                     APIENDPOINT = settings.APIURL['censys']['url'] + '/certificates/' + sha256 + '/hosts'
                     async with httpx.AsyncClient(headers=headers) as session:
                         # Replace /v2 with /v1
@@ -128,7 +129,6 @@ async def process(command, channel, username, params):
                         if 'result' in json_response:
                             uploads = []
                             result = json_response['result']
-                            text = '\n**Censys SHA256 certificate fingerprint search for**: `%s`' % (sha256,)
                             if 'hosts' in result:
                                 hosts = result['hosts']
                                 if len(hosts):
@@ -175,7 +175,8 @@ async def process(command, channel, username, params):
                                     messages.append({'text': text})
                                     messages.append({'text': 'Censys JSON output:', 'uploads': uploads})
                                 else:
-                                    messages.append({'text': 'No results.'})
+                                    text += 'no results.'
+                                    messages.append({'text': text})
 
                 else:
                     messages.append({'text': 'Censys error: invalid SHA256 fingerprint `%s`' % (params,)})

@@ -48,7 +48,7 @@ async def process(command, channel, username, params):
             messages = []
             if querytype == 'ip':
                 ip = params[0].split(':')[0].replace('[', '').replace(']', '')
-                text = 'Shodan `%s` search for `%s`:' % (querytype, ip)
+                text = 'Shodan `%s` search for `%s`: ' % (querytype, ip)
                 if re.search(r"^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(\:[0-65535]*)?$", ip):
                     APIENDPOINT = settings.APIURL['shodan']['url'] + '/shodan/host/%s?key=%s' % (ip, apikey)
                     async with httpx.AsyncClient(headers=headers) as session:
@@ -57,7 +57,8 @@ async def process(command, channel, username, params):
                         if 'error' in json_response:
                             error = json_response['error']
                             if 'No information available' in error:
-                                return {'messages': [{'text': 'No results found.'}]}
+                                text += 'no results found.'
+                                return {'messages': [{'text': text}]}
                             else:
                                 return {'messages': [{'text': 'An error occurred searching Shodan: ' + error}]}
                         if 'total' in json_response:
