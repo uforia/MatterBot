@@ -53,6 +53,8 @@ async def process(command, channel, username, params):
                             return {'messages': [{'text': 'An error occurred searching Censys: ' + error}]}
                         if 'result' in json_response:
                             result = json_response['result']
+                            services = None
+                            dns = None
                             if 'services' in result:
                                 services = result['services']
                                 if len(services):
@@ -107,10 +109,14 @@ async def process(command, channel, username, params):
                                 if 'reverse_dns' in dns:
                                     reverses = dns['reverse_dns']['names']
                                     text += '**Reverse DNS names**: `' + '`, `'.join(reverses) + '`\n'
-                            messages.append({'text': text})
-                            messages.append({'text': 'Censys JSON output:', 'uploads': [
-                                                {'filename': 'censys-'+querytype+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content}
-                                            ]})
+                            if dns or services:
+                                messages.append({'text': text})
+                                messages.append({'text': 'Censys JSON output:', 'uploads': [
+                                                    {'filename': 'censys-'+querytype+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content}
+                                                ]})
+                            else:
+                                text += 'no results found.'
+                                messages.append({'text': text})
                 else:
                     text += ' invalid IP address!'
                     messages.append({'text': text})
