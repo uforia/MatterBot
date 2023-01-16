@@ -7,7 +7,7 @@ Pull/feature requests and comments are welcome.
 
 ## Status
 
-Initial release. Code is probably still buggy, but at least it's in a 'works for me' state ;-)
+Code probably has bugs, but at least it's in a 'works for me' state ;-)
 
 ## Contents
 
