@@ -30,10 +30,10 @@ MatterBot consists of two parts that can be run independently: matterbot and mat
 - SecureList news (RSS)
 - TheHackerNews news (RSS)
 - Threatpost news (RSS)
-- Twitter users' posts, as followed by the account configured
+- Twitter users' posts, as followed by the account configured (*)
 - Velociraptor news/updates (RSS)
 - WeLiveSecurity news (RSS)
-- WikiJS (Monitoring changes to the popular Wiki software)
+- WikiJS - Monitoring change to your WikiJS instance (*)
 
 ### Currently supported by `matterbot`
 
