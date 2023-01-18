@@ -33,7 +33,7 @@ MatterBot consists of two parts that can be run independently: matterbot and mat
 - Twitter users' posts, as followed by the account configured (*)
 - Velociraptor news/updates (RSS)
 - WeLiveSecurity news (RSS)
-- WikiJS - Monitoring change to your WikiJS instance (*)
+- WikiJS - Report changes to your WikiJS instance (*)
 
 ### Currently supported by `matterbot`
 
