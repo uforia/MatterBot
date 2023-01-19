@@ -159,8 +159,8 @@ async def process(command, channel, username, params):
                         rule = rule['rule']
                         uploads.append({'filename': name, 'bytes': rule})
                     if len(uploads):
-                        text += '\n\n---\n\n**Detection Rules**:'
-                        messages.append({'text': text, 'uploads': uploads})
+                        detection = '\n\n---\n\n**Detection Rules**:'
+                        messages.append({'text': detection, 'uploads': uploads})
             if len(messages):
                 return {'messages': messages}
             else:
