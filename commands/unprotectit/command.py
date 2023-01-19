@@ -32,6 +32,7 @@ async def process(command, channel, username, params):
         if param[0] == 'cache':
             if os.path.isfile(settings.CACHE):
                 page = 1
+                techniques = {'techniques': []}
                 async with httpx.AsyncClient(headers=headers) as session:
                     response = await session.get(settings.APIURL['unprotectit']['url'])
                     json_response = response.json()
