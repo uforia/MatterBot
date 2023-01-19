@@ -12,6 +12,7 @@ build/
 config.yaml
 commands/*/settings.py
 modules/*/settings.py
+*.json
 *.log
 develop-eggs/
 dist/
