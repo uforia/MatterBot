@@ -106,7 +106,7 @@ async def process(command, channel, username, params):
                         await f.write(cache)
             text = 'Unprotect.it results for `' + '`, `'.join(params) + '`:\n'
             text += '*(Loaded ' + str(len(techniques['techniques'])) + ' techniques from ' + source + ')*'
-            messages.append({'messages': text})
+            messages.append({'text': text})
             # Check if all search terms appear in the content (logical AND search)
             results = 0
             for technique in techniques['techniques']:
@@ -195,9 +195,7 @@ async def process(command, channel, username, params):
                     if len(uploads):
                         detection = '\n\n---\n\n**Detection Rules**:'
                         messages.append({'text': detection, 'uploads': uploads})
-            if len(messages):
-                return {'messages': messages}
-            else:
+            if not len(messages):
                 text = 'Unprotect.it search for `' + '`, `'.join(params) + '`: no results found'
                 messages.append({'text': text})
         except Exception as e:
