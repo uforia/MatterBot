@@ -173,7 +173,6 @@ class MattermostManager(object):
                             except NameError:
                                 await self.send_message(channelid, 'No additional help available for the `' + module + '` module.')
                         if command in self.commands[module]['binds']:
-                            log.info('Trigger: ' + command + ' -> ' + module)
                             result = await self.commands[module]['process'](command, channelname, username, params)
                             if result and 'messages' in result:
                                 for message in result['messages']:
