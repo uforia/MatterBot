@@ -107,8 +107,8 @@ async def process(command, channel, username, params):
                 detection_rules = []
                 rules = []
                 for detection_rule in technique['detection_rules']:
-                    detection_rule_syntax_lang = detection_rule['type']['syntax_lang']
-                    detection_rule_name = detection_rule['name']
+                    detection_rule_syntax_lang = detection_rule['type']['syntax_lang'].lower()
+                    detection_rule_name = detection_rule['name'].lower()
                     detection_rule_rule = detection_rule['rule']
                     detection_rules.append(detection_rule_name + '\n' + detection_rule_rule + '\n')
                     rules.append({
