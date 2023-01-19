@@ -95,7 +95,7 @@ async def process(command, channel, username, params):
                 for snippet in technique['snippets']:
                     snippet_description = snippet['description']
                     snippet_plain_code = snippet['plain_code']
-                    codesnippet = '\n**Code Snippet**: ' + snippet_description + '\n'
+                    codesnippet = '\n**Code Snippet**: `' + snippet_description + '`\n'
                     snippet_code_class = regex.sub('', snippet['language']['code_class'])
                     if not snippet_code_class in defaults.LANGS:
                         snippet_code_class = ''
