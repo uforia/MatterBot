@@ -48,6 +48,7 @@ MatterBot consists of two parts that can be run independently: matterbot and mat
 - RIPE WHOIS: query RIPE for WHOIS information
 - Shodan: search for IP or hostname information, run `count` and `search` queries (*)
 - ThreatFox: search for MD5/SHA1/SHA256 hashes, IP addresses
+- Unprotect.it: search through and return information on TTPs, code snippets and detection rules
 - URLHaus: search for MD5/SHA1/SHA256 hashes, URLs
 - VirusTotal: search for IPs, MD5/SHA1/SHA256 hashes, URLs, domains (*)
 - WikiJS: search your WikiJS instance for information (*)
