@@ -29,6 +29,39 @@ async def process(command, channel, username, params):
         headers = {
             'Content-Type': settings.CONTENTTYPE,
         }
+        if param[0] == 'cache':
+            if os.path.isfile(settings.CACHE):
+                page = 1
+                async with httpx.AsyncClient(headers=headers) as session:
+                    response = await session.get(settings.APIURL['unprotectit']['url'])
+                    json_response = response.json()
+                    if 'count' in json_response:
+                        if 'results' in json_response:
+                            results = json_response['results']
+                            for result in results:
+                                techniques['techniques'].append(result)
+                        # Grab the next pages as well (if they exist)
+                        if 'next' in json_response:
+                            nextpage = json_response['next']
+                            while nextpage:
+                                async with httpx.AsyncClient(headers=headers) as session:
+                                    response = await session.get(nextpage)
+                                    json_response = response.json()
+                                    if 'count' in json_response:
+                                        if 'results' in json_response:
+                                            results = json_response['results']
+                                            for result in results:
+                                                techniques['techniques'].append(result)
+                                            if 'next' in json_response:
+                                                nextpage = json_response['next']
+                if len(techniques):
+                    async with aiofiles.open(settings.CACHE, mode='w') as f:
+                        cache = json.dumps(techniques)
+                        await f.write(cache)
+                        text = "Unprotect.it cache rebuilt."
+                        return {'messages': [
+                            {'text': text},
+                        ]}
         try:
             messages = []
             uploads = []
@@ -72,7 +105,7 @@ async def process(command, channel, username, params):
                         await f.write(cache)
             text = 'Unprotect.it results for `' + '`, `'.join(params) + '`:\n'
             text += '*(Loaded ' + str(len(techniques['techniques'])) + ' techniques from ' + source + ')*'
-            messages.append({'text': text})
+            messages.append({'messages': text})
             # Check if all search terms appear in the content (logical AND search)
             results = 0
             for technique in techniques['techniques']:

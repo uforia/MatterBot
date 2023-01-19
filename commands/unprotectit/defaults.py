@@ -78,12 +78,8 @@ HELP = {
                 'On its first run, the module will build a cache of the unprotect.it website, so the very first query will be '
                 'slow.',
     },
-    'ttp': {
-        'args': '<keywords>',
-        'desc': 'Search unprotect.it for the given <keyword(s)> and return the matching techniques, code snippets and YARA rules (if available).',
-    },
     'cache': {
         'args': None,
-        'desc': 'Force a rebuild of the cache. ',
+        'desc': 'Force a rebuild of the cache. Please use this sparingly and do not overload the Unprotect.it website.',
     },
 }
