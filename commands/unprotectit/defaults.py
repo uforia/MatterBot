@@ -78,7 +78,7 @@ HELP = {
                 'On its first run, the module will build a cache of the unprotect.it website, so the very first query will be '
                 'slow.',
     },
-    'cache': {
+    'rebuildcache': {
         'args': None,
         'desc': 'Force a rebuild of the cache. Please use this sparingly and do not overload the Unprotect.it website.',
     },

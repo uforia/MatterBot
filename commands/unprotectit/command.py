@@ -29,7 +29,7 @@ async def process(command, channel, username, params):
         headers = {
             'Content-Type': settings.CONTENTTYPE,
         }
-        if param[0] == 'cache':
+        if params[0] == 'cache':
             if os.path.isfile(settings.CACHE):
                 page = 1
                 techniques = {'techniques': []}
