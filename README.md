@@ -61,6 +61,7 @@ MatterBot consists of two parts that can be run independently: matterbot and mat
 
 - Tested with Python 3.10+, although earlier Python 3 versions might work (test at your own discretion). Most modern distributions should be able to run this.
 - Make sure to install the Python requirements (see `requirements.txt`).
+- For GraphViz support (e.g. AttackMatrix API calls), you will need to install GraphViz for your distribution/OS. Make sure that it includes **GTS** *(GNU Triangulated Surface)* support.
 
 ### Mattermost
 
