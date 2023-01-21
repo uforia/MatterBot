@@ -37,6 +37,7 @@ MatterBot consists of two parts that can be run independently: matterbot and mat
 
 ### Currently supported by `matterbot`
 
+- AttackMatrix: query an [AttackMatrix](https://github.com/uforia/AttackMatrix) instance for MITRE ATT&CK IDs, Actor- and TTP-overlap
 - Censys: search for IPs, SHA256 certificate fingerprints (*)
 - ChatGPT: ask OpenAI's ChatGPT individual questions (no history) (*)
 - Diceroll: rolling dice
