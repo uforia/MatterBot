@@ -147,7 +147,7 @@ async def process(command, channel, username, params):
                         async with httpx.AsyncClient(headers=headers) as session:
                             response = await session.get(APIENDPOINT)
                             json_response = response.json()
-                            if json_response != 'null':
+                            if json_response != 'null' and len(json_response):
                                 numresults = 0
                                 commonids = {}
                                 actormatrices = {}
@@ -292,7 +292,7 @@ async def process(command, channel, username, params):
                             json_response = response.json()
                             numresults = 0
                             actornames = set()
-                            if json_response != 'null':
+                            if json_response != 'null' and len(json_response):
                                 for matrix in json_response:
                                     numresults += len(json_response[matrix]['Actors'])
                                     for actor in json_response[matrix]['Actors']:
@@ -405,6 +405,15 @@ async def process(command, channel, username, params):
                                     bytes = graph.pipe()
                                     messages.append({
                                         'text': 'Graphical representation of overlap:\n', 'uploads': [{'filename': filename, 'bytes': bytes}]
+                                    })
+                            else:
+                                if len(keywords)>1:
+                                    messages.append({
+                                        'text': 'AttackMatrix: no results found for `' + '`, `'.join(keywords) + '`.'
+                                    })
+                                else:
+                                    messages.append({
+                                        'text': 'AttackMatrix: you must specify at least two TTPs!'
                                     })
         except Exception as e:
             messages.append({'text': 'An error occurred querying AttackMatrix:\nError: ' + str(e)})
