@@ -4,6 +4,7 @@ azure-storage-blob==12.14.1
 azure-search-documents==11.3.0
 ConfigArgParse==1.5.3
 feedparser==6.0.10
+graphviz==0.20.1
 httpx==0.23.3
 mattermostdriver==7.3.2
 pymisp==2.4.167.1

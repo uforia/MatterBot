@@ -7,7 +7,6 @@ import json
 import math
 import random
 import re
-import urllib
 from pathlib import Path
 try:
     from commands.censys import defaults as settings
