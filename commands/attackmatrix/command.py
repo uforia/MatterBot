@@ -325,7 +325,7 @@ async def process(command, channel, username, params):
                                                             table += '|\n'
                                                             numresults += 1
                                             table += '\n\n'
-                                            if len(numresults)>0:
+                                            if numresults>0:
                                                 messages.append({'text': table})
                                         # Digraph
                                         filename = 'TTP-overlap-for-'+'-'.join(actors)+'.png'
