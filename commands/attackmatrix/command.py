@@ -3,8 +3,10 @@
 import collections
 import graphviz
 import httpx
+import itertools
 import json
 import os
+import pprint
 import re
 import urllib
 from pathlib import Path
@@ -30,20 +32,19 @@ async def process(command, channel, username, params):
     querytype = params[0].strip()
     stripchars = '`\n\r\'\"'
     regex = re.compile('[%s]' % stripchars)
-    matrices = ('Enterprise', 'ICS', 'Mobile', 'PRE')
-    categories = ('Actors', 'Malwares', 'Mitigations', 'Subtechniques', 'Tactics', 'Techniques', 'Tools')
+    categories = ('Actors', 'Techniques', 'Malwares', 'Tools', 'Mitigations', 'Tactics', 'Matrices')
     tableheaders = collections.OrderedDict({
         'type': 'Type',
         'name': 'Name',
         'details': 'MITRE ID',
     })
     if not params[0] in querytypes:
-        messages.append({'text': 'Please specify an AttackMatrix query type: `' + '`, `'.join(querytypes) + '`.'})
+        messages.append({'text': 'Please specify an AttackMatrix query type: `'+'`, `'.join(querytypes)+'`.'})
     else:
         try:
             keywords = params[1:]
             if len(' '.join(keywords))<4:
-                messages.append({'text': 'Please specify at least one reasonably-sized keyword to query the AttackMatrix `' + querytype + '`.'})
+                messages.append({'text': 'Please specify at least one reasonably-sized keyword to query the AttackMatrix `'+querytype+'`.'})
             else:
                 headers={
                     'Content-Type': settings.CONTENTTYPE,
@@ -51,7 +52,7 @@ async def process(command, channel, username, params):
                 if querytype == 'search':
                     searchterms = '&params='.join([urllib.parse.quote(_) for _ in keywords])
                     if re.search(r"[\w\s,.\+\-]+", searchterms):
-                        APIENDPOINT = settings.APIURL['attackmatrix']['url'] + '/search/?params=' + searchterms
+                        APIENDPOINT = settings.APIURL['attackmatrix']['url']+'/search?params='+searchterms
                         async with httpx.AsyncClient(headers=headers) as session:
                             response = await session.get(APIENDPOINT)
                             json_response = response.json()
@@ -60,221 +61,179 @@ async def process(command, channel, username, params):
                                 text += "\n"
                                 messages.append({'text': text})
                                 numresults = 0
-                                for matrix in json_response:
-                                    if matrix in matrices:
-                                        table = '**Matrix**: ' + matrix + '\n\n\n'
-                                        for tableheader in tableheaders:
-                                            table += '| %s ' % (tableheaders[tableheader],)
-                                        table += '|\n'
-                                        table += '|:- |:- |:- |\n'
-                                        jsonmatrix = json_response[matrix]
-                                        for category in jsonmatrix:
-                                            if category in categories:
-                                                jsonentries = jsonmatrix[category]
-                                                for entry in jsonentries:
-                                                    jsonentry = jsonentries[entry]
-                                                    numresults += 1
-                                                    name = jsonentry['name']
-                                                    description = regex.sub(' ', jsonentry['description'])
-                                                    if len(description)>80:
-                                                        description = description[:80] + ' ...'
-                                                    table += '| ' + category
-                                                    table += ' | ' + jsonentry['name']
-                                                    url = settings.APIURL['attackmatrix']['details']
-                                                    url += '&matrix=' + matrix
-                                                    url += '&cat=' + category
-                                                    url += '&id=' + entry
-                                                    table += '| [' + entry + '](' + url + ')'
-                                                    table += ' |\n'
+                                for category in categories:
+                                    if category in json_response:
+                                        table = '\n\n'
+                                        table += '| **MITRE ID** | **'+category+'** | **Description** | **URL** |\n'
+                                        table += '|:- |:- |:- |:- |\n'
+                                        for entry in json_response[category]:
+                                            jsonentry = json_response[category][entry]
+                                            numresults += 1
+                                            name = regex.sub(' ', ' '.join(jsonentry['Metadata']['name']))
+                                            description = regex.sub(' ', ' '.join(jsonentry['Metadata']['description']))
+                                            url = regex.sub(' ', ' '.join(jsonentry['Metadata']['url']))
+                                            if len(description)>80:
+                                                description = description[:80]+' ...'
+                                            table += '| '+entry+' | '+name+' | '+description+' | '+url+' |\n'
+                                        table += '\n\n'
                                         messages.append({'text': table})
-                                if numresults:
-                                    text = 'Found ' + str(numresults) + ' match' + ('es' if numresults>1 else '') + ' for your search.'
-                                    messages.append({'text': text})
+                                if 'count' in json_response:
+                                    count = json_response['count']
+                                    if count>0:
+                                        text = 'Found '+str(count)+' match'+('es' if count>1 else '')+' for your search.'
+                                        messages.append({'text': text})
                     else:
                         text = 'Invalid keyword(s).'
                         messages.append({'text': text})
                 if querytype == 'mitre':
                     mitreid = keywords[0].upper()
                     if re.search(r"^[GMST][0-9]{4}(\.[0-9]{3})?$|^[T][A][0-9]{4}$", mitreid):
-                        for matrix in matrices:
+                        for category in categories:
                             async with httpx.AsyncClient(headers=headers) as session:
-                                APIENDPOINT = settings.APIURL['attackmatrix']['url'] + '/explore/' + matrix
+                                APIENDPOINT = settings.APIURL['attackmatrix']['url']+'/explore/'+category+'/'+mitreid
                                 response = await session.get(APIENDPOINT)
                                 json_response = response.json()
-                                if json_response != 'null':
-                                    jsonmatrix = json_response[matrix]
-                                    for category in jsonmatrix:
-                                        if category in categories:
-                                            jsonentries = jsonmatrix[category]
-                                            if mitreid in jsonentries:
-                                                details = jsonentries[mitreid]
-                                                name = details['name']
-                                                description = regex.sub(' ', details['description'])
-                                                text = '**MITRE ID**: `' + mitreid + '` **Name**: `' + name + '`'
-                                                text += '\n**Description:** `' + description + '`'
-                                                messages.append({'text': text})
-                                                APIENDPOINT = settings.APIURL['attackmatrix']['url']+'/explore/'+matrix+'/'+category+'/'+mitreid
-                                                response = await session.get(APIENDPOINT)
-                                                jsondetails = response.json()
-                                                if len(jsondetails):
-                                                    jsondetail = jsondetails[matrix][category][mitreid]
-                                                    for detailcategory in jsondetail:
-                                                        if category != detailcategory and detailcategory in categories:
-                                                            table = '\n**Associated ' + detailcategory + '**'
-                                                            table += '\n\n\n'
-                                                            detailentries = jsondetail[detailcategory]
-                                                            table += '| Reference | Name |\n'
-                                                            table += '|:--------- |:---- |\n'
-                                                            for detailentry in detailentries:
-                                                                name = detailentries[detailentry]['name']
-                                                                url = settings.APIURL['attackmatrix']['details']
-                                                                url += '&matrix=' + matrix
-                                                                url += '&cat=' + detailcategory
-                                                                url += '&id=' + detailentry
-                                                                table += '| [' + detailentry + '](' + url + ')'
-                                                                table += ' | ' + name
-                                                                table += ' |\n'
-                                                            messages.append({'text': table})
+                                if len(json_response)>0:
+                                    table = '\n\n'
+                                    table += '| **MITRE ID** | **Name** | **Description** | **URL** |\n'
+                                    table += '|:- |:- |:- |:- |\n'
+                                    name = regex.sub(' ', ' '.join(json_response['Metadata']['name']))
+                                    description = regex.sub(' ', ' '.join(json_response['Metadata']['description']))
+                                    url = regex.sub(' ', ' '.join(json_response['Metadata']['url']))
+                                    table += '| '+mitreid+' | '+name+' | '+description+' | '+url+' |\n'
+                                    table += '\n\n'
+                                    messages.append({'text': table})
+                                    for actorcategory in categories:
+                                        if actorcategory in json_response:
+                                            table = '\n\n**Associated** `'+actorcategory+'`\n'
+                                            table += '\n\n'
+                                            table += '| **MITRE ID** | **Name ** | **URL** |\n'
+                                            table += '|:- |:- |:- |\n'
+                                            for entry in json_response[actorcategory]:
+                                                name = regex.sub(' ', ' '.join(json_response[actorcategory][entry]['name']))
+                                                url = regex.sub(' ', ' '.join(json_response[actorcategory][entry]['url']))
+                                                table += '| '+entry+' | '+name+' | '+url+' |\n'
+                                            table += '\n\n'
+                                            messages.append({'text': table})
+                                    break
                     else:
                         text = 'AttackMatrix: invalid MITRE TTP ID!'
                         messages.append({'text': text})
                 if querytype == 'actoroverlap':
                     keywords = [_.upper() for _ in keywords]
-                    searchterms = '&actor='.join([urllib.parse.quote(_) for _ in keywords])
+                    searchterms = '&actors='.join([urllib.parse.quote(_) for _ in keywords])
                     if re.search(r"[\w\s,.\+\-]+", searchterms):
                         text = None
-                        APIENDPOINT = settings.APIURL['attackmatrix']['url'] + '/actoroverlap/?actor=' + searchterms
+                        APIENDPOINT = settings.APIURL['attackmatrix']['url']+'/actoroverlap?actors='+searchterms
                         async with httpx.AsyncClient(headers=headers) as session:
                             response = await session.get(APIENDPOINT)
                             json_response = response.json()
-                            if json_response != 'null' and len(json_response):
-                                numresults = 0
-                                commonids = {}
-                                actormatrices = {}
-                                for actor in keywords:
-                                    actormatrices[actor] = set()
-                                    if actor in json_response['Actors']:
-                                        for matrixname in json_response['Actors'][actor]['Matrices']:
-                                            actormatrices[actor].add(matrixname)
-                                categories = ('Matrices', 'Techniques', 'Subtechniques', 'Malwares', 'Tools', 'Mitigations', 'Tactics')
-                                text = '**Actor Overlap** matrix for: `' + '`, `'.join(keywords) + '`'
-                                text += '\n\n\n'
-                                text += '| **MITRE ATT&CK** '
-                                for actor in keywords:
-                                    actorname = json_response['Actors'][actor]['name']
-                                    text += '| **' + actor + '**: ' + actorname
-                                text += ' |\n'
-                                text += ('|:- ' * (len(keywords)+1)) + '|\n'
-                                for actor in keywords:
-                                    if actor in json_response['Actors']:
-                                        jsonactors = json_response['Actors']
-                                        jsoncategories = jsonactors[actor]
+                            if len(json_response)>0:
+                                if 'error' in json_response:
+                                    text = 'AttackMatrix error: '+json_response['error']
+                                else:
+                                    count = json_response.pop('count')
+                                    actorttps = {}
+                                    commonttps = {}
+                                    for actor in json_response:
                                         for category in categories:
-                                            if category in jsoncategories:
-                                                detailcategories = collections.OrderedDict(sorted(jsoncategories[category].items()))
-                                                for mitreid in detailcategories:
-                                                    name = detailcategories[mitreid]['name']
-                                                    text += '| **' + category + '** '
-                                                    for otheractor in keywords:
-                                                        if mitreid in jsonactors[otheractor][category]:
-                                                            text += '| ' + mitreid
-                                                            if category != 'Matrices':
-                                                                text += ': ' + name
-                                                                commonids[mitreid] = name
-                                                                numresults += 1
-                                                            text += ' '
-                                                        else:
-                                                            text += '| - '
-                                                    text += '|\n'
-                                    break
-                                text += '\n\n'
-                                text += 'Found ' + str(int(numresults/len(keywords))) + ' match' + ('es' if numresults>1 else '') + ' between the actors.'
-                                # Build a list of unique TTPs for each actor
-                                messages.append({'text': text})
-                                actorttps = {}
-                                for actor in keywords:
-                                    actorttps[actor] = {}
-                                    actorttps[actor]['ttps'] = {}
-                                    for category in categories:
-                                        actorttps[actor]['ttps'][category] = collections.OrderedDict()
-                                    for actormatrix in actormatrices[actor]:
-                                        APIENDPOINT = settings.APIURL['attackmatrix']['url'] + '/explore/' + actormatrix + '/Actors/' + actor
+                                            if category in json_response[actor]:
+                                                commonttps[category] = {}
+                                                for entry in json_response[actor][category]:
+                                                    commonttps[category][entry] = json_response[actor][category][entry]
+                                        table = '**Common TTPs** for '
+                                        for actor in keywords:
+                                            table += '`'+actor+'`: `'
+                                            table += '`, `'.join(json_response[actor]['Metadata']['name'])
+                                            table += '` and '
+                                        table = table[:-5]
+                                        table += '\n\n\n'
+                                        table += '| **Type** | **MITRE ID** | **Name** |\n'
+                                        table += '|:- |:- |:- |\n'
+                                        for category in commonttps:
+                                            for entry in commonttps[category]:
+                                                name = regex.sub(' ', ' '.join(commonttps[category][entry]['name']))
+                                                table += '| '+category+' | '+entry+' | '+name+' |\n'
+                                        table += '\n\n'
+                                        messages.append({'text': table})
+                                        break
+                                    for actor in keywords:
+                                        actorttps[actor] = {}
+                                        APIENDPOINT = settings.APIURL['attackmatrix']['url']+'/explore/Actors/'+actor
                                         async with httpx.AsyncClient(headers=headers) as session:
                                             response = await session.get(APIENDPOINT)
                                             json_response = response.json()
-                                            if len(json_response):
-                                                actorttps[actor]['name'] = json_response[actormatrix]['Actors'][actor]['name']
-                                                for category in categories:
-                                                    jsonactor = json_response[actormatrix]['Actors'][actor]
-                                                    if category in jsonactor:
-                                                        for ttp in jsonactor[category]:
-                                                            ttpname = jsonactor[category][ttp]['name']
-                                                            if not ttp in commonids:
-                                                                actorttps[actor]['ttps'][category][ttp] = ttpname
-                                text = '**Unique TTPs** matrix for: `' + '`, `'.join(keywords) + '`'
-                                text += '\n\n\n'
-                                text += '| **MITRE ATT&CK** '
+                                            for commonttpcategory in commonttps:
+                                                if commonttpcategory in commonttps:
+                                                    if len(json_response[commonttpcategory]) == 0:
+                                                        del json_response[commonttpcategory]
+                                                        continue
+                                                for commonttp in commonttps[commonttpcategory]:
+                                                    del json_response[commonttpcategory][commonttp]
+                                        actorttps[actor] = json_response
                                 for actor in keywords:
-                                    text += '| **' + actor + '** ' + actorttps[actor]['name'] + ' '
-                                text += '|\n'
-                                text += ('|:- ' * (len(keywords)+1)) + '|\n'
-                                count = 0
-                                actoruniquettplist = {}
-                                for actor in keywords:
-                                    actoruniquettplist[actor] = {}
-                                    actoruniquettplist[actor]['name'] = actorttps[actor]['name']
-                                    for category in categories:
-                                        if category in actorttps[actor]['ttps']:
-                                            actoruniquettplist[actor][category] = list(actorttps[actor]['ttps'][category].items())
-                                for category in categories:
-                                    maxcount = 0
-                                    for actor in keywords:
-                                        if len(actoruniquettplist[actor][category])>maxcount:
-                                            maxcount = len(actoruniquettplist[actor][category])
-                                    while count<maxcount:
-                                        text += '| **' + category + '** '
-                                        for actor2 in keywords:
-                                            if count<len(actoruniquettplist[actor2][category]):
-                                                mitreid, name = actoruniquettplist[actor2][category][count]
-                                                text += '| ' + mitreid + ': ' + name + ' '
-                                            else:
-                                                text += '| - '
-                                        text += '|\n'
-                                        count += 1
-                                    count = 0
-                                messages.append({'text': text})
-                                filename = '-'.join(keywords) + '.png'
+                                    table = '\n\n'
+                                    table += '**Unique TTPs** for `'+actor+'`: `'
+                                    table += '`, `'.join(actorttps[actor]['Metadata']['name'])
+                                    table += '`\n\n\n'
+                                    messages.append({'text': table})
+                                    for category in actorttps[actor]:
+                                        if len(actorttps[actor][category])>0:
+                                            table = '\n\n'
+                                            if category in categories:
+                                                table += '| **Type** | **MITRE IDs** |\n'
+                                                table += '|:- |:- |\n'
+                                                table += '| '+category+' | '
+                                                for entry in actorttps[actor][category]:
+                                                    name = regex.sub(' ', ' '.join(actorttps[actor][category][entry]['name']))
+                                                    table += entry+': '+name+', '
+                                                table = table[:-2]
+                                                table += '|\n'
+                                                table += '\n\n'
+                                            messages.append({'text': table})
+                                # Create a graph
+                                filename = 'Actor-overlap-for-'+'-'.join(keywords)+'.png'
                                 graph = graphviz.Digraph(comment=filename, format='png')
                                 graph.attr(layout='sfdp', overlap='prism')
                                 # Create the actor nodes
-                                for actor in actorttps:
-                                    graph.node(actor,
-                                               actorttps[actor]['name'],
+                                for actorid in actorttps:
+                                    contents = actorid+'\n'
+                                    contents += ', '.join(actorttps[actorid]['Metadata']['name'])
+                                    # Add all actors to the graph
+                                    graph.node(actorid,
+                                               contents,
                                                style='filled',
                                                fillcolor='#000080',
                                                fontcolor='white')
-                                    for category in actorttps[actor]['ttps']:
-                                        for ttp in actorttps[actor]['ttps'][category].items():
-                                            mitreid, name = ttp
-                                            contents = mitreid + '\n' + name
-                                            graph.node(mitreid,
+                                    # Add all TTPs to the graph
+                                    for category in categories:
+                                        if category in actorttps[actorid]:
+                                            for ttpid in actorttps[actorid][category]:
+                                                entry = actorttps[actorid][category][ttpid]
+                                                contents = ttpid+'\n'
+                                                contents += ', '.join(entry['name'])
+                                                graph.node(ttpid,
+                                                           contents,
+                                                           shape='box',
+                                                           style='filled',
+                                                           fillcolor='#800000',
+                                                           fontcolor='white')
+                                                graph.edge(actorid, ttpid)
+                                # Create the nodes for the TTPs they have in common
+                                for category in categories:
+                                    if category in commonttps:
+                                        for ttpid in commonttps[category]:
+                                            entry = commonttps[category][ttpid]
+                                            contents = ttpid+'\n'
+                                            contents += ', '.join(entry['name'])
+                                            graph.node(ttpid,
                                                        contents,
                                                        shape='box',
                                                        style='filled',
-                                                       fillcolor='#800000',
+                                                       fillcolor='#008000',
                                                        fontcolor='white')
-                                            graph.edge(actor, mitreid)
-                                # Create the nodes for the TTPs they have in common
-                                for commonid in commonids:
-                                    contents = commonid + '\n' + commonids[commonid]
-                                    graph.node(commonid,
-                                               contents,
-                                               shape='box',
-                                               style='filled',
-                                               fillcolor='#008000',
-                                               fontcolor='white')
-                                    for actor in actorttps:
-                                        graph.edge(actor, commonid)
+                                            for actor in keywords:
+                                                graph.edge(actor, ttpid)
                                 bytes = graph.pipe()
                                 messages.append({
                                     'text': 'Graphical representation of overlap:\n', 'uploads': [{'filename': filename, 'bytes': bytes}]
@@ -283,139 +242,144 @@ async def process(command, channel, username, params):
                                 messages.append({'text': 'AttackMatrix: invalid MITRE Actor ID or no overlap.\n'})
                 if querytype == 'ttpoverlap':
                     keywords = [keyword.upper() for keyword in keywords]
-                    searchterms = '&ttp='.join([urllib.parse.quote(_) for _ in keywords])
+                    searchterms = '&ttps='.join([urllib.parse.quote(_) for _ in keywords])
                     if re.search(r"[\w\s,.\+\-]+", searchterms):
                         text = None
-                        APIENDPOINT = settings.APIURL['attackmatrix']['url'] + '/ttpoverlap/?ttp=' + searchterms
+                        APIENDPOINT = settings.APIURL['attackmatrix']['url']+'/ttpoverlap?ttps='+searchterms
                         async with httpx.AsyncClient(headers=headers) as session:
                             response = await session.get(APIENDPOINT)
                             json_response = response.json()
-                            numresults = 0
-                            actornames = set()
-                            if json_response != 'null' and len(json_response):
-                                for matrix in json_response:
-                                    numresults += len(json_response[matrix]['Actors'])
-                                    for actor in json_response[matrix]['Actors']:
-                                        actornames.add(actor)
-                                if numresults>settings.MAXRESULTS:
-                                    text = 'AttackMatrix: More than ' + str(settings.MAXRESULTS) + ' actors match your TTP set, '
-                                    text += 'making the resulting data set too large to be useful. Narrow down your selection by '
-                                    text += 'either adding more TTPs or selecting more specific TTPs.\n'
-                                    text += 'You are currently matching ' + str(len(actornames)) + ' actors: `' + '`, `'.join(actornames) + '`.'
-                                    messages.append({'text': text})
+                            if len(json_response)>0:
+                                count = len(json_response)
+                                if 'error' in json_response:
+                                    text = 'AttackMatrix error: '+json_response['error']
                                 else:
-                                    numresults = 0
-                                    actors = collections.OrderedDict()
-                                    categories = ('Matrices', 'Techniques', 'Subtechniques', 'Malwares', 'Tools', 'Mitigations', 'Tactics')
-                                    text = '**TTP Overlap** matrix for: `' + '`, `'.join(keywords) + '`'
-                                    text += '\n\n\n'
-                                    text += '| **MITRE ATT&CK** '
-                                    commonids = collections.OrderedDict()
-                                    actoruniquettplist = {}
-                                    for matrix in matrices:
-                                        if matrix in json_response:
-                                            matrix = json_response[matrix]
-                                            for actor in matrix['Actors']:
-                                                actorname = matrix['Actors'][actor]['name']
-                                                actors[actor] = actorname
-                                    for actor in actors:
-                                        text += '| **' + actor + '**: ' + actors[actor] + ' '
-                                        if not actor in actoruniquettplist:
-                                            actoruniquettplist[actor] = {}
-                                    text += '|\n'
-                                    text += ('|:- ' * (len(actors)+1)) + '|\n'
-                                    for matrix in matrices:
-                                        if matrix in json_response:
-                                            matrix = json_response[matrix]
-                                            for jsonactor in matrix['Actors']:
-                                                for jsonactorcategory in matrix['Actors'][jsonactor]:
-                                                    if not jsonactorcategory in actoruniquettplist[actor]:
-                                                        actoruniquettplist[jsonactor][jsonactorcategory] = {}
-                                                    if jsonactorcategory in categories:
-                                                        if not jsonactorcategory in commonids:
-                                                            commonids[jsonactorcategory] = {}
-                                                        for jsonactorttp in matrix['Actors'][jsonactor][jsonactorcategory]:
-                                                            name = matrix['Actors'][jsonactor][jsonactorcategory][jsonactorttp]['name']
-                                                            if jsonactorttp in keywords:
-                                                                commonids[jsonactorcategory][jsonactorttp] = name
-                                                            else:
-                                                                actoruniquettplist[jsonactor][jsonactorcategory][jsonactorttp] = name
-                                    for commoncategory in commonids:
-                                        for commonid in commonids[commoncategory]:
-                                            text += '| **' + commoncategory + '** '
-                                            contents = '| **' + commonid + '**: ' + commonids[commoncategory][commonid] + ' '
-                                            text += (contents) * (len(actors))
-                                            text += '|\n'
-                                    messages.append({'text': text})
-                                    for actor in actors:
-                                        text = '**Unique TTPs** for **' + actor + '**: ' + actors[actor]
-                                        text += '\n\n\n'
-                                        text += '| **MITRE ATT&CK** | **' + actor + '**: ' + actors[actor] + '\n'
-                                        text += '|:- |:- |\n'
-                                        for category in categories:
-                                            if category in actoruniquettplist[actor]:
-                                                if len(actoruniquettplist[actor][category])>0:
-                                                    text += '| **' + category + '** | '
-                                                    for uniquettp in actoruniquettplist[actor][category]:
-                                                        name = actoruniquettplist[actor][category][uniquettp]
-                                                        text += '**' + uniquettp +'**: ' + name + ', '
-                                                    text = text[:-2]
-                                                    text += '|\n'
-                                        text += '\n'
+                                    if count>settings.MAXRESULTS:
+                                        text = 'AttackMatrix: More than '+str(settings.MAXRESULTS)+' actors match your TTP set, '
+                                        text += 'making the resulting data set too large to be useful. Narrow down your selection by '
+                                        text += 'either adding more TTPs or selecting more specific TTPs.\n'
+                                        text += 'You are currently matching '+str(count)+' actors: `'+'`, `'.join(sorted(json_response.keys()))+'`.'
                                         messages.append({'text': text})
-                                    # Digraph
-                                    filename = '-'.join(keywords) + '.png'
-                                    graph = graphviz.Digraph(comment=filename, format='png')
-                                    graph.attr(layout='sfdp', overlap='prism')
-                                    # Create the actor nodes
-                                    for actor in actors:
-                                        contents = actor + '\n' + actors[actor]
-                                        graph.node(actor,
-                                                   contents,
-                                                   style='filled',
-                                                   fillcolor='#000080',
-                                                   fontcolor='white')
-                                        for category in categories:
-                                            if category in actoruniquettplist[actor]:
-                                                if len(actoruniquettplist[actor][category])>0:
-                                                    for ttp in actoruniquettplist[actor][category].items():
-                                                        mitreid, name = ttp
-                                                        contents = mitreid + '\n' + name
-                                                        graph.node(mitreid,
-                                                                   contents,
-                                                                   shape='box',
-                                                                   style='filled',
-                                                                   fillcolor='#800000',
-                                                                   fontcolor='white')
-                                                        graph.edge(actor, mitreid)
-                                    # Create the nodes for the TTPs they have in common
-                                    for category in categories:
-                                        if category in commonids:
-                                            for ttp in commonids[category].items():
-                                                mitreid, name = ttp
-                                                contents = mitreid + '\n' + name
-                                                graph.node(mitreid,
-                                                           contents,
-                                                           shape='box',
-                                                           style='filled',
-                                                           fillcolor='#008000',
-                                                           fontcolor='white')
+                                    else:
+                                        actors = sorted(list(json_response.keys()))
+                                        additionalttps = {}
+                                        commonttps = []
+                                        table = '**Common TTPs** for '
+                                        for actor in json_response.keys():
+                                            table += '`'+actor+'`: `'
+                                            table += '`, `'.join(json_response[actor]['Metadata']['name'])
+                                            table += '` and '
+                                        table = table[:-5]
+                                        table += '\n\n\n'
+                                        table += '| **Type** | **MITRE ID** | **Name** |\n'
+                                        table += '|:- |:- |:- |\n'
+                                        allttps = {}
+                                        for actor in actors:
+                                            for category in categories:
+                                                if category in json_response[actor]:
+                                                    if category not in allttps:
+                                                        allttps[category] = {}
+                                                    for ttp in json_response[actor][category]:
+                                                        if ttp not in allttps[category]:
+                                                            allttps[category][ttp] = json_response[actor][category][ttp]
+                                        commonttps = {}
+                                        for ttpcategory in allttps:
+                                            commonttps[ttpcategory] = {}
+                                            for ttp in allttps[ttpcategory]:
+                                                # First, assume the TTP exists for all actors
+                                                exists = True
                                                 for actor in actors:
-                                                    graph.edge(actor, mitreid)
-                                    bytes = graph.pipe()
-                                    messages.append({
-                                        'text': 'Graphical representation of overlap:\n', 'uploads': [{'filename': filename, 'bytes': bytes}]
-                                    })
+                                                    if not ttp in json_response[actor][ttpcategory]:
+                                                        # Check if the TTP exists for every actor, otherwise set to False
+                                                        exists = False
+                                                if exists:
+                                                    commonttps[ttpcategory][ttp] = json_response[actor][ttpcategory][ttp]
+                                            if len(commonttps[ttpcategory])==0:
+                                                del commonttps[ttpcategory]
+                                        for category in commonttps:
+                                            for ttp in commonttps[category]:
+                                                table += '| '+category+' '
+                                                table += '| '+ttp+' '
+                                                name = regex.sub(' ', ' '.join(commonttps[category][ttp]['name']))
+                                                table += '| '+name+' '
+                                                table += '|\n'
+                                        table += '\n\n'
+                                        messages.append({'text': table})
+                                        for actor in actors:
+                                            table = '**Unique TTPs** for '
+                                            table += '`'+actor+'`: `'
+                                            table += '`, `'.join(json_response[actor]['Metadata']['name'])
+                                            table += '`'
+                                            table += '\n\n\n'
+                                            table += '| **Type** | **MITRE ID** | **Name** |\n'
+                                            table += '|:- |:- |:- |\n'
+                                            for category in categories:
+                                                if category in json_response[actor]:
+                                                    for ttp in json_response[actor][category]:
+                                                        if not ttp in commonttps[category]:
+                                                            table += '| '+category+' '
+                                                            table += '| '+ttp+' '
+                                                            name = regex.sub(' ', ' '.join(json_response[actor][category][ttp]['name']))
+                                                            table += '| '+name+' '
+                                                            table += '|\n'
+                                            table += '\n\n'
+                                            messages.append({'text': table})
+                                        # Digraph
+                                        filename = 'TTP-overlap-for-'+'-'.join(actors)+'.png'
+                                        graph = graphviz.Digraph(comment=filename, format='png')
+                                        graph.attr(layout='sfdp', overlap='prism')
+                                        # Create the actor nodes
+                                        for actor in actors:
+                                            contents = actor+'\n'
+                                            contents += ' '.join(json_response[actor]['Metadata']['name'])
+                                            graph.node(actor,
+                                                       contents,
+                                                       style='filled',
+                                                       fillcolor='#000080',
+                                                       fontcolor='white')
+                                            for category in categories:
+                                                if category in json_response[actor]:
+                                                    for ttp in json_response[actor][category]:
+                                                        if not ttp in commonttps[category]:
+                                                            mitreid = ttp
+                                                            contents = mitreid+'\n'
+                                                            contents += ' '.join(json_response[actor][category][ttp]['name'])
+                                                            graph.node(mitreid,
+                                                                       contents,
+                                                                       shape='box',
+                                                                       style='filled',
+                                                                       fillcolor='#800000',
+                                                                       fontcolor='white')
+                                                            graph.edge(actor, mitreid)
+                                        # Create the nodes for the TTPs they have in common
+                                        for category in commonttps:
+                                            if category in categories:
+                                                for ttp in commonttps[category]:
+                                                    mitreid = ttp
+                                                    contents = mitreid+'\n'
+                                                    contents += ' '.join(commonttps[category][ttp]['name'])
+                                                    graph.node(mitreid,
+                                                               contents,
+                                                               shape='box',
+                                                               style='filled',
+                                                               fillcolor='#008000',
+                                                               fontcolor='white')
+                                                    for actor in actors:
+                                                        graph.edge(actor, mitreid)
+                                        bytes = graph.pipe()
+                                        messages.append({
+                                            'text': 'Graphical representation of overlap:\n', 'uploads': [{'filename': filename, 'bytes': bytes}]
+                                        })
                             else:
                                 if len(keywords)>1:
                                     messages.append({
-                                        'text': 'AttackMatrix: no results found for `' + '`, `'.join(keywords) + '`.'
+                                        'text': 'AttackMatrix: no results found for `'+'`, `'.join(keywords)+'`.'
                                     })
                                 else:
                                     messages.append({
                                         'text': 'AttackMatrix: you must specify at least two TTPs!'
                                     })
         except Exception as e:
-            messages.append({'text': 'An error occurred querying AttackMatrix:\nError: ' + str(e)})
+            messages.append({'text': 'An error occurred querying AttackMatrix:\nError: '+str(type(e))+': '+str(e)})
         finally:
             return {'messages': messages}
