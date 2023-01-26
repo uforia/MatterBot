@@ -306,6 +306,7 @@ async def process(command, channel, username, params):
                                         table += '\n\n'
                                         messages.append({'text': table})
                                         for actor in actors:
+                                            numresults = 0
                                             table = '**Unique TTPs** for '
                                             table += '`'+actor+'`: `'
                                             table += '`, `'.join(json_response[actor]['Metadata']['name'])
@@ -322,8 +323,10 @@ async def process(command, channel, username, params):
                                                             name = regex.sub(' ', ' '.join(json_response[actor][category][ttp]['name']))
                                                             table += '| '+name+' '
                                                             table += '|\n'
+                                                            numresults += 1
                                             table += '\n\n'
-                                            messages.append({'text': table})
+                                            if len(numresults)>0:
+                                                messages.append({'text': table})
                                         # Digraph
                                         filename = 'TTP-overlap-for-'+'-'.join(actors)+'.png'
                                         graph = graphviz.Digraph(comment=filename, format='png')
