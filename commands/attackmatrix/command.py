@@ -282,6 +282,8 @@ async def process(command, channel, username, params):
                                         allttps = {}
                                         for actor in actors:
                                             for category in categories:
+                                                if category == 'Actors':
+                                                    continue
                                                 if category in json_response[actor]:
                                                     if category not in allttps:
                                                         allttps[category] = {}
@@ -295,9 +297,10 @@ async def process(command, channel, username, params):
                                                 # First, assume the TTP exists for all actors
                                                 exists = True
                                                 for actor in actors:
-                                                    if not ttp in json_response[actor][ttpcategory]:
-                                                        # Check if the TTP exists for every actor, otherwise set to False
-                                                        exists = False
+                                                    if ttpcategory in json_response[actor]:
+                                                        if not ttp in json_response[actor][ttpcategory]:
+                                                            # Check if the TTP exists for every actor, otherwise set to False
+                                                            exists = False
                                                 if exists:
                                                     commonttps[ttpcategory][ttp] = json_response[actor][ttpcategory][ttp]
                                             if len(commonttps[ttpcategory])==0:
@@ -321,15 +324,18 @@ async def process(command, channel, username, params):
                                             table += '| **Type** | **MITRE ID** | **Name** |\n'
                                             table += '|:- |:- |:- |\n'
                                             for category in categories:
+                                                if category == 'Actors':
+                                                    continue
                                                 if category in json_response[actor]:
                                                     for ttp in sorted(json_response[actor][category]):
-                                                        if not ttp in commonttps[category]:
-                                                            table += '| '+category+' '
-                                                            table += '| '+ttp+' '
-                                                            name = regex.sub(' ', ' '.join(json_response[actor][category][ttp]['name']))
-                                                            table += '| '+name+' '
-                                                            table += '|\n'
-                                                            numresults += 1
+                                                        if category in commonttps:
+                                                            if not ttp in commonttps[category]:
+                                                                table += '| '+category+' '
+                                                                table += '| '+ttp+' '
+                                                                name = regex.sub(' ', ' '.join(json_response[actor][category][ttp]['name']))
+                                                                table += '| '+name+' '
+                                                                table += '|\n'
+                                                                numresults += 1
                                             table += '\n\n'
                                             if numresults>0:
                                                 messages.append({'text': table})
@@ -347,34 +353,38 @@ async def process(command, channel, username, params):
                                                        fillcolor='#000080',
                                                        fontcolor='white')
                                             for category in categories:
+                                                if category == 'Actors':
+                                                    continue
                                                 if category in json_response[actor]:
                                                     for ttp in json_response[actor][category]:
-                                                        if not ttp in commonttps[category]:
-                                                            mitreid = ttp
-                                                            contents = mitreid+'\n'
-                                                            contents += ' '.join(json_response[actor][category][ttp]['name'])
-                                                            graph.node(mitreid,
-                                                                       contents,
-                                                                       shape='box',
-                                                                       style='filled',
-                                                                       fillcolor='#800000',
-                                                                       fontcolor='white')
-                                                            graph.edge(actor, mitreid)
+                                                        if category in commonttps:
+                                                            if not ttp in commonttps[category]:
+                                                                mitreid = ttp
+                                                                contents = mitreid+'\n'
+                                                                contents += ' '.join(json_response[actor][category][ttp]['name'])
+                                                                graph.node(mitreid,
+                                                                           contents,
+                                                                           shape='box',
+                                                                           style='filled',
+                                                                           fillcolor='#800000',
+                                                                           fontcolor='white')
+                                                                graph.edge(actor, mitreid)
                                         # Create the nodes for the TTPs they have in common
                                         for category in commonttps:
                                             if category in categories:
-                                                for ttp in commonttps[category]:
-                                                    mitreid = ttp
-                                                    contents = mitreid+'\n'
-                                                    contents += ' '.join(commonttps[category][ttp]['name'])
-                                                    graph.node(mitreid,
-                                                               contents,
-                                                               shape='box',
-                                                               style='filled',
-                                                               fillcolor='#008000',
-                                                               fontcolor='white')
-                                                    for actor in actors:
-                                                        graph.edge(actor, mitreid)
+                                                if category in commonttps:
+                                                    for ttp in commonttps[category]:
+                                                        mitreid = ttp
+                                                        contents = mitreid+'\n'
+                                                        contents += ' '.join(commonttps[category][ttp]['name'])
+                                                        graph.node(mitreid,
+                                                                   contents,
+                                                                   shape='box',
+                                                                   style='filled',
+                                                                   fillcolor='#008000',
+                                                                   fontcolor='white')
+                                                        for actor in actors:
+                                                            graph.edge(actor, mitreid)
                                         bytes = graph.pipe()
                                         messages.append({
                                             'text': 'Graphical representation of overlap:\n', 'uploads': [{'filename': filename, 'bytes': bytes}]
