@@ -190,7 +190,7 @@ async def process(command, channel, username, params):
                                                 table += '| **Type** | **MITRE IDs** |\n'
                                                 table += '|:- |:- |\n'
                                                 table += '| '+category+' | '
-                                                for entry in actorttps[actor][category]:
+                                                for entry in sorted(actorttps[actor][category]):
                                                     name = regex.sub(' ', ' '.join(actorttps[actor][category][entry]['name']))
                                                     table += entry+': '+name+', '
                                                 table = table[:-2]
@@ -322,7 +322,7 @@ async def process(command, channel, username, params):
                                             table += '|:- |:- |:- |\n'
                                             for category in categories:
                                                 if category in json_response[actor]:
-                                                    for ttp in json_response[actor][category]:
+                                                    for ttp in sorted(json_response[actor][category]):
                                                         if not ttp in commonttps[category]:
                                                             table += '| '+category+' '
                                                             table += '| '+ttp+' '
