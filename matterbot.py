@@ -3,6 +3,7 @@
 import aiofiles
 import ast
 import asyncio
+import concurrent.futures
 import configargparse
 import fnmatch
 import importlib.util
@@ -125,6 +126,7 @@ class MattermostManager(object):
                 params = message[1:]
             except IndexError:
                 params = None
+            # Generic !help function
             if command == '!help' and not params:
                 for module in self.commands:
                     for chan in self.commands[module]['chans']:
@@ -133,47 +135,62 @@ class MattermostManager(object):
                                 commands.add('`' + bind + '`')
                 text = username + " I know about: `!help`, " + ', '.join(sorted(commands)) + " here. Remember that not every command works everywhere: this depends on the configuration. Modules may offer additional help via `!help <command>`."
                 await self.send_message(channelid, text)
-            for module in self.commands:
-                for chan in self.commands[module]['chans']:
-                    if channelname == chan or (((my_id and userid) in channelname) and chan in userchannels):
-                        if command == '!help' and params and params[0] in self.commands[module]['binds']:
-                            try:
-                                text = ''
-                                HELP = self.commands[module]['help']
-                                if len(params)==1:
-                                    if 'DEFAULT' in HELP:
-                                        # Trigger the default help message
-                                        args = HELP['DEFAULT']['args'] if HELP['DEFAULT']['args'] else None
-                                        desc = HELP['DEFAULT']['desc']
-                                        text += '**Module**: `' + module + '`'
-                                        text += '\n**Description**: '
-                                        text += desc
-                                        if args:
-                                            text += '\n**Arguments**: `' + args + '`'
-                                        subcommands = set()
-                                        if len(HELP)>1:
-                                            text += '\n**Subcommmands**: '
-                                        for subcommand in HELP:
-                                            if subcommand != 'DEFAULT':
-                                                subcommands.add(subcommand)
-                                        if len(subcommands)>0:
-                                            text += '`' + '`, `'.join(subcommands) + '`'
-                                else:
-                                    subcommand = params[1]
-                                    if subcommand in HELP:
-                                        args = HELP[subcommand]['args'] if HELP[subcommand]['args'] else None
-                                        desc = HELP[subcommand]['desc']
-                                        text += '**Module**: `' + module + '`/`' + subcommand + '`'
-                                        text += '\n**Description**: '
-                                        text += desc
-                                        if args:
-                                            text += '\n**Arguments**: `' + args + '`'
-                                if len(text)>0:
-                                    await self.send_message(channelid, text)
-                            except NameError:
-                                await self.send_message(channelid, 'No additional help available for the `' + module + '` module.')
+            else:
+                # User is asking for specific module help
+                for module in self.commands:
+                    for chan in self.commands[module]['chans']:
+                        if channelname == chan or (((my_id and userid) in channelname) and chan in userchannels):
+                            if command == '!help' and params and params[0] in self.commands[module]['binds']:
+                                try:
+                                    text = ''
+                                    HELP = self.commands[module]['help']
+                                    if len(params)==1:
+                                        if 'DEFAULT' in HELP:
+                                            # Trigger the default help message
+                                            args = HELP['DEFAULT']['args'] if HELP['DEFAULT']['args'] else None
+                                            desc = HELP['DEFAULT']['desc']
+                                            text += '**Module**: `' + module + '`'
+                                            text += '\n**Description**: '
+                                            text += desc
+                                            if args:
+                                                text += '\n**Arguments**: `' + args + '`'
+                                            subcommands = set()
+                                            if len(HELP)>1:
+                                                text += '\n**Subcommmands**: '
+                                            for subcommand in HELP:
+                                                if subcommand != 'DEFAULT':
+                                                    subcommands.add(subcommand)
+                                            if len(subcommands)>0:
+                                                text += '`' + '`, `'.join(subcommands) + '`'
+                                    else:
+                                        subcommand = params[1]
+                                        if subcommand in HELP:
+                                            args = HELP[subcommand]['args'] if HELP[subcommand]['args'] else None
+                                            desc = HELP[subcommand]['desc']
+                                            text += '**Module**: `' + module + '`/`' + subcommand + '`'
+                                            text += '\n**Description**: '
+                                            text += desc
+                                            if args:
+                                                text += '\n**Arguments**: `' + args + '`'
+                                    if len(text)>0:
+                                        await self.send_message(channelid, text)
+                                except NameError:
+                                    await self.send_message(channelid, 'No additional help available for the `' + module + '` module.')
+            # Normal command
+            if command != '!help':
+                tasks = []
+                for module in self.commands:
+                    for chan in self.commands[module]['chans']:
                         if command in self.commands[module]['binds']:
-                            result = await self.commands[module]['process'](command, channelname, username, params)
+                            tasks.append(module)
+                if len(tasks):
+                    try:
+                        results = []
+                        with concurrent.futures.ThreadPoolExecutor(max_workers=None) as executor:
+                            for task in tasks:
+                                results.append(executor.submit(self.commands[task]['process'], command, channelname, username, params))
+                        for _ in concurrent.futures.as_completed(results):
+                            result = _.result()
                             if result and 'messages' in result:
                                 for message in result['messages']:
                                     if 'text' in message:
@@ -200,6 +217,9 @@ class MattermostManager(object):
                                             await self.send_message(channelid, text)
                                     else:
                                         await self.send_message(channelid, text)
+                    except Exception as e:
+                        text = 'A Python error occurred: '+str(type(e))+': '+str(e)
+                        await self.send_message(channelid, text)
 
 if __name__ == '__main__' :
     '''

@@ -2,11 +2,11 @@
 
 import collections
 import datetime
-import httpx
 import json
 import math
 import random
 import re
+import requests
 from pathlib import Path
 try:
     from commands.censys import defaults as settings
@@ -21,7 +21,7 @@ else:
         except ModuleNotFoundError: # local test run
             import settings
 
-async def process(command, channel, username, params):
+def process(command, channel, username, params):
     stripchars = '`\n\r\'\"'
     regex = re.compile('[%s]' % stripchars)
     if len(params)>0:
@@ -44,8 +44,7 @@ async def process(command, channel, username, params):
                 if re.search(r"^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(\:[0-65535]*)?$", ip):
                     text = 'Censys `%s` search for `%s`: ' % (querytype, ip)
                     APIENDPOINT = settings.APIURL['censys']['url'] + '/hosts/%s' % (ip,)
-                    async with httpx.AsyncClient(headers=headers) as session:
-                        response = await session.get(APIENDPOINT, auth=(settings.APIURL['censys']['key'], settings.APIURL['censys']['secret']))
+                    with requests.get(APIENDPOINT, auth=(settings.APIURL['censys']['key'], settings.APIURL['censys']['secret']), headers=headers) as response:
                         json_response = response.json()
                         if 'error' in json_response:
                             error = json_response['error']
@@ -124,9 +123,7 @@ async def process(command, channel, username, params):
                 if (re.search(r"^[A-Fa-f0-9]{64}$", sha256)):
                     text = '\n**Censys SHA256 certificate fingerprint search for**: `%s`' % (sha256,)
                     APIENDPOINT = settings.APIURL['censys']['url'] + '/certificates/' + sha256 + '/hosts'
-                    async with httpx.AsyncClient(headers=headers) as session:
-                        # Replace /v2 with /v1
-                        response = await session.get(APIENDPOINT, auth=(settings.APIURL['censys']['key'], settings.APIURL['censys']['secret']))
+                    with requests.get(APIENDPOINT, auth=(settings.APIURL['censys']['key'], settings.APIURL['censys']['secret']), headers=headers) as response:
                         json_response = response.json()
                         if 'error' in json_response:
                             error = json_response['error']
@@ -169,7 +166,7 @@ async def process(command, channel, username, params):
                                                 page += 1
                                                 cursor = result['links']['next']
                                                 APIENDPOINT = settings.APIURL['censys']['url'] + '/certificates/' + sha256 + '/hosts&cursor=' + cursor
-                                                response = await session.get(APIENDPOINT, auth=(settings.APIURL['censys']['key'], settings.APIURL['censys']['secret']))
+                                                response = requests.get(APIENDPOINT, auth=(settings.APIURL['censys']['key'], settings.APIURL['censys']['secret']))
                                                 uploads.append({'filename': 'censys-'+querytype+'-page-'+str(page)+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content})
                                                 json_response = response.json()
                                                 result = json_response['result']
@@ -187,9 +184,7 @@ async def process(command, channel, username, params):
                     messages.append({'text': 'Censys error: invalid SHA256 fingerprint `%s`' % (params,)})
             if querytype == 'credits':
                 APIENDPOINT = settings.APIURL['censys']['url'].replace('/v2', '/v1') + '/account'
-                async with httpx.AsyncClient(headers=headers) as session:
-                    # Replace /v2 with /v1
-                    response = await session.get(APIENDPOINT, auth=(settings.APIURL['censys']['key'], settings.APIURL['censys']['secret']))
+                with requests.get(APIENDPOINT, auth=(settings.APIURL['censys']['key'], settings.APIURL['censys']['secret']), headers=headers) as response:
                     json_response = response.json()
                     if 'error' in json_response:
                         error = json_response['error']

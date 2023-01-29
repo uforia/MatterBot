@@ -2,7 +2,6 @@
 
 # Note: this module assumes you're using a Microsoft Azure Search index (https://...search.windows.net)
 
-import aiohttp
 from azure.core.credentials import AzureKeyCredential
 from azure.search.documents import SearchClient
 from pathlib import Path
@@ -19,7 +18,7 @@ else:
         except ModuleNotFoundError: # local test run
             import settings
 
-async def process(command, channel, username, params):
+def process(command, channel, username, params):
     if len(params)>0:
         credential = AzureKeyCredential(settings.APIKEY)
         client = SearchClient(endpoint=settings.APIENDPOINT,

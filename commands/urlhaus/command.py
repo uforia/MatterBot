@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-import httpx
 import json
 import re
+import requests
 from pathlib import Path
 try:
     from commands.urlhaus import defaults as settings
@@ -17,7 +17,7 @@ else:
         except ModuleNotFoundError: # local test run
             import settings
 
-async def process(command, channel, username, params):
+def process(command, channel, username, params):
     if len(params)>0:
         params = params[0].replace('[', '').replace(']', '').replace('hxxp','http')
         headers = {
@@ -42,8 +42,7 @@ async def process(command, channel, username, params):
                 data = { 'url': params }
                 type = 'url'
             if type == 'url':
-                async with httpx.AsyncClient() as session:
-                    response = await session.post(settings.APIURL['urlhaus']['url'], data=data)
+                with requests.post(settings.APIURL['urlhaus']['url'], data=data) as response:
                     json_response = response.json()
                     if json_response['query_status'] == 'ok':
                         urlhaus_reference = json_response['urlhaus_reference']
@@ -73,8 +72,7 @@ async def process(command, channel, username, params):
                         {'text': message.strip()},
                     ]}
             if type == 'hash':
-                async with httpx.AsyncClient() as session:
-                    response = await session.post(settings.APIURL['urlhaus']['payload'], data=data)
+                with requests.post(settings.APIURL['urlhaus']['payload'], data=data) as response:
                     json_response = response.json()
                     if json_response['query_status'] == 'ok':
                         urls = json_response['urls']

@@ -2,12 +2,12 @@
 
 import collections
 import graphviz
-import httpx
 import itertools
 import json
 import os
 import pprint
 import re
+import requests
 import urllib
 from pathlib import Path
 try:
@@ -26,7 +26,7 @@ else:
             import defaults
             import settings
 
-async def process(command, channel, username, params):
+def process(command, channel, username, params):
     messages = []
     querytypes = ('search', 'mitre', 'actoroverlap', 'ttpoverlap')
     querytype = params[0].strip()
@@ -53,8 +53,7 @@ async def process(command, channel, username, params):
                     searchterms = '&params='.join([urllib.parse.quote(_) for _ in keywords])
                     if re.search(r"[\w\s,.\+\-]+", searchterms):
                         APIENDPOINT = settings.APIURL['attackmatrix']['url']+'/search?params='+searchterms
-                        async with httpx.AsyncClient(headers=headers) as session:
-                            response = await session.get(APIENDPOINT)
+                        with requests.get(APIENDPOINT, headers=headers) as response:
                             json_response = response.json()
                             if json_response != 'null':
                                 text = "AttackMatrix API search results for: `%s`\n" % ('`, `'.join(keywords))
@@ -89,9 +88,8 @@ async def process(command, channel, username, params):
                     mitreid = keywords[0].upper()
                     if re.search(r"^[GMST][0-9]{4}(\.[0-9]{3})?$|^[T][A][0-9]{4}$", mitreid):
                         for category in categories:
-                            async with httpx.AsyncClient(headers=headers) as session:
-                                APIENDPOINT = settings.APIURL['attackmatrix']['url']+'/explore/'+category+'/'+mitreid
-                                response = await session.get(APIENDPOINT)
+                            APIENDPOINT = settings.APIURL['attackmatrix']['url']+'/explore/'+category+'/'+mitreid
+                            with requests.get(APIENDPOINT, headers=headers) as response:
                                 json_response = response.json()
                                 result = False
                                 if len(json_response)>0:
@@ -131,8 +129,7 @@ async def process(command, channel, username, params):
                     if re.search(r"[\w\s,.\+\-]+", searchterms):
                         text = None
                         APIENDPOINT = settings.APIURL['attackmatrix']['url']+'/actoroverlap?actors='+searchterms
-                        async with httpx.AsyncClient(headers=headers) as session:
-                            response = await session.get(APIENDPOINT)
+                        with requests.get(APIENDPOINT, headers=headers) as response:
                             json_response = response.json()
                             if len(json_response)>0:
                                 if 'error' in json_response:
@@ -166,8 +163,7 @@ async def process(command, channel, username, params):
                                     for actor in keywords:
                                         actorttps[actor] = {}
                                         APIENDPOINT = settings.APIURL['attackmatrix']['url']+'/explore/Actors/'+actor
-                                        async with httpx.AsyncClient(headers=headers) as session:
-                                            response = await session.get(APIENDPOINT)
+                                        with requests.get(APIENDPOINT, headers=headers) as response:
                                             json_response = response.json()
                                             for commonttpcategory in commonttps:
                                                 if commonttpcategory in commonttps:
@@ -252,8 +248,7 @@ async def process(command, channel, username, params):
                     if re.search(r"[\w\s,.\+\-]+", searchterms):
                         text = None
                         APIENDPOINT = settings.APIURL['attackmatrix']['url']+'/ttpoverlap?ttps='+searchterms
-                        async with httpx.AsyncClient(headers=headers) as session:
-                            response = await session.get(APIENDPOINT)
+                        with requests.get(APIENDPOINT, headers=headers) as response:
                             json_response = response.json()
                             if len(json_response)>0:
                                 count = len(json_response)

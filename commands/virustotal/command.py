@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
 import base64
-import httpx
 import json
 import random
 import re
+import requests
 from pathlib import Path
 try:
     from commands.virustotal import defaults as settings
@@ -19,7 +19,7 @@ else:
         except ModuleNotFoundError: # local test run
             import settings
 
-async def process(command, channel, username, params):
+def process(command, channel, username, params):
     if len(params)>0:
         params = params[0].replace('[', '').replace(']', '').replace('hxxp','http')
         headers = {
@@ -52,8 +52,7 @@ async def process(command, channel, username, params):
                 APIENDPOINT = settings.APIURL['virustotal']['url'] + 'domains/%s' % (params,)
             if querytype:
                 uploads = []
-                async with httpx.AsyncClient(headers=headers) as session:
-                    response = await session.get(APIENDPOINT)
+                with requests.get(APIENDPOINT, headers=headers) as response:
                     json_response = response.json()
                     if 'data' in json_response:
                         data = json_response['data']
@@ -87,8 +86,7 @@ async def process(command, channel, username, params):
                                     for crowdsourced_yara_result in attributes['crowdsourced_yara_results']:
                                         if crowdsourced_yara_result['source'] == 'https://malpedia.caad.fkie.fraunhofer.de/':
                                             ruleset_name = crowdsourced_yara_result['ruleset_name'].replace('_auto','')
-                                            async with httpx.AsyncClient(headers=malpedia_headers) as session:
-                                                response = await session.get(settings.APIURL['malpedia']['url'] + '/' + ruleset_name + '/zip')
+                                            with requests.get(settings.APIURL['malpedia']['url'] + '/' + ruleset_name + '/zip', headers=malpedia_headers) as response:
                                                 if response.content:
                                                     bytes = response.content
                                                     if len(bytes)>0:
@@ -111,8 +109,7 @@ async def process(command, channel, username, params):
                                     else:
                                         verdict = 'safe'
                                     text += '\n - Maliciousness: `' + verdict + '` (' + str(probability) + '%)'
-                                    async with httpx.AsyncClient(headers=headers) as session:
-                                        response = await session.get(APIENDPOINT + '/behaviour_mitre_trees')
+                                    with requests.get(APIENDPOINT + '/behaviour_mitre_trees', headers=headers) as response:
                                         json_response = response.json()
                                         mitre_tree_names = ('Malwares', 'Subtechniques', 'Techniques', 'Tools')
                                         if 'data' in json_response:

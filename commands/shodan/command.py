@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
 import datetime
-import httpx
 import json
 import math
 import random
 import re
+import requests
 import urllib
 from pathlib import Path
 try:
@@ -21,7 +21,7 @@ else:
         except ModuleNotFoundError: # local test run
             import settings
 
-async def process(command, channel, username, params):
+def process(command, channel, username, params):
     # Methods to query the current API account info (credits etc.)
     querytypes = ['ip', 'credits', 'host', 'count', 'search']
     stripchars = '`\n\r\'\"'
@@ -51,8 +51,7 @@ async def process(command, channel, username, params):
                 text = 'Shodan `%s` search for `%s`: ' % (querytype, ip)
                 if re.search(r"^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(\:[0-65535]*)?$", ip):
                     APIENDPOINT = settings.APIURL['shodan']['url'] + '/shodan/host/%s?key=%s' % (ip, apikey)
-                    async with httpx.AsyncClient(headers=headers) as session:
-                        response = await session.get(APIENDPOINT)
+                    with requests.get(APIENDPOINT, headers=headers) as response:
                         json_response = response.json()
                         if 'error' in json_response:
                             error = json_response['error']
@@ -109,8 +108,7 @@ async def process(command, channel, username, params):
                 text = 'Shodan `%s` search for `%s`:' % (querytype, host)
                 if re.search(r"^(((?!\-))(xn\-\-)?[a-z0-9\-_]{0,61}[a-z0-9]{1,1}\.)*(xn\-\-)?([a-z0-9\-]{1,61}|[a-z0-9\-]{1,30})\.[a-z]{2,}$", host):
                     APIENDPOINT = settings.APIURL['shodan']['url'] + '/shodan/host/search?key=%s&query=%s' % (apikey, host)
-                    async with httpx.AsyncClient(headers=headers) as session:
-                        response = await session.get(APIENDPOINT)
+                    with requests.get(APIENDPOINT, headers=headers) as response:
                         json_response = response.json()
                         if 'total' in json_response:
                             total = json_response['total']
@@ -196,8 +194,7 @@ async def process(command, channel, username, params):
                     facets = urllib.parse.quote(','.join(facets))
                     APIENDPOINT += '&facets=' + facets
                     text += ', facets: `' + urllib.parse.unquote(facets) + '`'
-                async with httpx.AsyncClient(headers=headers) as session:
-                    response = await session.get(APIENDPOINT)
+                with requests.get(APIENDPOINT, headers=headers) as response:
                     json_response = response.json()
                     if 'error' in json_response:
                         error = json_response['error']
@@ -299,8 +296,7 @@ async def process(command, channel, username, params):
                 table_header_displayed = False
                 for page in range(1,pages+1):
                     PAGEENDPOINT = APIENDPOINT+'&page='+str(page) if page>1 else APIENDPOINT
-                    async with httpx.AsyncClient(headers=headers) as session:
-                        response = await session.get(PAGEENDPOINT)
+                    with requests.get(PAGEENDPOINT, headers=headers) as response:
                         json_response = response.json()
                         if 'error' in json_response:
                             error = json_response['error']
@@ -359,8 +355,7 @@ async def process(command, channel, username, params):
             if querytype == 'credits':
                 text = 'Shodan API account credits (remaining/total):'
                 APIENDPOINT = settings.APIURL['shodan']['url'] + '/api-info?key=%s' % (apikey,)
-                async with httpx.AsyncClient(headers=headers) as session:
-                    response = await session.get(APIENDPOINT)
+                with requests.get(APIENDPOINT, headers=headers) as response:
                     json_response = response.json()
                     if 'error' in json_response:
                         error = json_response['error']

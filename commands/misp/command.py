@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-import aiohttp
 import json
 import pymisp
+import requests
 from pathlib import Path
 try:
     from commands.misp import defaults as settings
@@ -21,7 +21,7 @@ else:
         except ModuleNotFoundError: # local test run
             import settings
 
-async def process(command, channel, username, params):
+def process(command, channel, username, params):
     if len(params)>0:
         params = ' '.join(params).replace('[', '').replace(']', '').replace('hxxp','http')
         headers = {
@@ -31,23 +31,22 @@ async def process(command, channel, username, params):
             "enforceWarninglist": "1",
         }
         data = '{"returnformat":"json", "value":"%s"}' % (params,)
-        async with aiohttp.ClientSession(headers=headers) as session:
-            async with session.post(settings.APIENDPOINT, data=data) as response:
-                answer = await response.json()
-                results = answer['response']['Attribute']
-                resultset = set()
-                if len(results)>0:
-                    message = 'MISP search for `%s`:\n' % (params,)
-                    for result in results:
-                        line = '- `' + result['Event']['info'].replace('\n', ' ') + '`: ' + settings.APIURL + '/events/view/' + result['event_id'] + '\n'
-                        if line not in resultset:
-                            resultset.add(line)
-                            message += line
-                else:
-                    message = 'MISP search for `%s` returned no results.' % (params,)
-                return {'messages': [
-                    {'text': message.strip()},
-                ]}
+        with requests.post(settings.APIENDPOINT, data=data, headers=headers) as response:
+            answer = response.json()
+            results = answer['response']['Attribute']
+            resultset = set()
+            if len(results)>0:
+                message = 'MISP search for `%s`:\n' % (params,)
+                for result in results:
+                    line = '- `' + result['Event']['info'].replace('\n', ' ') + '`: ' + settings.APIURL + '/events/view/' + result['event_id'] + '\n'
+                    if line not in resultset:
+                        resultset.add(line)
+                        message += line
+            else:
+                message = 'MISP search for `%s` returned no results.' % (params,)
+            return {'messages': [
+                {'text': message.strip()},
+            ]}
     else:
         return {'messages': [
             {'text': 'At least ask me something, %s!' % (username,)}

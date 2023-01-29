@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-import httpx
 import json
 import re
+import requests
 from pathlib import Path
 try:
     from commands.threatfox import defaults as settings
@@ -17,7 +17,7 @@ else:
         except ModuleNotFoundError: # local test run
             import settings
 
-async def process(command, channel, username, params):
+def process(command, channel, username, params):
     if len(params)>0:
         params = params[0].replace('[', '').replace(']', '').replace('hxxp','http')
         headers = {
@@ -44,8 +44,7 @@ async def process(command, channel, username, params):
                     'hash': params,
                 }
             if data:
-                async with httpx.AsyncClient() as session:
-                    response = await session.post(settings.APIURL['threatfox']['url'], json=data)
+                with requests.post(settings.APIURL['threatfox']['url'], data=data, headers=headers) as response:
                     json_response = response.json()
                     if json_response['query_status'] == 'ok':
                         if 'data' in json_response:

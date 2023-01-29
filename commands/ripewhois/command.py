@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-import httpx
 import json
 import re
+import requests
 from pathlib import Path
 try:
     from commands.ripewhois import defaults as settings
@@ -17,7 +17,7 @@ else:
         except ModuleNotFoundError: # local test run
             import settings
 
-async def process(command, channel, username, params):
+def process(command, channel, username, params):
     if len(params)>0:
         params = params[0].replace('[', '').replace(']', '').replace('hxxp','http')
         headers = {
@@ -28,8 +28,7 @@ async def process(command, channel, username, params):
             if re.search(r"^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(\:[0-65535]*)?$", params):
                 data = params.split(':')[0]
             if data:
-                async with httpx.AsyncClient() as session:
-                    response = await session.get(settings.APIURL['ripewhois']['url'] + data)
+                with requests.get(settings.APIURL['ripewhois']['url'] + data) as response:
                     json_response = response.json()
                     message = 'RIPE WHOIS lookup for `%s`' % (params,)
                     if 'status' in json_response:

@@ -3,13 +3,7 @@
 # GENERAL INFORMATION
 #
 # This is an example module that responds to various forms of 'hello'. It describes the basics
-# needed to create your own Mattermost channel binds and handlers. Nearly every function your
-# own module implements will need to use AsyncIO (await ..., etc.). If you intend to do HTTP
-# requests from your own module, it is strongly recommended to use HTTPX, as AIOHTTP has known
-# issues with mangling a POST body, certain headers/cookies, etc. This may cause unpredictable
-# behaviour when communicating with APIs that are not 'lenient' with the requests they accept.
-# Please note: the AsyncIO nature of this bot means that you should not use library functions
-# that are 'blocking (do not support async operation), such as the Python 'requests' module.
+# needed to create your own Mattermost channel binds and handlers.
 #
 # BASIC SETUP
 #
@@ -81,7 +75,7 @@ else:
         except ModuleNotFoundError: # local test run
             import settings
 
-async def process(command, channel, username, params):
+def process(command, channel, username, params):
     return {'messages': [
         {'text': 'Hello %s!' % (username,)}
     ]}

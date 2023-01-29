@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 
-import aiofiles
-import httpx
 import json
 import os
 import re
+import requests
 from pathlib import Path
 try:
     from commands.unprotectit import defaults as settings
@@ -22,7 +21,7 @@ else:
             import defaults
             import settings
 
-async def process(command, channel, username, params):
+def process(command, channel, username, params):
     if len(params):
         stripchars = ' `\n\r\'\"'
         regex = re.compile('[%s]' % stripchars)
@@ -33,8 +32,7 @@ async def process(command, channel, username, params):
             if os.path.isfile(settings.CACHE):
                 page = 1
                 techniques = {'techniques': []}
-                async with httpx.AsyncClient(headers=headers) as session:
-                    response = await session.get(settings.APIURL['unprotectit']['url'])
+                with requests.get(settings.APIURL['unprotectit']['url'], headers=headers) as response:
                     json_response = response.json()
                     if 'count' in json_response:
                         if 'results' in json_response:
@@ -45,8 +43,8 @@ async def process(command, channel, username, params):
                         if 'next' in json_response:
                             nextpage = json_response['next']
                             while nextpage:
-                                async with httpx.AsyncClient(headers=headers) as session:
-                                    response = await session.get(nextpage)
+                                print(nextpage)
+                                with requests.get(nextpage, headers=headers) as response:
                                     json_response = response.json()
                                     if 'count' in json_response:
                                         if 'results' in json_response:
@@ -56,9 +54,9 @@ async def process(command, channel, username, params):
                                             if 'next' in json_response:
                                                 nextpage = json_response['next']
                 if len(techniques):
-                    async with aiofiles.open(settings.CACHE, mode='w') as f:
+                    with open(settings.CACHE, mode='w') as f:
                         cache = json.dumps(techniques)
-                        await f.write(cache)
+                        f.write(cache)
                         text = "Unprotect.it cache rebuilt."
                         return {'messages': [
                             {'text': text},
@@ -71,14 +69,13 @@ async def process(command, channel, username, params):
             # perform the search query. Otherwise, build the cache first and then do
             # the search.
             if os.path.isfile(settings.CACHE):
-                async with aiofiles.open(settings.CACHE, mode='r') as f:
-                    cache = await f.read()
+                with open(settings.CACHE, mode='r') as f:
+                    cache = f.read()
                     techniques = json.loads(cache)
                     source = 'cache'
             else:
                 page = 1
-                async with httpx.AsyncClient(headers=headers) as session:
-                    response = await session.get(settings.APIURL['unprotectit']['url'])
+                with requests.get(settings.APIURL['unprotectit']['url'], headers=headers) as response:
                     json_response = response.json()
                     if 'count' in json_response:
                         if 'results' in json_response:
@@ -89,8 +86,7 @@ async def process(command, channel, username, params):
                         if 'next' in json_response:
                             nextpage = json_response['next']
                             while nextpage:
-                                async with httpx.AsyncClient(headers=headers) as session:
-                                    response = await session.get(nextpage)
+                                with requests.get(nextpage, headers=headers) as response:
                                     json_response = response.json()
                                     if 'count' in json_response:
                                         if 'results' in json_response:
@@ -101,9 +97,9 @@ async def process(command, channel, username, params):
                                                 nextpage = json_response['next']
                         source = 'website'
                 if len(techniques):
-                    async with aiofiles.open(settings.CACHE, mode='w') as f:
+                    with open(settings.CACHE, mode='w') as f:
                         cache = json.dumps(techniques)
-                        await f.write(cache)
+                        f.write(cache)
             text = 'Unprotect.it results for `' + '`, `'.join(params) + '`:\n'
             text += '*(Loaded ' + str(len(techniques['techniques'])) + ' techniques from ' + source + ')*'
             messages.append({'text': text})
