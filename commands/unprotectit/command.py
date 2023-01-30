@@ -125,15 +125,14 @@ def process(command, channel, username, params):
                 for snippet in technique['snippets']:
                     snippet_description = snippet['description']
                     snippet_plain_code = snippet['plain_code']
-                    codesnippet = '\n**Code Snippet**: `' + snippet_description + '`\n'
                     snippet_code_class = regex.sub('', snippet['language']['code_class'])
                     if not snippet_code_class in defaults.LANGS:
-                        snippet_code_class = ''
-                    snippets.append(
-                        codesnippet +
-                        '\n  ```' + snippet_code_class + '\n' +
-                        snippet_plain_code + '\n```'
-                    )
+                        snippet_code_class = 'unknown-language'
+                    snippets.append({
+                        'name': snippet_description,
+                        'lang': snippet_code_class,
+                        'code': snippet_plain_code,
+                    })
                 detection_rules = []
                 rules = []
                 for detection_rule in technique['detection_rules']:
@@ -152,7 +151,7 @@ def process(command, channel, username, params):
                     all(param in description for param in params),
                     all(param in ' '.join(resources) for param in params),
                     all(param in ' '.join(tags) for param in params),
-                    all(param in ' '.join(snippets) for param in params),
+                    all(param in ' '.join([snippet['name']+snippet['code'] for snippet in snippets]) for param in params),
                     all(param in ' '.join(detection_rules) for param in params),
                     ]):
                     results += 1
@@ -164,12 +163,7 @@ def process(command, channel, username, params):
                         for id in ids:
                             text += '[' + id + ']('
                             if id.startswith('T'):
-                                techniquetype = 'Techniques'
-                                if '.' in id:
-                                    techniquetype = 'Subtechniques'
-                                text += settings.APIURL['attackmatrix']['url']
-                                text += '&cat=' + techniquetype
-                                text += '&id=' + id
+                                text += settings.APIURL['attackmatrix']['url'] + '/Techniques/' + id
                             else:
                                 text += 'https://unprotect.it/search/?keyword=' + id
                             text += '), '
@@ -183,7 +177,16 @@ def process(command, channel, username, params):
                     text = text[:-2]
                     messages.append({'text': text})
                     for snippet in snippets:
-                        messages.append({'text': snippet})
+                        snippetname = snippet['name']
+                        snippetlang = snippet['lang']
+                        snippetcode = snippet['code']
+                        uploads = [{'filename': 'Unprotectit-'+regex.sub('_', name).lower()+'-'+snippetlang+'-sample.txt',
+                                    'bytes': snippetcode.encode()}]
+                        messages.append({
+                            'text': name,
+                            'uploads': uploads,
+                        })
+                    uploads = []
                     for rule in rules:
                         name = rule['name']
                         rule = rule['rule']

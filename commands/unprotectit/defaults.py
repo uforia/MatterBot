@@ -4,7 +4,7 @@ BINDS = ['@upi', '@ttp']
 CHANS = ['debug']
 APIURL = {
     'unprotectit':   {'url': 'https://unprotect.it/api/techniques/'},
-    'attackmatrix':  {'url': 'https://www.valethosting.net/~penguin/attackmap/attackmap.php?q=explore&matrix=Enterprise'},
+    'attackmatrix':  {'url': 'http://149.210.137.179:8008/api/explore'},
 }
 CONTENTTYPE = 'application/json'
 CACHE = 'unprotectit.json'
