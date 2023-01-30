@@ -183,7 +183,7 @@ def process(command, channel, username, params):
                         uploads = [{'filename': 'Unprotectit-'+regex.sub('_', name).lower()+'-'+snippetlang+'-sample.txt',
                                     'bytes': snippetcode.encode()}]
                         messages.append({
-                            'text': name,
+                            'text': '**Example Code for**: '+name+'\n**Language**: '+snippetlang+'\n',
                             'uploads': uploads,
                         })
                     uploads = []
