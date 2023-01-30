@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import aiofiles
 import ast
 import asyncio
 import concurrent.futures
@@ -10,6 +9,7 @@ import importlib.util
 import json
 import logging
 import os
+import pyinotify
 import sys
 import tempfile
 
@@ -183,7 +183,8 @@ class MattermostManager(object):
                     if command in self.commands[module]['binds']:
                         for chan in self.commands[module]['chans']:
                             if channelname == chan or (((my_id and userid) in channelname) and chan in userchannels):
-                                tasks.append(module)
+                                if not module in tasks:
+                                    tasks.append(module)
                 if len(tasks):
                     try:
                         results = []
