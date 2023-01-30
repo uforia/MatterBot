@@ -138,7 +138,7 @@ class MattermostManager(object):
             else:
                 # User is asking for specific module help
                 for module in self.commands:
-                    if chan in self.commands[module]['chans'] or (((my_id and userid) in channelname) and chan in userchannels):
+                    if channelname in self.commands[module]['chans'] or (((my_id and userid) in channelname) and channelname in userchannels):
                         if command == '!help' and params and params[0] in self.commands[module]['binds']:
                             try:
                                 text = ''
@@ -180,7 +180,7 @@ class MattermostManager(object):
                 tasks = []
                 for module in self.commands:
                     if command in self.commands[module]['binds']:
-                        if chan in self.commands[module]['chans'] or (((my_id and userid) in channelname) and chan in userchannels):
+                        if channelname in self.commands[module]['chans'] or (((my_id and userid) in channelname) and channelname in userchannels):
                             if not module in tasks:
                                 tasks.append(module)
                 if len(tasks):
