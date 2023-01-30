@@ -138,53 +138,51 @@ class MattermostManager(object):
             else:
                 # User is asking for specific module help
                 for module in self.commands:
-                    if chan in self.commands[module]['chans']:
-                        if channelname == chan or (((my_id and userid) in channelname) and chan in userchannels):
-                            if command == '!help' and params and params[0] in self.commands[module]['binds']:
-                                try:
-                                    text = ''
-                                    HELP = self.commands[module]['help']
-                                    if len(params)==1:
-                                        if 'DEFAULT' in HELP:
-                                            # Trigger the default help message
-                                            args = HELP['DEFAULT']['args'] if HELP['DEFAULT']['args'] else None
-                                            desc = HELP['DEFAULT']['desc']
-                                            text += '**Module**: `' + module + '`'
-                                            text += '\n**Description**: '
-                                            text += desc
-                                            if args:
-                                                text += '\n**Arguments**: `' + args + '`'
-                                            subcommands = set()
-                                            if len(HELP)>1:
-                                                text += '\n**Subcommmands**: '
-                                            for subcommand in HELP:
-                                                if subcommand != 'DEFAULT':
-                                                    subcommands.add(subcommand)
-                                            if len(subcommands)>0:
-                                                text += '`' + '`, `'.join(subcommands) + '`'
-                                    else:
-                                        subcommand = params[1]
-                                        if subcommand in HELP:
-                                            args = HELP[subcommand]['args'] if HELP[subcommand]['args'] else None
-                                            desc = HELP[subcommand]['desc']
-                                            text += '**Module**: `' + module + '`/`' + subcommand + '`'
-                                            text += '\n**Description**: '
-                                            text += desc
-                                            if args:
-                                                text += '\n**Arguments**: `' + args + '`'
-                                    if len(text)>0:
-                                        await self.send_message(channelid, text)
-                                except NameError:
-                                    await self.send_message(channelid, 'No additional help available for the `' + module + '` module.')
+                    if chan in self.commands[module]['chans'] or (((my_id and userid) in channelname) and chan in userchannels):
+                        if command == '!help' and params and params[0] in self.commands[module]['binds']:
+                            try:
+                                text = ''
+                                HELP = self.commands[module]['help']
+                                if len(params)==1:
+                                    if 'DEFAULT' in HELP:
+                                        # Trigger the default help message
+                                        args = HELP['DEFAULT']['args'] if HELP['DEFAULT']['args'] else None
+                                        desc = HELP['DEFAULT']['desc']
+                                        text += '**Module**: `' + module + '`'
+                                        text += '\n**Description**: '
+                                        text += desc
+                                        if args:
+                                            text += '\n**Arguments**: `' + args + '`'
+                                        subcommands = set()
+                                        if len(HELP)>1:
+                                            text += '\n**Subcommmands**: '
+                                        for subcommand in HELP:
+                                            if subcommand != 'DEFAULT':
+                                                subcommands.add(subcommand)
+                                        if len(subcommands)>0:
+                                            text += '`' + '`, `'.join(subcommands) + '`'
+                                else:
+                                    subcommand = params[1]
+                                    if subcommand in HELP:
+                                        args = HELP[subcommand]['args'] if HELP[subcommand]['args'] else None
+                                        desc = HELP[subcommand]['desc']
+                                        text += '**Module**: `' + module + '`/`' + subcommand + '`'
+                                        text += '\n**Description**: '
+                                        text += desc
+                                        if args:
+                                            text += '\n**Arguments**: `' + args + '`'
+                                if len(text)>0:
+                                    await self.send_message(channelid, text)
+                            except NameError:
+                                await self.send_message(channelid, 'No additional help available for the `' + module + '` module.')
             # Normal command
             if command != '!help':
                 tasks = []
                 for module in self.commands:
                     if command in self.commands[module]['binds']:
-                        if chan in self.commands[module]['chans']:
-                            if channelname == chan or (((my_id and userid) in channelname) and chan in userchannels):
-                                if not module in tasks:
-                                    tasks.append(module)
+                        if chan in self.commands[module]['chans'] or (((my_id and userid) in channelname) and chan in userchannels):
+                            if not module in tasks:
+                                tasks.append(module)
                 if len(tasks):
                     try:
                         results = []
