@@ -180,9 +180,10 @@ class MattermostManager(object):
             if command != '!help':
                 tasks = []
                 for module in self.commands:
-                    for chan in self.commands[module]['chans']:
-                        if command in self.commands[module]['binds']:
-                            tasks.append(module)
+                    if command in self.commands[module]['binds']:
+                        for chan in self.commands[module]['chans']:
+                            if channelname == chan or (((my_id and userid) in channelname) and chan in userchannels):
+                                tasks.append(module)
                 if len(tasks):
                     try:
                         results = []
