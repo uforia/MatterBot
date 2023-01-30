@@ -23,7 +23,7 @@ else:
 
 def process(command, channel, username, params):
     # Methods to query the current API account info (credits etc.)
-    querytypes = ['ip', 'credits', 'host', 'count', 'search']
+    querytypes = ['ip', 'credits', 'account', 'host', 'count', 'search']
     stripchars = '`\n\r\'\"'
     regex = re.compile('[%s]' % stripchars)
     if len(params)>0:
@@ -352,7 +352,7 @@ def process(command, channel, username, params):
                             messages.append({'text': 'Shodan JSON output:', 'uploads': uploads})
                         elif page==1:
                             messages.append({'text': '\nNo matches.'})
-            if querytype == 'credits':
+            if querytype == 'credits' or querytype == 'account':
                 text = 'Shodan API account credits (remaining/total):'
                 APIENDPOINT = settings.APIURL['shodan']['url'] + '/api-info?key=%s' % (apikey,)
                 with requests.get(APIENDPOINT, headers=headers) as response:

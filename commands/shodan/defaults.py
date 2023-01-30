@@ -26,6 +26,10 @@ HELP = {
         'args': None,
         'desc': 'Display the Shodan account credits and status.',
     },
+    'account': {
+        'args': None,
+        'desc': 'Display the Shodan account credits and status.',
+    },
     'count': {
         'args': 'query:<word1,word2,...> [filters:<...,...>] [facets:<...,...>] ',
         'desc': 'The provided `word#N` fields are used to search the database of banners in Shodan, '

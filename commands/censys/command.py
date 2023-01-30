@@ -182,7 +182,7 @@ def process(command, channel, username, params):
 
                 else:
                     messages.append({'text': 'Censys error: invalid SHA256 fingerprint `%s`' % (params,)})
-            if querytype == 'credits':
+            if querytype == 'credits' or querytype == 'account':
                 APIENDPOINT = settings.APIURL['censys']['url'].replace('/v2', '/v1') + '/account'
                 with requests.get(APIENDPOINT, auth=(settings.APIURL['censys']['key'], settings.APIURL['censys']['secret']), headers=headers) as response:
                     json_response = response.json()

@@ -27,4 +27,8 @@ HELP = {
         'args': None,
         'desc': 'Display your Censys account information.',
     },
+    'account': {
+        'args': None,
+        'desc': 'Display your Censys account information.',
+    },
 }
