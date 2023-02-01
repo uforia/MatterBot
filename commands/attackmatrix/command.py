@@ -68,9 +68,9 @@ def process(command, channel, username, params):
                                         for entry in sorted(json_response[category]):
                                             jsonentry = json_response[category][entry]
                                             numresults += 1
-                                            name = regex.sub(' ', ' '.join(jsonentry['Metadata']['name']))
-                                            description = regex.sub(' ', ' '.join(jsonentry['Metadata']['description']))
-                                            url = regex.sub(' ', ' '.join(jsonentry['Metadata']['url']))
+                                            name = regex.sub(' ', ', '.join(jsonentry['Metadata']['name']))
+                                            description = regex.sub(' ', ', '.join(jsonentry['Metadata']['description']))
+                                            url = regex.sub(' ', ', '.join(jsonentry['Metadata']['url']))
                                             if len(description)>80:
                                                 description = description[:80]+' ...'
                                             table += '| '+entry+' | '+name+' | '+description+' | '+url+' |\n'
