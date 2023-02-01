@@ -65,7 +65,7 @@ def process(command, channel, username, params):
                                         table = '\n\n'
                                         table += '| **MITRE ID** | **'+category+'** | **Description** | **URL** |\n'
                                         table += '|:- |:- |:- |:- |\n'
-                                        for entry in json_response[category]:
+                                        for entry in sorted(json_response[category]):
                                             jsonentry = json_response[category][entry]
                                             numresults += 1
                                             name = regex.sub(' ', ' '.join(jsonentry['Metadata']['name']))
