@@ -3,7 +3,7 @@
 BINDS = ['@misp', '@ioc']
 CHANS = ['debug']
 APIURL = '<your-MISP-instance>'
-APIENDPOINT = APIURL + '/attributes/restSearch'
+APIENDPOINT = '<your-MISP-instance>/attributes/restSearch'
 APIKEY = '<your-API-key>'
 CONTENTTYPE = 'application/json'
 HELP = {

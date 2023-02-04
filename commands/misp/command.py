@@ -33,6 +33,7 @@ def process(command, channel, username, params):
         data = '{"returnformat":"json", "value":"%s"}' % (params,)
         with requests.post(settings.APIENDPOINT, data=data, headers=headers) as response:
             answer = response.json()
+            print(answer)
             results = answer['response']['Attribute']
             resultset = set()
             if len(results)>0:
