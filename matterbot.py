@@ -188,7 +188,6 @@ class MattermostManager(object):
                         results = []
                         with concurrent.futures.ThreadPoolExecutor(max_workers=None) as executor:
                             for task in tasks:
-                                print(task)
                                 results.append(executor.submit(self.commands[task]['process'], command, channelname, username, params))
                         for _ in concurrent.futures.as_completed(results):
                             result = _.result()
