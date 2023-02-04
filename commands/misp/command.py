@@ -33,7 +33,6 @@ def process(command, channel, username, params):
         data = '{"returnformat":"json", "value":"%s"}' % (params,)
         with requests.post(settings.APIENDPOINT, data=data, headers=headers) as response:
             answer = response.json()
-            print(answer)
             results = answer['response']['Attribute']
             resultset = set()
             if len(results)>0:
@@ -46,7 +45,7 @@ def process(command, channel, username, params):
             else:
                 message = 'MISP search for `%s` returned no results.' % (params,)
             return {'messages': [
-                {'text': message.strip()},
+                {'text': message.strip()}
             ]}
     else:
         return {'messages': [

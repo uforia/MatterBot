@@ -7,6 +7,7 @@ import math
 import random
 import re
 import requests
+import string
 from pathlib import Path
 try:
     from commands.censys import defaults as settings
@@ -73,13 +74,17 @@ def process(command, channel, username, params):
                                         for field in fieldmap:
                                             value = None
                                             if field in service:
-                                                value = str(service[field])
+                                                value = service[field]
                                                 if field == '_decoded' and service[field] == 'banner_grab':
-                                                    value = 'unknown'
+                                                    value = '`unknown`'
                                                 else:
-                                                    value = regex.sub(' ', value)
-                                                    if len(value)>60:
-                                                        value = value[:60] + ' [...]'
+                                                    try:
+                                                        value = '`'+''.join([_ for _ in value if _.isprintable()])+'`'
+                                                        value = regex.sub(' ', value)
+                                                        if len(value)>60:
+                                                            value = '`'+value[:60]+'`[...]'
+                                                    except (UnicodeDecodeError, AttributeError, TypeError):
+                                                        pass
                                                 if field == 'tls':
                                                     value = service[field]['version_selected']
                                                 if field == 'software':
@@ -202,7 +207,7 @@ def process(command, channel, username, params):
             return {'messages': messages}
         except Exception as e:
             return {'messages': [
-                {'text': 'A Python error occurred searching Censys:\nError:' + str(e)}
+                {'text': 'A Python error occurred searching Censys:\nError:'+str(e)}
             ]}
     else:
         return {'messages': [

@@ -208,7 +208,6 @@ class MattermostManager(object):
                                                     files={'files': (filename, payload)}
                                                 )['file_infos'][0]['id']
                                                 file_ids.append(file_id)
-                                                log.info('File upload:' + filename + ' (' + str(len(payload)) + ' bytes)')
                                             self.mmDriver.posts.create_post(options={'channel_id': channelid,
                                                                                      'message': text,
                                                                                      'file_ids': file_ids,
