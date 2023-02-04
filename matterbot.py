@@ -188,7 +188,11 @@ class MattermostManager(object):
                         results = []
                         with concurrent.futures.ThreadPoolExecutor(max_workers=None) as executor:
                             for task in tasks:
-                                results.append(executor.submit(self.commands[task]['process'], command, channelname, username, params))
+                                try:
+                                    results.append(executor.submit(self.commands[task]['process'], command, channelname, username, params))
+                                except Exception as e:
+                                    text = 'An error occurred within module: '+task+': '+str(type(e))+': '+e
+                                    await self.send_message(channelid, text)
                         for _ in concurrent.futures.as_completed(results):
                             result = _.result()
                             if result and 'messages' in result:
