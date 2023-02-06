@@ -33,7 +33,7 @@ def process(command, channel, username, params):
                 hash_algo = 'sha1_hash'
             elif re.search(r"^[A-Fa-f0-9]{64}$", params):
                 hash_algo = 'sha256_hash'
-            elif re.search(r"^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(\:[0-65535]*)?$", params):
+            elif re.search(r"^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(\:[0-9]*)?$", params):
                 data = {
                     'query': 'search_ioc',
                     'search_term': params.split(':')[0],
