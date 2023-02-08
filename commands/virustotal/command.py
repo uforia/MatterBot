@@ -30,7 +30,7 @@ def process(command, channel, username, params):
             'Content-Type': settings.CONTENTTYPE,
             'Authorization': 'apitoken %s' % (settings.APIURL['malpedia']['key'],),
         }
-        text = 'VirusTotal search for `%s`:' % (params,)
+        text = 'VirusTotal search for `%s`:' % (params.strip(),)
         # IP report: https://www.virustotal.com/api/v3/ip_addresses/{ip}
         # File report MITRE: https://www.virustotal.com/api/v3/files/{id}/behaviour_mitre_trees
         # URL report: https://www.virustotal.com/api/v3/urls/{id}
@@ -117,25 +117,41 @@ def process(command, channel, username, params):
                                             if 'Zenbox' in data:
                                                 Zenbox = data['Zenbox']
                                                 if 'tactics' in Zenbox:
-                                                    tacticslist = set()
+                                                    tacticslist = []
+                                                    ttplist = []
                                                     tactics = Zenbox['tactics']
                                                     for tactic in tactics:
                                                         tacticid = tactic['id']
                                                         tacticname = tactic['name']
                                                         tacticlink = tactic['link']
-                                                        tacticslist.add('`' + tacticid + '` [' + tacticname + '](' + tacticlink + ')')
+                                                        if not tacticid in [_['id'] for _ in tacticslist]:
+                                                            tacticslist.append({
+                                                                'id': tacticid,
+                                                                'name': tacticname,
+                                                                'link': tacticlink,
+                                                            })
                                                         for mitre_tree in [tree_name.lower() for tree_name in mitre_tree_names]:
-                                                            ttplist = set()
                                                             if mitre_tree in tactic:
                                                                 for ttp in tactic[mitre_tree]:
                                                                     ttpid = ttp['id']
                                                                     ttpname = ttp['name']
                                                                     ttplink = ttp['link']
-                                                                    ttplist.add('`' + ttpid + '` [' + ttpname + '](' + ttplink + ')')
-                                                            if len(ttplist)>0:
-                                                                text += '\n - TTP(s): ' + ', '.join(ttplist)
+                                                                    if not ttpid in [_['id'] for _ in ttplist]:
+                                                                        ttplist.append({
+                                                                            'id': ttpid,
+                                                                            'name': ttpname,
+                                                                            'link': ttplink,
+                                                                        })
+                                                    if len(ttplist)>0:
+                                                        for ttp in sorted(ttplist, key=lambda _: _['id']):
+                                                            ttpid, ttpname, ttplink = ttp.values()
+                                                            text += '\n - TTP: ['+ttpid+']('+ttplink+') `'+ttpname+'`'
+                                                        text += '\n - TTP MITRE IDs for easy pivoting: `'+' '.join(_['id'] for _ in sorted(ttplist, key=lambda _: _['id']))+'`'
                                                     if len(tacticslist)>0:
-                                                        text += '\n - Tactic(s): ' + ', '.join(tacticslist)
+                                                        for tactic in sorted(tacticslist, key=lambda _: _['id']):
+                                                            tacticid, tacticname, tacticlink = tactic.values()
+                                                            text += '\n - Tactic: ['+tacticid+']('+tacticlink+') `'+tacticname+'`'
+                                                        text += '\n - Tactic MITRE IDs for easy pivoting: `'+' '.join(_['id'] for _ in sorted(tacticslist, key=lambda _: _['id']))+'`'
                             if querytype == 'ip':
                                 if 'last_https_certificate' in attributes:
                                     last_https_certificate = attributes['last_https_certificate']
