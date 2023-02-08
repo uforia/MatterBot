@@ -154,7 +154,7 @@ def process(command, channel, username, params):
                                         table += '| **Type** | **MITRE ID** | **Name** |\n'
                                         table += '|:- |:- |:- |\n'
                                         for category in commonttps:
-                                            for entry in commonttps[category]:
+                                            for entry in sorted(commonttps[category]):
                                                 name = regex.sub(' ', ' '.join(commonttps[category][entry]['name']))
                                                 table += '| '+category+' | '+entry+' | '+name+' |\n'
                                         table += '\n\n'
@@ -301,7 +301,7 @@ def process(command, channel, username, params):
                                             if len(commonttps[ttpcategory])==0:
                                                 del commonttps[ttpcategory]
                                         for category in commonttps:
-                                            for ttp in commonttps[category]:
+                                            for ttp in sorted(commonttps[category]):
                                                 table += '| '+category+' '
                                                 table += '| '+ttp+' '
                                                 name = regex.sub(' ', ' '.join(commonttps[category][ttp]['name']))
