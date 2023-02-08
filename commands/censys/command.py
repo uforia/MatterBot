@@ -79,7 +79,7 @@ def process(command, channel, username, params):
                                                     value = '`unknown`'
                                                 else:
                                                     try:
-                                                        value = '`'+''.join([_ for _ in value if _.isprintable()])+'`'
+                                                        value = ' `'+''.join([_ for _ in value if _.isprintable()])+'`'
                                                         value = regex.sub(' ', value)
                                                         if len(value)>60:
                                                             value = '`'+value[:60]+'`[...]'
