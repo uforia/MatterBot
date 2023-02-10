@@ -22,7 +22,7 @@ def process(command, channel, username, params):
         params = params[0].replace('[.]','.')
         try:
             data = None
-            if re.search(r"^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(\:[0-65535]*)?$", params):
+            if re.search(r"^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(\:[0-9]*)?$", params):
                 data = params.split(':')[0]
             if data:
                 with requests.get(settings.APIURL['ipwhois']['url'] + data) as response:
