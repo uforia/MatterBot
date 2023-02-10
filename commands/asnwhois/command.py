@@ -42,7 +42,11 @@ def process(command, channel, username, params):
                             providers = str(jsondata['asnDegree']['provider'])
                             lat = str(jsondata['latitude'])
                             long = str(jsondata['longitude'])
-                            message += 'Name: `'+name+'`, Peers/Providers: `'+peers+'`/`'+providers+'`, Latitude/Longitude: `'+lat+'`/`'+long+'` :flag-'+country.lower()+':, Source: `'+source+'`'
+                            with requests.get(settings.APIURL['osmdata']['url']+'lat='+lat+'&lon='+long+'&format=json') as response:
+                                json_response = response.json()
+                                if 'display_name' in json_response:
+                                    address = json_response['display_name']
+                                    message += 'Name: `'+name+'`, Address: `'+address+'`, Latitude/Longitude: `'+lat+'`/`'+long+'` :flag-'+country.lower()+':, Peers/Providers: `'+peers+'`/`'+providers+'`, Source: `'+source+'`'
                             return {'messages': [
                                 {'text': message.strip()},
                             ]}
