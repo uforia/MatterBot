@@ -37,11 +37,13 @@ MatterBot consists of two parts that can be run independently: matterbot and mat
 
 ### Currently supported by `matterbot`
 
+- ASN WHOIS: look up Autonomous System Numbers and return the ownership, peering and location information
 - AttackMatrix: query an [AttackMatrix](https://github.com/uforia/AttackMatrix) instance for MITRE ATT&CK IDs, Actor- and TTP-overlap
 - Censys: search for IPs, SHA256 certificate fingerprints (*)
 - ChatGPT: ask OpenAI's ChatGPT individual questions (no history) (*)
 - Diceroll: rolling dice
 - Example: module with instructions for developing your own
+- GeoLocation: transform latitude/longitude into an address, if possible
 - IPWHOIS: query IP WHOIS for IP address information
 - Malpedia: search for MD5/SHA256 malware hashes, malware families or threat actors (*)
 - MalwareBazaar: search for MD5/SHA1/SHA256 hashes
@@ -49,6 +51,7 @@ MatterBot consists of two parts that can be run independently: matterbot and mat
 - RIPE WHOIS: query RIPE for WHOIS information
 - Shodan: search for IP or hostname information, run `count` and `search` queries (*)
 - ThreatFox: search for MD5/SHA1/SHA256 hashes, IP addresses
+- TLSGrab: connect to the given IP address(es) and attempt to retrieve the TLS certificate CNs, if available
 - Unprotect.it: search through and return information on TTPs, code snippets and detection rules
 - URLHaus: search for MD5/SHA1/SHA256 hashes, URLs
 - VirusTotal: search for IPs, MD5/SHA1/SHA256 hashes, URLs, domains (*)
