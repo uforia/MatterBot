@@ -39,6 +39,7 @@ MatterBot consists of two parts that can be run independently: matterbot and mat
 
 - ASN WHOIS: look up Autonomous System Numbers and return the ownership, peering and location information
 - AttackMatrix: query an [AttackMatrix](https://github.com/uforia/AttackMatrix) instance for MITRE ATT&CK IDs, Actor- and TTP-overlap
+- Broadcom Symantec Security Cloud: retrieve 'Threat Intel Insight' information for SHA256 file hashes, IPs, domains and URLs (*)
 - Censys: search for IPs, SHA256 certificate fingerprints (*)
 - ChatGPT: ask OpenAI's ChatGPT individual questions (no history) (*)
 - Diceroll: rolling dice
@@ -57,7 +58,7 @@ MatterBot consists of two parts that can be run independently: matterbot and mat
 - VirusTotal: search for IPs, MD5/SHA1/SHA256 hashes, URLs, domains (*)
 - WikiJS: search your WikiJS instance for information (*)
 
-(*): Module requires (paid) API access for partial or full functionality
+(*): Module requires (paid) API access for partial or full functionality!
 
 ## Requirements
 
