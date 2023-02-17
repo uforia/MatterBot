@@ -2,4 +2,4 @@
 
 CHANNEL = "news"
 URL = "https://www.welivesecurity.com/feed/"
-ENTRIES = 5
+ENTRIES = 10

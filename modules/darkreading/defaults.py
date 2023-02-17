@@ -2,4 +2,4 @@
 
 CHANNEL = "news"
 URL = "https://www.darkreading.com/rss/all.xml"
-ENTRIES = 5
+ENTRIES = 10

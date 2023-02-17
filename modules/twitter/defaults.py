@@ -7,5 +7,5 @@
 
 CHANNEL = "my-mattermost-channel-name"
 BEARER_TOKEN = "my-twitter-api-v2-bearer-token"
-HISTORY = 10
+HISTORY = 20
 USERNAME = "my-twitter-bots-username"

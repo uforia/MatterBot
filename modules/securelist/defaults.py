@@ -2,4 +2,4 @@
 
 CHANNEL = "news"
 URL = "https://securelist.com/feed/"
-ENTRIES = 5
+ENTRIES = 10

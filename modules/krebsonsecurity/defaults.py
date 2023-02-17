@@ -2,4 +2,4 @@
 
 CHANNEL = "news"
 URL = "http://krebsonsecurity.com/feed/"
-ENTRIES = 5
+ENTRIES = 10

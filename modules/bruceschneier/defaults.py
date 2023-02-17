@@ -2,4 +2,4 @@
 
 CHANNEL = "news"
 URL = "https://www.schneier.com/feed/atom"
-ENTRIES = 5
+ENTRIES = 10

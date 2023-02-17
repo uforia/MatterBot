@@ -2,4 +2,4 @@
 
 CHANNEL = "news"
 URL = "https://advisories.ncsc.nl/rss/advisories"
-ENTRIES = 5
+ENTRIES = 10

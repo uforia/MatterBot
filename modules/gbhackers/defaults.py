@@ -2,4 +2,4 @@
 
 CHANNEL = "news"
 URL = "https://gbhackers.com/feed/"
-ENTRIES = 5
+ENTRIES = 10

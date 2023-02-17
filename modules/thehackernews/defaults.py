@@ -2,4 +2,4 @@
 
 CHANNEL = "news"
 URL = "https://feeds.feedburner.com/TheHackersNews"
-ENTRIES = 5
+ENTRIES = 10

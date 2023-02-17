@@ -2,4 +2,4 @@
 
 CHANNEL = "news"
 URL = "https://www.kitploit.com//feeds/posts/default"
-ENTRIES = 5
+ENTRIES = 10

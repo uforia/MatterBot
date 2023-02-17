@@ -2,4 +2,4 @@
 
 CHANNEL = "news"
 URL = "https://api.msrc.microsoft.com/update-guide/rss"
-ENTRIES = 5
+ENTRIES = 30

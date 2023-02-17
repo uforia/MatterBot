@@ -2,4 +2,4 @@
 
 CHANNEL = "news"
 URL = "https://docs.velociraptor.app/blog/index.xml"
-ENTRIES = 5
+ENTRIES = 10

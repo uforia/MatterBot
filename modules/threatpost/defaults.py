@@ -2,4 +2,4 @@
 
 CHANNEL = "news"
 URL = "https://threatpost.com/feed"
-ENTRIES = 5
+ENTRIES = 10

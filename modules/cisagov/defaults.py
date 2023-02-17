@@ -2,4 +2,4 @@
 
 CHANNEL = "news"
 URL = "https://www.us-cert.gov/ncas/current-activity.xml"
-ENTRIES = 5
+ENTRIES = 10

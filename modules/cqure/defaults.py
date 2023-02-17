@@ -2,4 +2,4 @@
 
 CHANNEL = "news"
 URL = "https://cqureacademy.com/blog/feed"
-ENTRIES = 5
+ENTRIES = 10

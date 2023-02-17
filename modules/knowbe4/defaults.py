@@ -2,4 +2,4 @@
 
 CHANNEL = "news"
 URL = "https://blog.knowbe4.com/rss.xml"
-ENTRIES = 5
+ENTRIES = 10
