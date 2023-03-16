@@ -12,6 +12,27 @@
 # <channel>: basically the destination channel in Mattermost, e.g. 'Newsfeed', 'Incident', etc.
 # <content>: the content of the message, MD format possible
 
+from io import StringIO
+from html.parser import HTMLParser
+
+
+class MLStripper(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.reset()
+        self.strict = False
+        self.convert_charrefs= True
+        self.text = StringIO()
+    def handle_data(self, d):
+        self.text.write(d)
+    def get_data(self):
+        return self.text.getvalue()
+
+def strip_tags(html):
+    s = MLStripper()
+    s.feed(html)
+    return s.get_data()
+
 import requests
 import feedparser
 from pathlib import Path
@@ -34,7 +55,9 @@ def query(MAX=settings.ENTRIES):
     count = 0
     while count < MAX:
         try:
-            title = feed.entries[count].title
+            s = MLStripper()
+            s.feed(feed.entries[count].title)
+            title = s.get_data()
             link = feed.entries[count].link
             content = '[' + title + '](' + link + ')'
             items.append([settings.CHANNEL, content])
