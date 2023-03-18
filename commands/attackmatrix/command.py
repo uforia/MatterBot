@@ -421,7 +421,7 @@ def process(command, channel, username, params):
                                                             'totalttps': str(actorttpsnum),
                                                             'coverage': float(len(item)/actorttpsnum)*100,
                                                         }
-                                                if actor in foundactors:
+                                                else:
                                                     oldcoverage = foundactors[actor]['coverage']
                                                     if (float(len(item)/actorttpsnum)*100) > oldcoverage:
                                                         foundactors[actor] = {
