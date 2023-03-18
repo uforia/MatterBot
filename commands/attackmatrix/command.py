@@ -422,7 +422,7 @@ def process(command, channel, username, params):
                                                             'coverage': float(len(item)/actorttpsnum)*100,
                                                         }
                         if len(foundactors):
-                            table = '| **MITRE ID** | **Name** | **Matching TTPs** | **Total TTPs** | **Coverage** |\n'
+                            table = '| **MITRE ID** | **Name** | **Matching TTPs** | **Known TTPs** | **Coverage** |\n'
                             table += '| -: | :- | -: | -: | -: |\n'
                             for actor in foundactors:
                                 table += '| ' + actor + ' '
