@@ -421,6 +421,15 @@ def process(command, channel, username, params):
                                                             'totalttps': str(actorttpsnum),
                                                             'coverage': float(len(item)/actorttpsnum)*100,
                                                         }
+                                                if actor in foundactors:
+                                                    oldcoverage = foundactors[actor]['coverage']
+                                                    if (float(len(item)/actorttpsnum)*100) > oldcoverage:
+                                                        foundactors[actor] = {
+                                                            'name': json_response[actor]['Metadata']['name'],
+                                                            'ttpmatches': str(len(item)),
+                                                            'totalttps': str(actorttpsnum),
+                                                            'coverage': float(len(item)/actorttpsnum)*100,
+                                                        }
                         if len(foundactors):
                             table = '| **MITRE ID** | **Name** | **Matching TTPs** | **Known TTPs** | **Coverage** |\n'
                             table += '| -: | :- | -: | -: | -: |\n'
