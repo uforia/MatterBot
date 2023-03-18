@@ -3,17 +3,18 @@
 import ast
 import asyncio
 import concurrent.futures
-import configargparse
 import fnmatch
 import importlib.util
 import json
 import logging
 import os
-import pyinotify
 import sys
 import tempfile
 
+import configargparse
+import pyinotify
 from mattermostdriver import Driver
+
 
 class TokenAuth():
     def __call__(self, r):

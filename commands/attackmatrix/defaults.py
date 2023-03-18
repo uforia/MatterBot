@@ -10,6 +10,7 @@ APIURL = {
 }
 CONTENTTYPE = 'application/json'
 MAXRESULTS = 4
+CONFIDENCE = 0.33
 HELP = {
     'DEFAULT': {
         'args': None,
@@ -38,5 +39,12 @@ HELP = {
         'args': '<ttp1> <ttp2> ... <ttp3>',
         'desc': 'Check what actors share the given TTPs. At least two TTPs must be given,'
         'in MITRE ATT&CK notation, e.g.: `... ttpoverlap T1078 T1588.002 S0002 S0008`.',
+    },
+    'findactor': {
+        'args': '<ttp1> <ttp2> ... <ttp3>',
+        'desc': 'Similar to the `ttpoverlap` feature, but will perform a \'fuzzy\' match by cycling through '
+        'all combinations of the TTPs to find which actors match the specific the TTP subset, and display '
+        'the resulting list of matching actors with the matching certainty. Particularly useful with the '
+        'lists of MITRE IDs, such as the `easy pivoting` one from the VirusTotal module output.',
     },
 }
