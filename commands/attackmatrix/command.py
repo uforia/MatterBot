@@ -410,7 +410,7 @@ def process(command, channel, username, params):
                                         table = 'Found ' + str(count) + ' potential matches:\n\n'
                                         table += '| **MITRE ID** | **Name** | **Matching TTPs** | **TTP Match %** | **TTP Known %** |\n'
                                         table += '| :-           | :-       | :-                |              -: |              -: |\n'
-                                        for actor in sorted(json_response):
+                                        for actor in json_response:
                                             if actor != 'count':
                                                 id = json_response[actor]['id']
                                                 name = json_response[actor]['name']
