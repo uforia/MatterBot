@@ -395,53 +395,39 @@ def process(command, channel, username, params):
                                     })
                 if querytype == 'findactor':
                     keywords = [_.upper().strip() for _ in keywords]
-                    slices = list(reversed([_ for _ in sorted(list(map(keywords.__getitem__, itertools.starmap(slice, itertools.combinations(range(len(keywords)+1), 2)))), key=len) if len(_)>2]))
-                    if len(slices):
-                        foundactors = collections.OrderedDict()
-                        for item in slices:
-                            searchterms = '&ttps='.join([urllib.parse.quote(_) for _ in item])
-                            if re.search(r"[\w\s,.\+\-]+", searchterms):
-                                text = None
-                                APIENDPOINT = settings.APIURL['attackmatrix']['url']+'/ttpoverlap?ttps='+searchterms
-                                with requests.get(APIENDPOINT, headers=headers) as response:
-                                    json_response = response.json()
-                                    if len(json_response)>0:
-                                        count = len(json_response)
-                                        if 'error' in json_response:
-                                            text = 'AttackMatrix error: '+json_response['error']
-                                        else:
-                                            actors = sorted(list(json_response.keys()))
-                                            for actor in actors:
-                                                if not actor in foundactors:
-                                                    if 'Techniques' in json_response[actor]:
-                                                        actorttpsnum = len(json_response[actor]['Techniques'])
-                                                        foundactors[actor] = {
-                                                            'name': json_response[actor]['Metadata']['name'],
-                                                            'ttpmatches': str(len(item)),
-                                                            'totalttps': str(actorttpsnum),
-                                                            'coverage': float(len(item)/actorttpsnum)*100,
-                                                        }
-                                                else:
-                                                    oldcoverage = foundactors[actor]['coverage']
-                                                    if (float(len(item)/actorttpsnum)*100) > oldcoverage:
-                                                        foundactors[actor] = {
-                                                            'name': json_response[actor]['Metadata']['name'],
-                                                            'ttpmatches': str(len(item)),
-                                                            'totalttps': str(actorttpsnum),
-                                                            'coverage': float(len(item)/actorttpsnum)*100,
-                                                        }
-                        if len(foundactors):
-                            table = '| **MITRE ID** | **Name** | **Matching TTPs** | **Known TTPs** | **Coverage** |\n'
-                            table += '| -: | :- | -: | -: | -: |\n'
-                            for actor in foundactors:
-                                table += '| ' + actor + ' '
-                                table += '| ' + ', '.join(foundactors[actor]['name']) + ' '
-                                table += '| ' + foundactors[actor]['ttpmatches'] + ' '
-                                table += '| ' + foundactors[actor]['totalttps'] + ' '
-                                table += '| ' + '%.3f' % foundactors[actor]['coverage'] + '% '
-                                table += '|\n'
-                            table += '\n\n'
-                            messages.append({'text': table})
+                    searchterms = '&ttps='.join([urllib.parse.quote(_) for _ in keywords])
+                    if len(keywords)>2:
+                        if re.search(r"[\w\s,.\+\-]+", searchterms):
+                            APIENDPOINT = settings.APIURL['attackmatrix']['url']+'/findactor?ttps='+searchterms
+                            with requests.get(APIENDPOINT, headers=headers) as response:
+                                json_response = response.json()
+                                if len(json_response)>0:
+                                    count = json_response['count']
+                                    if 'error' in json_response:
+                                        text = 'AttackMatrix error: '+json_response['error']
+                                        messages.append({'text': text})
+                                    else:
+                                        table = 'Found ' + str(count) + ' potential matches:\n\n'
+                                        table += '| **MITRE ID** | **Name** | **Matching TTPs** | **TTP Match %** | **TTP Known %** |\n'
+                                        table += '| :-           | :-       | :-                |              -: |              -: |\n'
+                                        for actor in sorted(json_response):
+                                            if actor != 'count':
+                                                id = json_response[actor]['id']
+                                                name = json_response[actor]['name']
+                                                matching_ttps = json_response[actor]['matching_ttps']
+                                                num_matching_ttps = str(json_response[actor]['num_matching_ttps'])
+                                                num_given_ttps = str(json_response[actor]['num_given_ttps'])
+                                                num_known_ttps = str(json_response[actor]['num_known_ttps'])
+                                                matching_coverage = json_response[actor]['matching_coverage']
+                                                total_coverage = json_response[actor]['total_coverage']
+                                                table += '| ' + id
+                                                table += ' | ' + name
+                                                table += ' | ' + ', '.join(matching_ttps)
+                                                table += ' | ' + num_matching_ttps + '/' + num_given_ttps + ' (' + matching_coverage + ')'
+                                                table += ' | ' + num_matching_ttps + '/' + num_known_ttps + ' (' + total_coverage + ')'
+                                                table += ' |\n'
+                                        table += '\n\n'
+                                        messages.append({'text': table})
         except Exception as e:
             messages.append({'text': 'An error occurred querying AttackMatrix:\nError: '+str(type(e))+': '+str(e)})
         finally:
