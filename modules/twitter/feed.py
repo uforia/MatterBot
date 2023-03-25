@@ -13,9 +13,11 @@
 # <content>: the content of the message, MD format possible
 
 import datetime
-import logging
-import tweepy
 import json
+import logging
+import re
+import tweepy
+import urllib
 from pathlib import Path
 try:
     from modules.twitter import defaults as settings
@@ -37,11 +39,19 @@ def query(MAX=0):
     follows = client.get_users_following(user_id).data
     for follow in follows:
         follow_id = follow.id
-        tweets = client.get_users_tweets(id=follow_id, max_results=settings.HISTORY, tweet_fields=['created_at', 'id'])
+        tweets = client.get_users_tweets(id=follow_id, max_results=settings.HISTORY, tweet_fields=['created_at', 'id', 'entities'])
         username = client.get_user(id=follow_id).data.username
         if tweets.data != None:
             for tweet in tweets.data:
-                tweets_list.append({'username': username, 'url': 'https://twitter.com/' + username + '/status/' + str(tweet.id), 'text': tweet.text, 'timestamp': tweet.created_at.strftime('%H:%M:%S UTC')})
+                text = tweet.text
+                if tweet.entities:
+                    for entity in tweet.entities:
+                        for item in tweet.entities[entity]:
+                            if ('url' in item) and ('expanded_url' in item):
+                                oldurl = item['url']
+                                newurl = item['expanded_url']
+                                text = text.replace(oldurl, newurl)
+                tweets_list.append({'username': username, 'url': 'https://twitter.com/' + username + '/status/' + str(tweet.id), 'text': text, 'timestamp': tweet.created_at.strftime('%H:%M:%S UTC')})
     items = []
     for tweet in tweets_list:
         username = '@[' + tweet['username'] + '](https://twitter.com/' + tweet['username'] + ')'
