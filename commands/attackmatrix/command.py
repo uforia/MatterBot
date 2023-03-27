@@ -51,76 +51,71 @@ def process(command, channel, username, params):
                 }
                 if querytype == 'search':
                     searchterms = '&params='.join([urllib.parse.quote(_) for _ in keywords])
-                    if re.search(r"[\w\s,.\+\-]+", searchterms):
-                        APIENDPOINT = settings.APIURL['attackmatrix']['url']+'/search?params='+searchterms
-                        with requests.get(APIENDPOINT, headers=headers) as response:
-                            json_response = response.json()
-                            if json_response != 'null':
-                                text = "AttackMatrix API search results for: `%s`\n" % ('`, `'.join(keywords))
-                                text += "\n"
-                                messages.append({'text': text})
-                                numresults = 0
-                                for category in categories:
-                                    if category in json_response:
-                                        table = '\n\n'
-                                        table += '| **MITRE ID** | **'+category+'** | **Description** | **URL** |\n'
-                                        table += '|:- |:- |:- |:- |\n'
-                                        for entry in sorted(json_response[category]):
-                                            jsonentry = json_response[category][entry]
-                                            numresults += 1
-                                            name = regex.sub(' ', ', '.join(jsonentry['Metadata']['name']))
-                                            description = regex.sub(' ', ', '.join(jsonentry['Metadata']['description']))
-                                            url = regex.sub(' ', ', '.join(jsonentry['Metadata']['url']))
-                                            if len(description)>80:
-                                                description = description[:80]+' ...'
-                                            table += '| '+entry+' | '+name+' | '+description+' | '+url+' |\n'
-                                        table += '\n\n'
-                                        messages.append({'text': table})
-                                if 'count' in json_response:
-                                    count = json_response['count']
-                                    if count>0:
-                                        text = 'Found '+str(count)+' match'+('es' if count>1 else '')+' for your search.'
-                                        messages.append({'text': text})
-                    else:
-                        text = 'Invalid keyword(s).'
-                        messages.append({'text': text})
+                    APIENDPOINT = settings.APIURL['attackmatrix']['url']+'/search?params='+searchterms
+                    with requests.get(APIENDPOINT, headers=headers) as response:
+                        json_response = response.json()
+                        if json_response != 'null':
+                            text = "AttackMatrix API search results for: `%s`\n" % ('`, `'.join(keywords))
+                            text += "\n"
+                            messages.append({'text': text})
+                            numresults = 0
+                            for category in categories:
+                                if category in json_response:
+                                    table = '\n\n'
+                                    table += '| **MITRE ID** | **'+category+'** | **Description** | **URL** |\n'
+                                    table += '|:- |:- |:- |:- |\n'
+                                    for entry in sorted(json_response[category]):
+                                        jsonentry = json_response[category][entry]
+                                        numresults += 1
+                                        name = regex.sub(' ', ', '.join(jsonentry['Metadata']['name']))
+                                        description = regex.sub(' ', ', '.join(jsonentry['Metadata']['description']))
+                                        url = regex.sub(' ', ', '.join(jsonentry['Metadata']['url']))
+                                        if len(description)>80:
+                                            description = description[:80]+' ...'
+                                        table += '| '+entry+' | '+name+' | '+description+' | '+url+' |\n'
+                                    table += '\n\n'
+                                    messages.append({'text': table})
+                            if 'count' in json_response:
+                                count = json_response['count']
+                                if count>0:
+                                    text = 'Found '+str(count)+' match'+('es' if count>1 else '')+' for your search.'
+                                    messages.append({'text': text})
                 if querytype == 'mitre':
                     mitreid = keywords[0].upper().strip()
-                    if re.search(r"^[GMST][0-9]{4}(\.[0-9]{3})?$|^[T][A][0-9]{4}$", mitreid):
-                        for category in categories:
-                            APIENDPOINT = settings.APIURL['attackmatrix']['url']+'/explore/'+category+'/'+mitreid
-                            with requests.get(APIENDPOINT, headers=headers) as response:
-                                json_response = response.json()
-                                result = False
-                                if len(json_response)>0:
-                                    if 'error' in json_response:
-                                        if json_response['error'].startswith('Key does not exist: '):
-                                            continue
-                                        messages.append({'text': 'An error occurred querying AttackMatrix:\nError: '+str(type(e))+': '+str(e)})
-                                    else:
-                                        result = True
-                                        table = '\n\n'
-                                        table += '| **MITRE ID** | **Name** | **Description** | **URL** |\n'
-                                        table += '|:- |:- |:- |:- |\n'
-                                        name = regex.sub(' ', ' '.join(json_response['Metadata']['name']))
-                                        description = regex.sub(' ', ' '.join(json_response['Metadata']['description']))
-                                        url = regex.sub(' ', ' '.join(json_response['Metadata']['url']))
-                                        table += '| '+mitreid+' | '+name+' | '+description+' | '+url+' |\n'
-                                        table += '\n\n'
-                                        messages.append({'text': table})
-                                        for category in categories:
-                                            if category in json_response:
-                                                table = '\n\n**Associated** `'+category+'`\n'
-                                                table += '\n\n'
-                                                table += '| **MITRE ID** | **Name ** | **URL** |\n'
-                                                table += '|:- |:- |:- |\n'
-                                                for entry in sorted(json_response[category]):
-                                                    name = regex.sub(' ', ' '.join(json_response[category][entry]['name']))
-                                                    url = regex.sub(' ', ' '.join(json_response[category][entry]['url']))
-                                                    table += '| '+entry+' | '+name+' | '+url+' |\n'
-                                                table += '\n\n'
-                                                messages.append({'text': table})
-                                        break
+                    for category in categories:
+                        APIENDPOINT = settings.APIURL['attackmatrix']['url']+'/explore/'+category+'/'+mitreid
+                        with requests.get(APIENDPOINT, headers=headers) as response:
+                            json_response = response.json()
+                            result = False
+                            if len(json_response)>0:
+                                if 'error' in json_response:
+                                    if json_response['error'].startswith('Key does not exist: '):
+                                        continue
+                                    messages.append({'text': 'An error occurred querying AttackMatrix:\nError: '+str(type(e))+': '+str(e)})
+                                else:
+                                    result = True
+                                    table = '\n\n'
+                                    table += '| **MITRE ID** | **Name** | **Description** | **URL** |\n'
+                                    table += '|:- |:- |:- |:- |\n'
+                                    name = regex.sub(' ', ' '.join(json_response['Metadata']['name']))
+                                    description = regex.sub(' ', ' '.join(json_response['Metadata']['description']))
+                                    url = regex.sub(' ', ' '.join(json_response['Metadata']['url']))
+                                    table += '| '+mitreid+' | '+name+' | '+description+' | '+url+' |\n'
+                                    table += '\n\n'
+                                    messages.append({'text': table})
+                                    for category in categories:
+                                        if category in json_response:
+                                            table = '\n\n**Associated** `'+category+'`\n'
+                                            table += '\n\n'
+                                            table += '| **MITRE ID** | **Name ** | **URL** |\n'
+                                            table += '|:- |:- |:- |\n'
+                                            for entry in sorted(json_response[category]):
+                                                name = regex.sub(' ', ' '.join(json_response[category][entry]['name']))
+                                                url = regex.sub(' ', ' '.join(json_response[category][entry]['url']))
+                                                table += '| '+entry+' | '+name+' | '+url+' |\n'
+                                            table += '\n\n'
+                                            messages.append({'text': table})
+                                    break
                         if not result:
                             messages.append({'text': 'AttackMatrix: MITRE ID not found.'})
                 if querytype == 'actoroverlap':
