@@ -32,7 +32,7 @@ def process(command, channel, username, params):
     querytype = params[0].strip()
     stripchars = '`\n\r\'\"'
     regex = re.compile('[%s]' % stripchars)
-    categories = ('Actors', 'Techniques', 'Malwares', 'Tools', 'Mitigations', 'Tactics', 'Matrices')
+    categories = ('Actors', 'Techniques', 'Malwares', 'Tools', 'Mitigations', 'Tactics', 'Data Sources', 'Case Studies', 'Campaigns', 'Matrices')
     tableheaders = collections.OrderedDict({
         'type': 'Type',
         'name': 'Name',
