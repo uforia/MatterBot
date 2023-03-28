@@ -61,7 +61,7 @@ def query(MAX=0):
         content = username + ' [tweet](' + url + '): ' + text + ' at ' + timestamp
         items.append([settings.CHANNEL, content])
     if len(items)>0:
-        return items.reverse()
+        return items[::-1]
 
 if __name__ == "__main__":
     print(query())
