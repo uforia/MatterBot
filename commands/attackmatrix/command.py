@@ -55,31 +55,32 @@ def process(command, channel, username, params):
                     with requests.get(APIENDPOINT, headers=headers) as response:
                         json_response = response.json()
                         if json_response != 'null':
-                            text = "AttackMatrix API search results for: `%s`\n" % ('`, `'.join(keywords))
-                            text += "\n"
-                            messages.append({'text': text})
-                            numresults = 0
-                            for category in categories:
-                                if category in json_response:
-                                    table = '\n\n'
-                                    table += '| **MITRE ID** | **'+category+'** | **Description** | **URL** |\n'
-                                    table += '|:- |:- |:- |:- |\n'
-                                    for entry in sorted(json_response[category]):
-                                        jsonentry = json_response[category][entry]
-                                        numresults += 1
-                                        name = regex.sub(' ', ', '.join(jsonentry['Metadata']['name']))
-                                        description = regex.sub(' ', ', '.join(jsonentry['Metadata']['description']))
-                                        url = regex.sub(' ', ', '.join(jsonentry['Metadata']['url']))
-                                        if len(description)>80:
-                                            description = description[:80]+' ...'
-                                        table += '| '+entry+' | '+name+' | '+description+' | '+url+' |\n'
-                                    table += '\n\n'
-                                    messages.append({'text': table})
                             if 'count' in json_response:
                                 count = json_response['count']
-                                if count>0:
-                                    text = 'Found '+str(count)+' match'+('es' if count>1 else '')+' for your search.'
+                                if count==0:
+                                    text = "No AttackMatrix API search results for: `%s`\n" % ('`, `'.join(keywords))
                                     messages.append({'text': text})
+                                else:
+                                    text = "AttackMatrix API search results for: `%s`\n" % ('`, `'.join(keywords))
+                                    text += "\n"
+                                    messages.append({'text': text})
+                                    numresults = 0
+                                    for category in categories:
+                                        if category in json_response:
+                                            table = '\n\n'
+                                            table += '| **MITRE ID** | **'+category+'** | **Description** | **URL** |\n'
+                                            table += '|:- |:- |:- |:- |\n'
+                                            for entry in sorted(json_response[category]):
+                                                jsonentry = json_response[category][entry]
+                                                numresults += 1
+                                                name = regex.sub(' ', ', '.join(jsonentry['Metadata']['name']))
+                                                description = regex.sub(' ', ', '.join(jsonentry['Metadata']['description']))
+                                                url = regex.sub(' ', ', '.join(jsonentry['Metadata']['url']))
+                                                if len(description)>80:
+                                                    description = description[:80]+' ...'
+                                                table += '| '+entry+' | '+name+' | '+description+' | '+url+' |\n'
+                                            table += '\n\n'
+                                            messages.append({'text': table})
                 if querytype == 'mitre':
                     mitreid = keywords[0].upper().strip()
                     for category in categories:
