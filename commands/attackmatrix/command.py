@@ -121,16 +121,17 @@ def process(command, channel, username, params):
                                     messages.append({'text': table})
                                     for category in categories:
                                         if category in json_response:
-                                            table = '\n\n**Associated** `'+category+'`\n'
-                                            table += '\n\n'
-                                            table += '| **MITRE ID** | **Name ** | **URL** |\n'
-                                            table += '|:- |:- |:- |\n'
-                                            for entry in sorted(json_response[category]):
-                                                name = regex.sub(' ', ' '.join(json_response[category][entry]['name']))
-                                                url = regex.sub(' ', ' '.join(json_response[category][entry]['url']))
-                                                table += '| '+entry+' | '+name+' | '+url+' |\n'
-                                            table += '\n\n'
-                                            messages.append({'text': table})
+                                            if len(json_response[category]):
+                                                table = '\n\n**Associated** `'+category+'`\n'
+                                                table += '\n\n'
+                                                table += '| **MITRE ID** | **Name ** | **URL** |\n'
+                                                table += '|:- |:- |:- |\n'
+                                                for entry in sorted(json_response[category]):
+                                                    name = regex.sub(' ', ' '.join(json_response[category][entry]['name']))
+                                                    url = regex.sub(' ', ' '.join(json_response[category][entry]['url']))
+                                                    table += '| '+entry+' | '+name+' | '+url+' |\n'
+                                                table += '\n\n'
+                                                messages.append({'text': table})
                                     break
                         if not result:
                             messages.append({'text': 'AttackMatrix: MITRE ID not found.'})
