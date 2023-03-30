@@ -28,11 +28,11 @@ else:
 
 def process(command, channel, username, params):
     messages = []
-    querytypes = ('search', 'mitre', 'actoroverlap', 'ttpoverlap', 'findactor')
+    querytypes = ('search', 'mitre', 'actoroverlap', 'ttpoverlap', 'findactor', 'matrices', 'config')
     querytype = params[0].strip()
     stripchars = '`\n\r\'\"'
     regex = re.compile('[%s]' % stripchars)
-    categories = ('Actors', 'Techniques', 'Malwares', 'Tools', 'Mitigations', 'Tactics', 'Data Sources', 'Case Studies', 'Campaigns', 'Matrices')
+    categories = ('Actors', 'Techniques', 'Malwares', 'Tools', 'Mitigations', 'Tactics', 'Data Sources', 'Case Studies', 'Campaigns', 'Detection Rules', 'Code Snippets', 'Matrices')
     tableheaders = collections.OrderedDict({
         'type': 'Type',
         'name': 'Name',
@@ -43,12 +43,27 @@ def process(command, channel, username, params):
     else:
         try:
             keywords = params[1:]
-            if len(' '.join(keywords))<4:
+            if len(' '.join(keywords))<4 and not querytype in ('matrices', 'config'):
                 messages.append({'text': 'Please specify at least one reasonably-sized keyword to query the AttackMatrix `'+querytype+'`.'})
             else:
                 headers={
                     'Content-Type': settings.CONTENTTYPE,
                 }
+                if querytype in ('matrices', 'config'):
+                    APIENDPOINT = settings.APIURL['attackmatrix']['url']+'/explore/'
+                    with requests.get(APIENDPOINT, headers=headers) as response:
+                        json_response = response.json()
+                        if len(json_response):
+                            table = 'ATT&CK Matrix API endpoint currently has ' + str(len(json_response['Metadata']['matrices'])) + ' databases loaded:'
+                            table += '\n\n'
+                            table += '| **Matrix Name** | **Description** |\n'
+                            table += '|:- |:- |\n'
+                            for matrix in json_response['Metadata']['matrices']:
+                                name = json_response['Metadata']['matrices'][matrix]['Metadata']['name'][0]
+                                description = json_response['Metadata']['matrices'][matrix]['Metadata']['description'][0]
+                                table += '| '+name+' | '+description+' |\n'
+                            table += '\n\n'
+                            messages.append({'text': table})
                 if querytype == 'search':
                     searchterms = '&params='.join([urllib.parse.quote(_) for _ in keywords])
                     APIENDPOINT = settings.APIURL['attackmatrix']['url']+'/search?params='+searchterms

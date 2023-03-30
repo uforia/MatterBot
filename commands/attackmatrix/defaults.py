@@ -47,4 +47,14 @@ HELP = {
         'the resulting list of matching actors with the matching certainty. Particularly useful with the '
         'lists of MITRE IDs, such as the `easy pivoting` one from the VirusTotal module output.',
     },
+    'matrices': {
+        'args': None,
+        'desc': 'Display all ATT&CK Matrices and other databases that have been loaded into the '
+                'configured AttackMatrix API endpoint: ' + APIURL['attackmatrix']['url'] + '.',
+    },
+    'config': {
+        'args': None,
+        'desc': 'Display all ATT&CK Matrices and other databases that have been loaded into the '
+                'configured AttackMatrix API endpoint: ' + APIURL['attackmatrix']['url'] + '.',
+    },
 }
