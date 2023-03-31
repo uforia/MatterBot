@@ -57,9 +57,9 @@ class MattermostManager(object):
                 module = importlib.import_module(module_name + '.' + 'command')
                 defaults = importlib.import_module(module_name + '.' + 'defaults')
                 overridesettings = importlib.import_module(module_name + '.' + 'settings')
-                if defaults.HELP:
+                if hasattr(defaults, 'HELP'):
                     HELP = defaults.HELP
-                if overridesettings.HELP:
+                if hasattr(overridesettings, 'HELP'):
                     HELP = overridesettings.HELP
                 self.commands[module_name] = {'binds': module.settings.BINDS, 'chans': module.settings.CHANS, 'help': HELP, 'process': getattr(module, 'process')}
         # Start the websocket
