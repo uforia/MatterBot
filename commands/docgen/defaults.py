@@ -11,19 +11,7 @@ APIURL = {
 }
 HELP = {
     'DEFAULT': {
-        'args': 'RRP, DFIR or CAR',
-        'desc': 'Generate a skeleton Retainer Response Plan, Digital Forensics / Incident Response or Compromise Assessment document in MD format.',
-    },
-    'RRP': {
-        'args': '<customer ID>,<Process ID #1>,<Process ID #2>,...,<Process ID #3>',
-        'desc': 'Generate an Retainer Response Plan skeleton document, based on the given process IDs and tailored to the given customer ID.',
-    },
-    'DFIR': {
-        'args': '<customer ID>,<Process ID #1>,<Process ID #2>,...,<Process ID #3>',
-        'desc': 'Generate a Digital Forensics and Incident Response skeleton document, based on the given process IDs and tailored to the given customer ID.',
-    },
-    'CAR': {
-        'args': '<customer ID>,<Process ID #1>,<Process ID #2>,...,<Process ID #3>',
-        'desc': 'Generate a Compromise Assessment skeleton document, based on the given process IDs and tailored to the given customer ID.',
+        'args': '<type> <name> <arg1> <arg2> ... <arg#>',
+        'desc': 'Create a composite `type` document for `name` from the given WikiJS pages.',
     },
 }

@@ -18,22 +18,18 @@ else:
 
 
 def process(command, channel, username, params):
-    querytypes = ('rrp', 'dfir', 'car')
-    typemap = {
-        'rrp': 'Retainer_Response_Plan',
-        'dfir': 'Incident_Response_Report',
-        'car': 'Compromise_Assessment',
-    }
+    querytypes = settings.DOCTYPES
+    typemap = settings.TYPEMAP
     if len(params)>0:
         messages = []
         try:
             if len(params)<2:
-                messages.append({'text': 'You need to specify the customer and process IDs, separated by comma\'s!'})
+                messages.append({'text': 'You need to specify the relevant name and IDs, separated by comma\'s!'})
             else:
                 querytype = params[0].lower()
-                customerid = params[1]
+                nameid = params[1]
                 if not querytype in querytypes:
-                    messages.append({'text': 'You need to specify at least a valid report type: `%s`!' % (querytypes,)})
+                    messages.append({'text': 'You need to specify at least a valid document type: `%s`!' % (querytypes,)})
                 else:
                     auth = {
                         'Authorization': 'Bearer %s' % settings.APIURL['docgen']['token'],
@@ -57,9 +53,9 @@ def process(command, channel, username, params):
                         now = datetime.datetime.now().strftime('%Y%m%d')
                         doctype = typemap[querytype]
                         # To-Do: needs database of customer info
-                        customerid = customerid
-                        filename = now+'-'+doctype+'-'+customerid+'.md'
-                        messages.append({'text': doctype+' for '+customerid+' at '+now+':' ,'uploads': [
+                        nameid = nameid
+                        filename = now+'-'+doctype+'-'+nameid+'.md'
+                        messages.append({'text': doctype+' for '+nameid+' at '+now+':' ,'uploads': [
                             {'filename': filename, 'bytes': ''.join(skeletondocument).encode('utf-8')}
                         ]})
         except Exception as e:

@@ -56,8 +56,11 @@ class MattermostManager(object):
                 module_name = root.split('/')[-1].lower()
                 module = importlib.import_module(module_name + '.' + 'command')
                 defaults = importlib.import_module(module_name + '.' + 'defaults')
+                overridesettings = importlib.import_module(module_name + '.' + 'settings')
                 if defaults.HELP:
                     HELP = defaults.HELP
+                if overridesettings.HELP:
+                    HELP = overridesettings.HELP
                 self.commands[module_name] = {'binds': module.settings.BINDS, 'chans': module.settings.CHANS, 'help': HELP, 'process': getattr(module, 'process')}
         # Start the websocket
         self.mmDriver.init_websocket(self.handle_raw_message)
