@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
 import datetime
-import json
 import math
 import random
 import re
 import requests
+import sys
 import urllib
 from pathlib import Path
 try:
@@ -261,18 +261,21 @@ def process(command, channel, username, params):
                 filters = set()
                 limit = 100
                 uploads = []
-                for param in params:
-                    if param.startswith('query:'):
-                        for value in param.replace('query:', '').split(','):
-                            query.add(value.replace('[', '').replace(']', '').replace('hxxp','http'))
-                    if param.startswith('filters:'):
-                        for value in param.replace('filters:', '').split(','):
-                            filters.add(value)
-                    if param.startswith('facets:'):
-                        for value in param.replace('facets:', '').split(','):
-                            facets.add(value)
-                    if param.startswith('limit:'):
-                        limit = param.split(':')[1]
+                try:
+                    for param in params:
+                        if param.startswith('query:'):
+                            for value in param.replace('query:', '').split(','):
+                                query.add(value.replace('[', '').replace(']', '').replace('hxxp','http'))
+                        if param.startswith('filters:'):
+                            for value in param.replace('filters:', '').split(','):
+                                filters.add(value)
+                        if param.startswith('facets:'):
+                            for value in param.replace('facets:', '').split(','):
+                                facets.add(value)
+                        if param.startswith('limit:'):
+                            limit = param.split(':')[1]
+                except Exception as e:
+                    return {'messages': [{'text': e}]}
                 try:
                     pages = math.floor(int(limit)/100)
                     if int(limit) % 100:
@@ -317,19 +320,23 @@ def process(command, channel, username, params):
                                 total = json_response['total']
                                 text += '\nReturning up to 10 matches from the first page only; download the JSON file(s) for all ' + str(total) + ' results:'
                                 text += '\n\n'
-                                text += '| Hostname(s) | Service | Port | Proto | SSL/TLS | Product | Banner |\n'
-                                text += '|:----------- |--------:| ----:| -----:| -------:|:------- |:-------|\n'
+                                text += '| IP Address | Hostname(s) | Service | Port | Proto | SSL/TLS | Product | Banner |\n'
+                                text += '| ---------: | :---------- | ------: | ---: | ----: | ------: | :------ | :---- -|\n'
                                 table_header_displayed = True
                             for match in matches[:10]:
                                 result = {}
-                                fields = ('hostnames', 'port', 'transport', 'product', 'data')
+                                fields = ('ip_str', 'hostnames', 'port', 'transport', 'product', 'data')
                                 for field in fields:
                                     if field in match:
                                         if isinstance(match[field],list):
-                                            result[field] = ', '.join(match[field])
+                                            combined = ', '.join(str(_) for _ in match[field])
+                                            if len(combined):
+                                                result[field] = ', '.join(str(_) for _ in match[field])
+                                            else:
+                                                result[field] = ' - '
                                         else:
                                             result[field] = str(match[field])
-                                        if not len(match[field]):
+                                        if not len(str(match[field])):
                                             result = ' - '
                                     else:
                                         result[field] = ' - '
@@ -341,11 +348,11 @@ def process(command, channel, username, params):
                                 for field in ('product', 'data'):
                                     if field in result:
                                         result[field] = regex.sub(' ', result[field])
-                                        if len(result[field])>60:
+                                        if len(str(result[field]))>60:
                                             result[field] = result[field][:60] + ' [...]'
-                                fields = ('hostnames', 'name', 'port', 'transport', 'ssl', 'product', 'data')
+                                fields = ('ip_str', 'hostnames', 'name', 'port', 'transport', 'ssl', 'product', 'data')
                                 for field in fields:
-                                    text += '| ' + result[field] + ' '
+                                    text += '| ' + str(result[field]) + ' '
                                 text += ' |\n'
                             uploads.append({'filename': 'shodan-'+querytype+'-page-'+str(page)+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content})
                             messages.append({'text': text})
@@ -377,6 +384,7 @@ def process(command, channel, username, params):
                     messages.append({'text': text})
             return {'messages': messages}
         except Exception as e:
+            raise
             return {'messages': [
                 {'text': 'A Python error occurred searching Shodan:\nError:' + e}
             ]}
