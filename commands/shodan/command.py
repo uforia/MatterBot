@@ -65,8 +65,8 @@ def process(command, channel, username, params):
                             if total==0:
                                 return {'messages': [{'text': 'No results found.'}]}
                         text += '\n\n'
-                        text += '| Hostname(s) | Service | Port | Proto | SSL/TLS | Product | Banner |\n'
-                        text += '|:----------- |--------:| ----:| -----:| -------:|:------- |:-------|\n'
+                        text += '| Hostname(s) | Service | Port | Proto | Vulns | SSL/TLS | Product | Banner |\n'
+                        text += '|:----------- |--------:| ----:| -----:| -----:| -------:|:------- |:-------|\n'
                         if 'data' in json_response:
                             json_data = json_response['data']
                             for service in json_data:
@@ -87,12 +87,16 @@ def process(command, channel, username, params):
                                     result['ssl'] = service['ssl']['cipher']['version']
                                 else:
                                     result['ssl'] = ' No '
+                                if 'vulns' in service['opts']:
+                                    result['vulns'] = str(len(service['opts']['vulns']))
+                                else:
+                                    result['vulns'] = '0'
                                 for field in ('product', 'data'):
                                     if field in result:
                                         result[field] = regex.sub(' ', result[field])
                                         if len(result[field])>60:
                                             result[field] = result[field][:60] + ' [...]'
-                                fields = ('hostnames', 'name', 'port', 'transport', 'ssl', 'product', 'data')
+                                fields = ('hostnames', 'name', 'port', 'transport', 'vulns', 'ssl', 'product', 'data')
                                 for field in fields:
                                     text += '| ' + result[field] + ' '
                                 text += ' |\n'
@@ -121,8 +125,8 @@ def process(command, channel, username, params):
                             else:
                                 return {'messages': [{'text': 'An error occurred searching Shodan: ' + error}]}
                         text += '\n\n'
-                        text += '| Hostname(s) | Service | Port | Proto | SSL/TLS | Product | Banner |\n'
-                        text += '|:----------- |--------:| ----:| -----:| -------:|:------- |:-------|\n'
+                        text += '| Hostname(s) | Service | Port | Proto | Vulns | SSL/TLS | Product | Banner |\n'
+                        text += '|:----------- |--------:| ----:| -----:| -----:| -------:|:------- |:-------|\n'
                         if 'matches' in json_response:
                             matches = json_response['matches']
                             if len(matches):
@@ -145,12 +149,16 @@ def process(command, channel, username, params):
                                         result['ssl'] = match['ssl']['cipher']['version']
                                     else:
                                         result['ssl'] = ' No '
+                                    if 'vulns' in match:
+                                        result['vulns'] = str(len(match['vulns']))
+                                    else:
+                                        result['vulns'] = '0'
                                     for field in ('product', 'data'):
                                         if field in result:
                                             result[field] = regex.sub(' ', result[field])
                                             if len(result[field])>60:
                                                 result[field] = result[field][:60] + ' [...]'
-                                    fields = ('hostnames', 'name', 'port', 'transport', 'ssl', 'product', 'data')
+                                    fields = ('hostnames', 'name', 'port', 'transport', 'vulns', 'ssl', 'product', 'data')
                                     for field in fields:
                                         text += '| ' + result[field] + ' '
                                     text += ' |\n'
@@ -320,8 +328,8 @@ def process(command, channel, username, params):
                                 total = json_response['total']
                                 text += '\nReturning up to 10 matches from the first page only; download the JSON file(s) for all ' + str(total) + ' results:'
                                 text += '\n\n'
-                                text += '| IP Address | Hostname(s) | Service | Port | Proto | SSL/TLS | Product | Banner |\n'
-                                text += '| ---------: | :---------- | ------: | ---: | ----: | ------: | :------ | :---- -|\n'
+                                text += '| IP Address | Hostname(s) | Service | Port | Proto | Vulns | SSL/TLS | Product | Banner |\n'
+                                text += '| ---------: | :---------- | ------: | ---: | ----: | ----: | ------: | :------ | :---- -|\n'
                                 table_header_displayed = True
                             for match in matches[:10]:
                                 result = {}
@@ -345,12 +353,16 @@ def process(command, channel, username, params):
                                     result['ssl'] = match['ssl']['cipher']['version']
                                 else:
                                     result['ssl'] = ' No '
+                                if 'vulns' in match:
+                                    result['vulns'] = str(len(match['vulns']))
+                                else:
+                                    result['vulns'] = '0'
                                 for field in ('product', 'data'):
                                     if field in result:
                                         result[field] = regex.sub(' ', result[field])
                                         if len(str(result[field]))>60:
                                             result[field] = result[field][:60] + ' [...]'
-                                fields = ('ip_str', 'hostnames', 'name', 'port', 'transport', 'ssl', 'product', 'data')
+                                fields = ('ip_str', 'hostnames', 'name', 'port', 'transport', 'vulns', 'ssl', 'product', 'data')
                                 for field in fields:
                                     text += '| ' + str(result[field]) + ' '
                                 text += ' |\n'
