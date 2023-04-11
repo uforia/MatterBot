@@ -11,7 +11,7 @@ APIURL = {
 }
 HELP = {
     'DEFAULT': {
-        'args': '<type> <name> <arg1> <arg2> ... <arg#>',
-        'desc': 'Create a composite `type` document for `name` from the given WikiJS pages.',
+        'args': '<id>,<lang>',
+        'desc': 'Create the composite document `ID` in the given language.',
     },
 }
