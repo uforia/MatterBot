@@ -43,6 +43,7 @@ MatterBot consists of two parts that can be run independently: matterbot and mat
 - Censys: search for IPs, SHA256 certificate fingerprints (*)
 - ChatGPT: ask OpenAI's ChatGPT individual questions (no history) (*)
 - Diceroll: rolling dice
+- EWA: generate Early Warning / Advisory announcements using NVD and WikiJS (**)
 - Example: module with instructions for developing your own
 - GeoLocation: transform latitude/longitude into an address, if possible
 - IPWHOIS: query IP WHOIS for IP address information
@@ -59,6 +60,7 @@ MatterBot consists of two parts that can be run independently: matterbot and mat
 - WikiJS: search your WikiJS instance for information (*)
 
 (*): Module requires (paid) API access for partial or full functionality!
+(**): The EWA module requires a complete Pandoc, pypandoc and (La)TeX setup to function, as well as your own CSS rendering template
 
 ## Requirements
 

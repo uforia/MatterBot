@@ -11,6 +11,7 @@ __pycache__/
 build/
 config.yaml
 commands/*/settings.py
+commands/*/template/*
 modules/*/settings.py
 *.json
 *.log
