@@ -141,96 +141,96 @@ def process(command, channel, username, params):
                                             for node in nodes:
                                                 for cpeMatch in node['cpeMatch']:
                                                     productnames.add(cpeMatch['criteria'].split(':')[4].replace('_',' ').title())
-                        content = "\n# **%s**" % (settings.EWAHEADER,)
-                        content += "\n\n"
-                        content += "## **%s**: %s" % (settings.VULNTEXT, cveid)
-                        content += "\n\n"
-                        content += "\n|  |  |"
-                        content += "\n|:-|:-|"
-                        content += "\n| **%s** | %s |" % (settings.DESCTEXT, title)
-                        content += "\n| **%s** | %s |" % (settings.DATETEXT, datetime.datetime.now().strftime('%A, %d %B %Y'))
-                        content += "\n| **%s** | 1.0 |" % (settings.REVTEXT,)
-                        content += "\n| **CVSS Score** | %s (%s) |" % (baseScore, baseSeverity)
-                        if exploitability:
-                            if exploitability<=3.9:
-                                chance = settings.LOWTEXT
-                            elif exploitability>=4.0 and exploitability<=6.9:
-                                chance = settings.MEDTEXT
-                            elif exploitability>=7.0:
-                                chance = settings.HIGHTEXT
-                            content += "\n| **%s** | %s |" % (settings.CHANCETEXT, chance)
-                        if impactScore:
-                            if impactScore<=3.9:
-                                schade = settings.LOWTEXT
-                            elif impactScore>=4.0 and impactScore<=6.9:
-                                schade = settings.MEDTEXT
-                            elif impactScore>=7.0:
-                                schade = settings.HIGHTEXT
-                            content += "\n| **%s** | %s |" % (settings.DMGTEXT, schade)
-                        content += "\n| **CVSS String** | %s |" % (vectorString,)
-                        if len(productnames):
-                            content += "\n| **%s** | %s |" % (settings.PRODTEXT, ', '.join(productnames))
-                        if len(referenceUrls):
-                            content += "\n| **%s** | [%s](%s) |" % (settings.REFTEXT, ', '.join(referenceUrls), ', '.join(referenceUrls))
-                        content += "\n| **%s** | ... |" % (settings.ADDDESCTEXT)
-                        content += "\n| **%s** | ... |" % (settings.SOLTEXT)
-                        content += "\n\n"
-                        content += "## %s" % (settings.FAQTEXT)
-                        content += "\n\n"
-                        content += settings.FAQCONTENT
-                        content += "\n\n"
-                        content += "## %s" % (settings.DISCTEXT)
-                        content += "\n\n"
-                        content += settings.DISCCONTENT
-                        content += "\n\n"
-                    if content:
-                        ### Create a WikiJS page
-                        description = "%s" % (title,)
-                        editor = "markdown"
-                        isPublished = "true"
-                        isPrivate = "false"
-                        locale = "en"
-                        path = "/home/%s" % (cveid,)
-                        tags = "[" + settings.TAGS + ", "
-                        tags += "\"%s\"]" % (cveid,)
-                        title = "%s" % (cveid,)
-                        query = """
-                        mutation Page {
-                            pages {
-                                create (
-                                    content: \"\"\"%s\"\"\",
-                                    description: \"\"\"%s\"\"\",
-                                    editor: "%s",
-                                    isPublished: %s,
-                                    isPrivate: %s,
-                                    locale: "%s",
-                                    path: "%s",
-                                    tags: %s,
-                                    title: \"\"\"%s\"\"\"
-                                )
-                                {
-                                    responseResult {
-                                        succeeded,
-                                        errorCode,
-                                        slug,
-                                        message
-                                    },
-                                    page {
-                                        id,
-                                        path,
-                                        title
+                                content = "\n# **%s**" % (settings.EWAHEADER,)
+                                content += "\n\n"
+                                content += "## **%s**: %s" % (settings.VULNTEXT, cveid)
+                                content += "\n\n"
+                                content += "\n|  |  |"
+                                content += "\n|:-|:-|"
+                                content += "\n| **%s** | %s |" % (settings.DESCTEXT, title)
+                                content += "\n| **%s** | %s |" % (settings.DATETEXT, datetime.datetime.now().strftime('%A, %d %B %Y'))
+                                content += "\n| **%s** | 1.0 |" % (settings.REVTEXT,)
+                                content += "\n| **CVSS Score** | %s (%s) |" % (baseScore, baseSeverity)
+                                if exploitability:
+                                    if exploitability<=3.9:
+                                        chance = settings.LOWTEXT
+                                    elif exploitability>=4.0 and exploitability<=6.9:
+                                        chance = settings.MEDTEXT
+                                    elif exploitability>=7.0:
+                                        chance = settings.HIGHTEXT
+                                    content += "\n| **%s** | %s |" % (settings.CHANCETEXT, chance)
+                                if impactScore:
+                                    if impactScore<=3.9:
+                                        schade = settings.LOWTEXT
+                                    elif impactScore>=4.0 and impactScore<=6.9:
+                                        schade = settings.MEDTEXT
+                                    elif impactScore>=7.0:
+                                        schade = settings.HIGHTEXT
+                                    content += "\n| **%s** | %s |" % (settings.DMGTEXT, schade)
+                                content += "\n| **CVSS String** | %s |" % (vectorString,)
+                                if len(productnames):
+                                    content += "\n| **%s** | %s |" % (settings.PRODTEXT, ', '.join(productnames))
+                                if len(referenceUrls):
+                                    content += "\n| **%s** | [%s](%s) |" % (settings.REFTEXT, ', '.join(referenceUrls), ', '.join(referenceUrls))
+                                content += "\n| **%s** | ... |" % (settings.ADDDESCTEXT)
+                                content += "\n| **%s** | ... |" % (settings.SOLTEXT)
+                                content += "\n\n"
+                                content += "## %s" % (settings.FAQTEXT)
+                                content += "\n\n"
+                                content += settings.FAQCONTENT
+                                content += "\n\n"
+                                content += "## %s" % (settings.DISCTEXT)
+                                content += "\n\n"
+                                content += settings.DISCCONTENT
+                                content += "\n\n"
+                            if content:
+                                ### Create a WikiJS page
+                                description = "%s" % (title,)
+                                editor = "markdown"
+                                isPublished = "true"
+                                isPrivate = "false"
+                                locale = "en"
+                                path = "/home/%s" % (cveid,)
+                                tags = "[" + settings.TAGS + ", "
+                                tags += "\"%s\"]" % (cveid,)
+                                title = "%s" % (cveid,)
+                                query = """
+                                mutation Page {
+                                    pages {
+                                        create (
+                                            content: \"\"\"%s\"\"\",
+                                            description: \"\"\"%s\"\"\",
+                                            editor: "%s",
+                                            isPublished: %s,
+                                            isPrivate: %s,
+                                            locale: "%s",
+                                            path: "%s",
+                                            tags: %s,
+                                            title: \"\"\"%s\"\"\"
+                                        )
+                                        {
+                                            responseResult {
+                                                succeeded,
+                                                errorCode,
+                                                slug,
+                                                message
+                                            },
+                                            page {
+                                                id,
+                                                path,
+                                                title
+                                            }
+                                        }
                                     }
                                 }
-                            }
-                        }
-                        """ % (content, description, editor, isPublished, isPrivate, locale, path, tags, title,)
-                        query = json.dumps({'query': query.strip()})
-                        with requests.post(settings.APIURL['ewa']['url']+'/graphql', headers=headers, data=query) as response:
-                            json_response = response.json()
-                            if 'data' in json_response:
-                                if 'pages' in json_response['data']:
-                                    if 'create' in json_response['data']['pages']:
-                                        messages.append({'text': "Early Warning / Advisory page generated for ["+cve+"]("+settings.APIURL['ewa']['url']+"/"+locale+path+")"})
+                                """ % (content, description, editor, isPublished, isPrivate, locale, path, tags, title,)
+                                query = json.dumps({'query': query.strip()})
+                                with requests.post(settings.APIURL['ewa']['url']+'/graphql', headers=headers, data=query) as response:
+                                    json_response = response.json()
+                                    if 'data' in json_response:
+                                        if 'pages' in json_response['data']:
+                                            if 'create' in json_response['data']['pages']:
+                                                messages.append({'text': "Early Warning / Advisory page generated for ["+cve+"]("+settings.APIURL['ewa']['url']+"/"+locale+path+")"})
     except Exception as e:
         messages.append({'text': "An error occurred: %s" % (str(e),)})
     finally:
