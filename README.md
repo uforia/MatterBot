@@ -59,7 +59,7 @@ MatterBot consists of two parts that can be run independently: matterbot and mat
 - VirusTotal: search for IPs, MD5/SHA1/SHA256 hashes, URLs, domains (*)
 - WikiJS: search your WikiJS instance for information (*)
 
-(*): Module requires (paid) API access for partial or full functionality!
+(*): Module requires (paid) API access for partial or full functionality!  
 (**): The EWA module requires a complete Pandoc, pypandoc and (La)TeX setup to function, as well as your own CSS rendering template
 
 ## Requirements
