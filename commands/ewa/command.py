@@ -175,6 +175,7 @@ def process(command, channel, username, params):
                                 content += "\n| **%s** | ... |" % (settings.ADDDESCTEXT)
                                 content += "\n| **%s** | ... |" % (settings.SOLTEXT)
                                 content += "\n\n"
+                                content += "<div style=\"page-break-after: always;\"></div>"
                                 content += "## %s" % (settings.FAQTEXT)
                                 content += "\n\n"
                                 content += settings.FAQCONTENT
