@@ -176,6 +176,7 @@ def process(command, channel, username, params):
                                 content += "\n| **%s** | ... |" % (settings.SOLTEXT)
                                 content += "\n\n"
                                 content += "<div style=\"page-break-after: always;\"></div>"
+                                content += "\n\n"
                                 content += "## %s" % (settings.FAQTEXT)
                                 content += "\n\n"
                                 content += settings.FAQCONTENT
@@ -232,6 +233,8 @@ def process(command, channel, username, params):
                                         if 'pages' in json_response['data']:
                                             if 'create' in json_response['data']['pages']:
                                                 messages.append({'text': "Early Warning / Advisory page generated for ["+cve+"]("+settings.APIURL['ewa']['url']+"/"+locale+path+")"})
+                        else:
+                            messages.append({'text': "`%s` is not a valid CVE or unknown in the NVD!" % (str(cve),)})
     except Exception as e:
         messages.append({'text': "An error occurred: %s" % (str(e),)})
     finally:
