@@ -74,9 +74,13 @@ def process(command, channel, username, params):
                                     data += '\n'+outputFields[outputField]+': `'+str(json_response[outputField]['level'])+'`'
                                 elif outputField == 'targetOrgs':
                                     if 'topCountries' in json_response['targetOrgs']:
-                                        data += '\nTop Targeted Countries: `'+'`, `'.join(json_response['targetOrgs']['topCountries'])+'`'
+                                        topCountries = '`, `'.join(json_response['targetOrgs']['topCountries'])
+                                        if len(topCountries):
+                                            data += '\nTop Targeted Countries: `'+topCountries+'`'
                                     if 'topIndustries' in json_response['targetOrgs']:
-                                        data += '\nTop Targeted Industries: `'+'`, `'.join(json_response['targetOrgs']['topIndustries'])+'`'
+                                        topIndustries = '`, `'.join(json_response['targetOrgs']['topIndustries'])
+                                        if len(topIndustries):
+                                            data += '\nTop Targeted Industries: `'+topIndustries+'`'
                                 elif outputField == 'categorization':
                                     data += '\nCategories: '
                                     for category in json_response['categorization']['categories']:
@@ -86,8 +90,8 @@ def process(command, channel, username, params):
                                     data += '\nAssociated Threat Actors: `'+'`, `'.join(json_response['actors'])+'`'
                                 elif outputField == 'associatedReferences':
                                     for associatedReference in json_response['associatedReferences']:
-                                        data += '\nAssociated Reference: ['+json_response['associatedReferences'][associatedReference]['description']+']'
-                                        data += '('+json_response['associatedReferences'][associatedReference]['url']+')'
+                                        data += '\nAssociated Reference: ['+associatedReference['description']+']'
+                                        data += '('+associatedReference['url']+')'
                                 else:
                                     data += '\n'+outputFields[outputField]+': `'+json_response[outputField]+'`'
                         if not len(data):
