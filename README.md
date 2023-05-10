@@ -52,6 +52,7 @@ MatterBot consists of two parts that can be run independently: matterbot and mat
 - MISP: query your MISP instance for any IoC type (*)
 - RIPE WHOIS: query RIPE for WHOIS information
 - Shodan: search for IP or hostname information, run `count` and `search` queries (*)
+- SSLMate: search for SHA256 hashes in Certificate Transparency logs (*)
 - ThreatFox: search for MD5/SHA1/SHA256 hashes, IP addresses
 - TLSGrab: connect to the given IP address(es) and attempt to retrieve the TLS certificate CNs, if available
 - Unprotect.it: search through and return information on TTPs, code snippets and detection rules
