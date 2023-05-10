@@ -126,7 +126,7 @@ def process(command, channel, username, params):
             if querytype == 'cert':
                 sha256 = params[0]
                 if (re.search(r"^[A-Fa-f0-9]{64}$", sha256)):
-                    text = '\n**Censys SHA256 certificate fingerprint search for**: `%s`' % (sha256,)
+                    text = '\nCensys SHA256 certificate fingerprint search for: `%s`' % (sha256,)
                     APIENDPOINT = settings.APIURL['censys']['url'] + '/certificates/' + sha256 + '/hosts'
                     with requests.get(APIENDPOINT, auth=(settings.APIURL['censys']['key'], settings.APIURL['censys']['secret']), headers=headers) as response:
                         json_response = response.json()
