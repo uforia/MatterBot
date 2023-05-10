@@ -172,11 +172,14 @@ def process(command, channel, username, params):
                                                 cursor = result['links']['next']
                                                 APIENDPOINT = settings.APIURL['censys']['url'] + '/certificates/' + sha256 + '/hosts&cursor=' + cursor
                                                 response = requests.get(APIENDPOINT, auth=(settings.APIURL['censys']['key'], settings.APIURL['censys']['secret']))
-                                                uploads.append({'filename': 'censys-'+querytype+'-page-'+str(page)+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content})
                                                 json_response = response.json()
-                                                result = json_response['result']
-                                                if 'hosts' in result:
-                                                    hosts = result['hosts']
+                                                if 'result' in json_response:
+                                                    uploads.append({'filename': 'censys-'+querytype+'-page-'+str(page)+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content})
+                                                    result = json_response['result']
+                                                    if 'hosts' in result:
+                                                        hosts = result['hosts']
+                                                else:
+                                                    cursor = None
                                             else:
                                                 cursor = None
                                     messages.append({'text': text})
