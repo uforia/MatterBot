@@ -155,7 +155,7 @@ def process(command, channel, username, params):
                                     cursor = '_firstpage'
                                     count = 0
                                     page = 1
-                                    while count < 10:
+                                    while count < 10 and count < len(hosts):
                                         host = hosts[count]
                                         for field in fieldmap:
                                             if field in host:
