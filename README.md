@@ -13,29 +13,43 @@ Code probably has bugs, but at least it's in a 'works for me' state ;-)
 
 MatterBot consists of two parts that can be run independently: matterbot and matterfeed. Both parts should be run within tmux or screen; the code itself is not daemonized (this may happen at some point in the future).
 
-### Currently supported by `matterfeed`
+### `matterfeed` Sources
 
-- Bruce Schneier's blog (RSS)
-- CISA.gov Security Announcements (RSS)
-- Cqure blog (RSS)
-- DarkReading news (RSS)
-- GBHackers news (RSS)
-- Kitploit tools (RSS)
-- Knowbe4 news (RSS)
-- KrebsOnSecurity blog (RSS)
-- MajorLeagueHacking news (RSS)
-- Microsoft Vulnerability reports (RSS)
-- NCSC NL (Netherlands) Vulnerability reports (RSS)
-- NCSC UK Vulnerability reports (RSS)
-- SecureList news (RSS)
-- TheHackerNews news (RSS)
-- Threatpost news (RSS)
-- Twitter users' posts, as followed by the account configured (*)
-- Velociraptor news/updates (RSS)
-- WeLiveSecurity news (RSS)
-- WikiJS - Report changes to your WikiJS instance (*)
+Matterfeed reports news updates on a set schedule. The currently supported sources are listed in the table below:
 
-### Currently supported by `matterbot`
+| Name                                                        | Type           | API Key Required | Paid Subscription |
+| ----------------------------------------------------------- | -------------- | ---------------- | ----------------- |
+| Bruce Schneier's Blog                                       | RSS            | No               | No                |
+| CISA.gov Security Announcements                             | RSS            | No               | No                |
+| Cqure Blog                                                  | RSS            | No               | No                |
+| DarkReading News                                            | RSS            | No               | No                |
+| GBHackers News                                              | RSS            | No               | No                |
+| Kitploit Tool Updates                                       | RSS            | No               | No                |
+| KnowBe4 News                                                | RSS            | No               | No                |
+| KrebsOnSecurity Blog                                        | RSS            | No               | No                |
+| MajorLeagueHacking News                                     | RSS            | No               | No                |
+| Microsoft Vulnerability Reports                             | RSS            | No               | No                |
+| NCSC Netherlands Advisories                                 | RSS            | No               | No                |
+| NCSC United Kingdom Advisories                              | RSS            | No               | No                |
+| SecureList News                                             | RSS            | No               | No                |
+| TheHackerNews News                                          | RSS            | No               | No                |
+| Threatpost News                                             | RSS            | No               | No                |
+| Twitter Posts (from all users the account is subscribed to) | Twitter        | Yes              | Yes               |
+| Velociraptor News/Updates                                   | RSS            | No               | No                |
+| WeLiveSecurity News                                         | RSS            | No               | No                |
+| WikiJS Page Updates                                         | WikiJS GraphQL | Yes              | No                |
+
+New Matterfeed modules can be created. A boilerplate example can be found in the modules directory.
+
+### `matterbot` Commands
+
+The Matterbot component listens in a given set of channels (configurable per module) for user-definable commands, executes and returns the results of the module code. The currently supported commands are listed below:
+
+| Name      | Type         | Functionality / Use Case | API Key Required | Paid Subscription |     |
+| --------- | ------------ | ------------------------ | ---------------- | ----------------- | --- |
+| ASN WHOIS | Threat Intel |                          |                  |                   |     |
+
+
 
 - ASN WHOIS: look up Autonomous System Numbers and return the ownership, peering and location information
 - AttackMatrix: query an [AttackMatrix](https://github.com/uforia/AttackMatrix) instance for MITRE ATT&CK IDs, Actor- and TTP-overlap
