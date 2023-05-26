@@ -18,7 +18,7 @@ MatterBot consists of two parts that can be run independently: matterbot and mat
 Matterfeed reports news updates on a set schedule. The currently supported sources are listed in the table below:
 
 | Name                                                        | Type           | API Key Required | Paid Subscription |
-| ----------------------------------------------------------- | -------------- | ---------------- | ----------------- |
+| ----------------------------------------------------------- |:--------------:|:----------------:|:-----------------:|
 | Bruce Schneier's Blog                                       | RSS            | No               | No                |
 | CISA.gov Security Announcements                             | RSS            | No               | No                |
 | Cqure Blog                                                  | RSS            | No               | No                |
@@ -39,43 +39,37 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | WeLiveSecurity News                                         | RSS            | No               | No                |
 | WikiJS Page Updates                                         | WikiJS GraphQL | Yes              | No                |
 
-New Matterfeed modules can be created. A boilerplate example can be found in the modules directory.
+New Matterfeed modules can be created. A boilerplate example can be found in the `modules` directory.
 
 ### `matterbot` Commands
 
 The Matterbot component listens in a given set of channels (configurable per module) for user-definable commands, executes and returns the results of the module code. The currently supported commands are listed below:
 
-| Name      | Type         | Functionality / Use Case | API Key Required | Paid Subscription |     |
-| --------- | ------------ | ------------------------ | ---------------- | ----------------- | --- |
-| ASN WHOIS | Threat Intel |                          |                  |                   |     |
+| Name                                    | Type                  | Functionality / Use Case                                                                                                                                                                                       | API Key Required                                                    | Paid Subscription                                                                                                                  |     |
+| --------------------------------------- | --------------------- |:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |:-------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------------------------------------------:| --- |
+| ASN WHOIS                               | Threat Intel          | Look up Autonomous System Numbers and return the ownership, peering and location information                                                                                                                   | No                                                                  | No                                                                                                                                 |     |
+| AttackMatrix                            | Threat Intel          | Query an [AttackMatrix](https://github.com/uforia/AttackMatrix) instance for e.g. MITRE ATT&CK IDs, Actor- and TTP-overlap. Requires Python GraphViz bindings to display the accompanying Graph.               | No, unless the AttackMatrix API is configured to require an API key | No                                                                                                                                 |     |
+| Broadcom Symantec Security Cloud (BSSC) | Threat Intel          | Retrieve 'Threat Intel Insight' information for SHA256 file hashes, IPs, reputations, domains and URLs                                                                                                         | Yes                                                                 | Yes                                                                                                                                |     |
+| Censys                                  | Threat Intel          | Query Censys for IPs and SHA256 certificate fingerprints. Query results are returned as the original Censys JSON blob.                                                                                         | Yes                                                                 | No: basic functionality<br />Yes: additional features, such as pagination                                                          |     |
+| ChatGPT                                 | LLM / GPT queries     | Ask OpenAI's ChatGPT singular questions (no  support for chat history).                                                                                                                                        | Yes                                                                 | Yes                                                                                                                                |     |
+| Diceroll                                | Fun                   | Roll any kind of dice combination: #d# format.                                                                                                                                                                 | No                                                                  | No                                                                                                                                 |     |
+| Early Warning & Advisory (EWA)          | Threat Intel          | Create Early Warning & Advisory documents using the National Vulnerability Database (NVD) and WikiJS information. Requires pandoc,  pypandoc, LaTeX, a WikiJS instance and a CSS template for final rendering. | No (for NVD)<br />Yes (for WikiJS)                                  | No                                                                                                                                 |     |
+| GeoLocation                             | Threat Intel          | Convert latitude/longitude  values into an address.                                                                                                                                                            | No                                                                  | No                                                                                                                                 |     |
+| IPWHOIS                                 | Threat Intel          | Look up IP address information: ownership, ASN, geolocation information.                                                                                                                                       | No                                                                  | No                                                                                                                                 |     |
+| Malpedia                                | Threat Intel          | Look up malware families, threat actors and MD5/SHA256 malware hashes.                                                                                                                                         | No: basic functionality<br />Yes: malware downloads                 | No                                                                                                                                 |     |
+| MalwareBazaar                           | Threat Intel          | Query MalwareBazaar for MD5/SHA1/SHA256 hashes of malware. Will also return include a downloadable malware sample, if available.                                                                               | No                                                                  | No                                                                                                                                 |     |
+| MISP                                    | Threat Intel          | Wildcard-searching of a MISP instance for the given search terms. Returns links to the MISP Events where the search terms have been found.                                                                     | Yes                                                                 | No                                                                                                                                 |     |
+| RIPE WHOIS                              | Threat Intel          | Look up IP address information: ownership, CIDR and geolocation information.                                                                                                                                   | No                                                                  | No                                                                                                                                 |     |
+| Shodan                                  | Threat Intel          | Query Shodan for IP address or host information, as well as performing `count` and `search` queries. Results will include the original Shodan JSON blob as a download.                                         | Yes                                                                 | No: basic functionality<br />Yes: pagination, search queries, etc.                                                                 |     |
+| SSLMate                                 | Threat Intel          | Look up SSL/TLS SHA256 hashes in the Certificate Transparency logs. Returns historic data, related hostnames, revocation status and validity times.                                                            | Yes                                                                 | No                                                                                                                                 |     |
+| ThreatFox                               | Threat Intel          | Query ThreatFox for MD5/SHA1/SHA256 hashes, IP addresses.                                                                                                                                                      | No                                                                  | No                                                                                                                                 |     |
+| TLSGrab                                 | Threat Intel          | Connect to the given IP address + port, and attempt to retrieve the TLS certificate CNs. *Note: this is an OPSEC risk, because the bot will actively attempt to connect to the host/port!*                     | No                                                                  | No                                                                                                                                 |     |
+| Unprotect.it                            | Threat Intel          | Search the Unprotect.it project for information on TTPs, code snippets and detection rules. Returns code snippets and detection rules as a download, if available.                                             | No                                                                  | No                                                                                                                                 |     |
+| URLhaus                                 | Threat Intel          | Look up reputation info on URLhaus for URLs and MD5 / SHA1 / SHA256 URL hashes.                                                                                                                                | No                                                                  | No                                                                                                                                 |     |
+| VirusTotal                              | Threat Intel          | Search VirusTotal for IP addresses, MD5/SHA1/SHA256 hashes, URLs and domains. Returned results will include maliciousness, TTP sets, malware family names, etc., if available.                                 | Yes                                                                 | No: basic functionality<br />Yes: paid VT features, throttling limit removal, etc.                                                 |     |
+| WikiJS                                  | Information Retrieval | Search through WikiJS pages' contents for the given search terms. Returns links to the pages where the contents were found.                                                                                    | Yes                                                                 | Yes: currently requires a Microsoft Azure Search instance  that indexes the WikiJS instance (*Note: this is a WikiJS limitation!*) |     |
 
-
-
-- ASN WHOIS: look up Autonomous System Numbers and return the ownership, peering and location information
-- AttackMatrix: query an [AttackMatrix](https://github.com/uforia/AttackMatrix) instance for MITRE ATT&CK IDs, Actor- and TTP-overlap
-- Broadcom Symantec Security Cloud: retrieve 'Threat Intel Insight' information for SHA256 file hashes, IPs, domains and URLs (*)
-- Censys: search for IPs, SHA256 certificate fingerprints (*)
-- ChatGPT: ask OpenAI's ChatGPT individual questions (no history) (*)
-- Diceroll: rolling dice
-- EWA: generate Early Warning / Advisory announcements using NVD and WikiJS (**)
-- Example: module with instructions for developing your own
-- GeoLocation: transform latitude/longitude into an address, if possible
-- IPWHOIS: query IP WHOIS for IP address information
-- Malpedia: search for MD5/SHA256 malware hashes, malware families or threat actors (*)
-- MalwareBazaar: search for MD5/SHA1/SHA256 hashes
-- MISP: query your MISP instance for any IoC type (*)
-- RIPE WHOIS: query RIPE for WHOIS information
-- Shodan: search for IP or hostname information, run `count` and `search` queries (*)
-- SSLMate: search for SHA256 hashes in Certificate Transparency logs (*)
-- ThreatFox: search for MD5/SHA1/SHA256 hashes, IP addresses
-- TLSGrab: connect to the given IP address(es) and attempt to retrieve the TLS certificate CNs, if available
-- Unprotect.it: search through and return information on TTPs, code snippets and detection rules
-- URLHaus: search for MD5/SHA1/SHA256 hashes, URLs
-- VirusTotal: search for IPs, MD5/SHA1/SHA256 hashes, URLs, domains (*)
-- WikiJS: search your WikiJS instance for information (*)
-
-(*): Module requires (paid) API access for partial or full functionality!  
-(**): The EWA module requires a complete Pandoc, pypandoc and (La)TeX setup to function, as well as your own CSS rendering template
+New Matterbot modules can be created. A boilerplate example can be found in the `commands` directory.
 
 ## Requirements
 
