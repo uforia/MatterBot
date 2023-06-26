@@ -35,8 +35,10 @@ else:
 def query(MAX=0):
     client = tweepy.Client(settings.BEARER_TOKEN)
     tweets_list = []
-    user_id = client.get_user(username=settings.USERNAME).data.id
-    follows = client.get_users_following(user_id).data
+    tweets = client.search_recent_tweets(query='from:KPNCSIRT -is:retweet')
+    print(tweets)
+    #user_id = client.get_user(username=settings.USERNAME).data.id
+    #follows = client.get_users_following().data
     for follow in follows:
         follow_id = follow.id
         tweets = client.get_users_tweets(id=follow_id, max_results=settings.HISTORY, tweet_fields=['created_at', 'id', 'entities'])

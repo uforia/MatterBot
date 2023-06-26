@@ -12,6 +12,7 @@ build/
 config.yaml
 commands/*/settings.py
 commands/*/template/*
+CVE-*
 modules/*/settings.py
 *.json
 *.log

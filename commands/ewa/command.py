@@ -5,6 +5,7 @@ import json
 import os
 import pypandoc
 import requests
+import weasyprint
 from pathlib import Path
 try:
     from commands.ewa import defaults as settings
@@ -73,39 +74,48 @@ def process(command, channel, username, params):
                             with requests.post(settings.APIURL['ewa']['url']+'/graphql', headers=headers, data=query) as response:
                                 json_response = response.json()
                                 content = json_response['data']['pages']['single']['content']
-                                doc = pypandoc.convert_text(content, 'html', format='markdown')
-                                pwd = os.getcwd()
-                                os.chdir(settings.HTMLTEMPLATEDIR)
-                                with open(settings.HTMLHEADER) as f:
-                                    htmlheader = f.read()
-                                with open(settings.HTMLCSS) as f:
-                                    css = "<style>\n" + f.read() + "\n</style>\n<body>\n"
-                                with open(settings.HTMLFOOTER) as f:
-                                    htmlfooter = f.read()
-                                html = htmlheader + css + doc + htmlfooter
-                                with open('../'+cve+'.html', 'wb') as f:
+                                MODULEDIR = "commands/ewa/"
+                                mdfile = MODULEDIR+cve+'.md'
+                                htmlfile = MODULEDIR+cve+'.html'
+                                cssfile = MODULEDIR+settings.HTMLCSS
+                                pdffile = MODULEDIR+cve+'.pdf'
+                                format = 'markdown'
+                                extra_args = ['--section-divs', '--number-offset=0', '--embed-resources', '--toc']
+                                with open(MODULEDIR+settings.HTMLHEADER) as f:
+                                    header = f.read()
+                                    header = header.replace('%title%', settings.EWAHEADER)
+                                    header = header.replace('%subtitle%', cve)
+                                    header = header.replace('%toc%', '[TOC]')
+                                    header = header.replace('%date%', datetime.datetime.now().strftime('%A, %d %B %Y'))
+                                with open(MODULEDIR+settings.HTMLFOOTER) as f:
+                                    footer = f.read()
+                                html = header + pypandoc.convert_text(content, 'html', format=format, extra_args=extra_args) + footer
+                                with open(mdfile, 'wb') as f:
+                                    f.write(content.encode())
+                                    f.flush()
+                                with open(htmlfile, 'wb') as f:
                                     f.write(html.encode())
                                     f.flush()
-                                output = pypandoc.convert_file('../'+cve+'.html', 'pdf', outputfile='../'+cve+'.pdf')
-                                assert output == ""
+                                html_writer = weasyprint.HTML(htmlfile)
+                                css = weasyprint.CSS(filename=MODULEDIR+settings.HTMLCSS, base_url=MODULEDIR+settings.HTMLTEMPLATEDIR)
+                                html_writer.write_pdf(pdffile, stylesheets=[cssfile])
                                 try:
-                                    os.unlink('../'+cve+'.html')
-                                    with open('../'+cve+'.pdf', 'rb') as f:
+                                    with open(pdffile, 'rb') as f:
                                         bytes = f.read()
                                     if len(bytes):
                                         messages.append({
-                                            'text': 'Early Warning / Advisory PDF for '+cve,
+                                            'text': 'Early Warning / Advisory PDF generated for '+cve,
                                             'uploads': [
                                                 {'filename': cve+'.pdf', 'bytes': bytes}
                                             ]
                                         })
-                                    os.unlink('../'+cve+'.pdf')
+                                    #os.unlink(mdfile)
+                                    #os.unlink(htmlfile)
+                                    #os.unlink(pdffile)
                                 except:
                                     raise
                         except:
                             raise
-                        finally:
-                            os.chdir(pwd)
                     else:
                         messages.append({'text': "**EAW Error**: there is no CVE page yet for `%s`" % (cve,)})
                 if command == 'create':
@@ -119,15 +129,22 @@ def process(command, channel, username, params):
                                 cveid = vulnerability['id']
                                 title = vulnerability['descriptions'][0]['value']
                                 cvssMetrics = vulnerability['metrics']
+                                vectorString = None
+                                baseScore = None
+                                baseSeverity = None
+                                exploitability = None
+                                impactScore = None
                                 for metrictype in cvssMetrics:
                                     if metrictype in cvssMetrics:
-                                        cvssMetric = cvssMetrics[metrictype][0]
-                                        vectorString = cvssMetric['cvssData']['vectorString']
-                                        baseScore = cvssMetric['cvssData']['baseScore']
-                                        baseSeverity = cvssMetric['cvssData']['baseSeverity']
-                                        exploitability = cvssMetric['exploitabilityScore'] if 'exploitabilityScore' in cvssMetric else None
-                                        impactScore = cvssMetric['impactScore'] if 'impactScore' in cvssMetric else None
-                                        break
+                                        if 'cvssData' in cvssMetrics:
+                                            cvssMetric = cvssMetrics[metrictype][0]
+                                            cvssData = cvssMetric['cvssData']
+                                            vectorString = cvssData['vectorString']
+                                            baseScore = cvssData['baseScore']
+                                            baseSeverity = cvssData['baseSeverity']
+                                            exploitability = cvssMetric['exploitabilityScore']
+                                            impactScore = cvssMetric['impactScore']
+                                            break
                                 referenceUrls = set()
                                 references = vulnerability['references']
                                 for reference in references:
@@ -146,11 +163,14 @@ def process(command, channel, username, params):
                                 content += "## **%s**: %s" % (settings.VULNTEXT, cveid)
                                 content += "\n\n"
                                 content += "\n|  |  |"
-                                content += "\n|:-|:-|"
+                                content += "\n|:-|:----|"
                                 content += "\n| **%s** | %s |" % (settings.DESCTEXT, title)
                                 content += "\n| **%s** | %s |" % (settings.DATETEXT, datetime.datetime.now().strftime('%A, %d %B %Y'))
                                 content += "\n| **%s** | 1.0 |" % (settings.REVTEXT,)
-                                content += "\n| **CVSS Score** | %s (%s) |" % (baseScore, baseSeverity)
+                                if baseScore and baseSeverity:
+                                    content += "\n| **CVSS Score** | %s (%s) |" % (baseScore, baseSeverity)
+                                else:
+                                    content += "\n| **CVSS Score** | Unknown (N/A) |"
                                 if exploitability:
                                     if exploitability<=3.9:
                                         chance = settings.LOWTEXT
@@ -171,20 +191,32 @@ def process(command, channel, username, params):
                                 if len(productnames):
                                     content += "\n| **%s** | %s |" % (settings.PRODTEXT, ', '.join(productnames))
                                 if len(referenceUrls):
-                                    content += "\n| **%s** | [%s](%s) |" % (settings.REFTEXT, ', '.join(referenceUrls), ', '.join(referenceUrls))
-                                content += "\n| **%s** | ... |" % (settings.ADDDESCTEXT)
-                                content += "\n| **%s** | ... |" % (settings.SOLTEXT)
+                                    content += "\n| **%s** | " % (settings.REFTEXT)
+                                    for referenceUrl in referenceUrls:
+                                        content += "[%s](%s), " % (referenceUrl, referenceUrl)
+                                    content = content[:-2]
+                                    content += " |"
                                 content += "\n\n"
-                                content += "<div style=\"page-break-after: always;\"></div>"
+                                content += "\n<div style=\"page-break-after: always;\"></div>"
                                 content += "\n\n"
-                                content += "## %s" % (settings.FAQTEXT)
+                                content += "\n## **%s**" % (settings.ADDDESCTEXT)
                                 content += "\n\n"
+                                content += "..."
+                                content += "\n\n"
+                                content += "\n## **%s**" % (settings.SOLTEXT)
+                                content += "\n\n"
+                                content += "..."
+                                content += "\n\n"
+                                content += "\n<div style=\"page-break-after: always;\"></div>"
+                                content += "\n\n"
+                                content += "\n# %s" % (settings.FAQTEXT)
+                                content += "\n"
                                 content += settings.FAQCONTENT
                                 content += "\n\n"
-                                content += "## %s" % (settings.DISCTEXT)
-                                content += "\n\n"
+                                content += "# %s" % (settings.DISCTEXT)
+                                content += "\n"
                                 content += settings.DISCCONTENT
-                                content += "\n\n"
+                                content += "\n"
                             if content:
                                 ### Create a WikiJS page
                                 description = "%s" % (title,)
@@ -233,8 +265,10 @@ def process(command, channel, username, params):
                                         if 'pages' in json_response['data']:
                                             if 'create' in json_response['data']['pages']:
                                                 messages.append({'text': "Early Warning / Advisory page generated for ["+cve+"]("+settings.APIURL['ewa']['url']+"/"+locale+path+")"})
+                            if json_response['resultsPerPage'] == 0:
+                                messages.append({'text': "`%s` does not exist in the NVD." % (cve,)})
                         else:
-                            messages.append({'text': "`%s` is not a valid CVE or unknown in the NVD!" % (str(cve),)})
+                            messages.append({'text': "An error occurred querying the NVD!"})
     except Exception as e:
         messages.append({'text': "An error occurred: %s" % (str(e),)})
     finally:

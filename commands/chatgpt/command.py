@@ -30,9 +30,12 @@ def process(command, channel, username, params):
         }
         with requests.post(settings.APIENDPOINT, json=data, headers=headers) as response:
             answer = response.json()
+            reply = None
+            if 'error' in answer:
+                reply = "An error occurred querying OpenAI: `"+answer['error']['message']+'`'
             if 'choices' in answer:
-                aitext = answer['choices'][0]['text'][1:]
-                reply = 'Well ' + username + ',\n```%s\n```' % (aitext,)
+                reply = '\n```%s\n```' % (answer['choices'][0]['message']['content'][1:],)
+            if reply:
                 return {'messages': [
                     {'text': reply},
                 ]}

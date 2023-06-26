@@ -12,7 +12,6 @@ import sys
 import tempfile
 
 import configargparse
-import pyinotify
 from mattermostdriver import Driver
 
 
