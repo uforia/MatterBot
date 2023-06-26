@@ -269,9 +269,16 @@ def process(command, channel, username, params):
                                     algorithm = last_https_certificate['public_key']['algorithm']
                                     if 'key_size' in last_https_certificate['public_key'][algorithm.lower()]:
                                         key_size = last_https_certificate['public_key'][algorithm.lower()]['key_size']
+                                    else:
+                                        key_size = 'N/A'
                                     if 'oid' in last_https_certificate['public_key'][algorithm.lower()]:
-                                        key_size = last_https_certificate['public_key'][algorithm.lower()]['oid']
-                                    signature_algorithm = last_https_certificate['signature_algorithm']
+                                        oid = last_https_certificate['public_key'][algorithm.lower()]['oid']
+                                    else:
+                                        oid = 'N/A'
+                                    if  'signature_algorithm' in last_https_certificate:
+                                        signature_algorithm = last_https_certificate['signature_algorithm']
+                                    else:
+                                        signature_algorithm = 'N/A'
                                     issuers = set()
                                     issuers.add(last_https_certificate['issuer']['O'])
                                     issuers.add(last_https_certificate['issuer']['CN'])
