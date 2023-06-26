@@ -4,10 +4,9 @@ ConfigArgParse==1.5.3
 feedparser==6.0.10
 graphviz==0.20.1
 mattermostdriver==7.3.2
+pymisp==2.4.172
+pyOpenSSL==23.2.0
 pypandoc==1.11
-pyinotify==0.9.6
-pymisp==2.4.168
-pyOpenSSL==23.0.0
-PyYAML==6.0
-requests==2.31.0
-tweepy==4.10.1
+Requests==2.31.0
+tweepy==4.14.0
+weasyprint==59.0
