@@ -80,7 +80,7 @@ def process(command, channel, username, params):
                                 cssfile = MODULEDIR+settings.HTMLCSS
                                 pdffile = MODULEDIR+cve+'.pdf'
                                 format = 'markdown'
-                                extra_args = ['--section-divs', '--number-offset=0', '--embed-resources', '--toc']
+                                extra_args = ['--section-divs', '--number-offset=0']
                                 with open(MODULEDIR+settings.HTMLHEADER) as f:
                                     header = f.read()
                                     header = header.replace('%title%', settings.EWAHEADER)
@@ -265,7 +265,7 @@ def process(command, channel, username, params):
                                         if 'pages' in json_response['data']:
                                             if 'create' in json_response['data']['pages']:
                                                 messages.append({'text': "Early Warning / Advisory page generated for ["+cve+"]("+settings.APIURL['ewa']['url']+"/"+locale+path+")"})
-                            if json_response['resultsPerPage'] == 0:
+                            elif json_response['resultsPerPage'] == 0:
                                 messages.append({'text': "`%s` does not exist in the NVD." % (cve,)})
                         else:
                             messages.append({'text': "An error occurred querying the NVD!"})
