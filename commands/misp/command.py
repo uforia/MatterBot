@@ -21,47 +21,56 @@ else:
             import settings
 
 def process(command, channel, username, params):
-    if len(params)>0:
-        params = ' '.join(params).replace('[', '').replace(']', '').replace('hxxp','http')
-        headers = {
-            "Content-Type": settings.CONTENTTYPE,
-            "Authorization": "%s" % (settings.APIKEY,),
-            "Accept": settings.CONTENTTYPE,
-            "enforceWarninglist": "1",
-        }
-        data = '{"returnformat":"json", "value":"%s"}' % (params,)
-        with requests.post(settings.APIENDPOINT, data=data, headers=headers) as response:
-            answer = response.json()
-            results = answer['response']['Attribute']
-            resultset = set()
-            if len(results)>0:
-                message = 'MISP search for `%s`:' % (params,)
-                for result in results:
-                    name = result['Event']['info'].replace('\n', ' ')
-                    timestamp = datetime.datetime.utcfromtimestamp(int(result['timestamp'])).strftime('%Y-%m-%dT%H:%M:%SZ')
-                    category = result['category']
-                    type = result['type']
-                    to_ids = result['to_ids']
-                    to_ids = "Yes" if to_ids else "No"
-                    if 'Tag' in result:
-                        tags = [_['name'].split(':') for _ in result['Tag']]
-                    url = settings.APIURL + '/events/view/' + result['event_id']
-                    message += "\n\n"
-                    message += "| Event: [%s](%s) | Date/Time: `%s` |\n" % (name, url, timestamp)
-                    message += "| :--- | -: |\n"
-                    message += "| TTP type / Kill-chain phase | %s |\n" % (category,)
-                    message += "| Indicator of Compromise type | %s |\n" % (type,)
-                    message += "| Suitable for IDS | %s |\n" % (to_ids,)
-                    if tags:
-                        for tag in tags:
-                            message += "| *Extra tag*: %s | %s |\n" % (tag[0].capitalize(), tag[1].capitalize())
-                message += "\n\n"
-            else:
-                message = 'MISP search for `%s` returned no results.' % (params,)
-            return {'messages': [
-                {'text': message.strip()}
-            ]}
-    else:
-        return {'messages': [
-            {'text': 'At least ask me something, %s!' % (username,)}
-        ]}
+    try:
+        messages = []
+        if len(params)>0:
+            params = ' '.join(params).replace('[', '').replace(']', '').replace('hxxp','http')
+            headers = {
+                "Accept": settings.CONTENTTYPE,
+                "Content-Type": settings.CONTENTTYPE,
+                "Authorization": "%s" % (settings.APIKEY,),
+                "enforceWarninglist": "1",
+                "order": "Event.date desc"
+            }
+            data = '{"returnformat":"json", "value":"%s"}' % (params,)
+            with requests.post(settings.APIENDPOINT, data=data, headers=headers) as response:
+                answer = response.json()
+                results = answer['response']['Attribute']
+                resultset = set()
+                if len(results)>0:
+                    messages.append({'text': 'MISP search for `%s`:' % (params,)})
+                    for result in results:
+                        name = result['Event']['info'].replace('\n', ' ')
+                        comment = result['Event']['comment'].replace('\n', ' ') if 'comment' in Event else None
+                        timestamp = datetime.datetime.utcfromtimestamp(int(result['timestamp'])).strftime('%Y-%m-%dT%H:%M:%SZ')
+                        category = result['category']
+                        type = result['type'].replace('|','` and `')
+                        to_ids = result['to_ids']
+                        to_ids = "Yes" if to_ids else "No"
+                        tags = [_['name'].split(':',1) for _ in result['Tag']] if 'Tag' in result else None
+                        url = settings.APIURL + '/events/view/' + result['event_id']
+                        message = "\n\n"
+                        message += "| Event: [%s](%s) | Date/Time: `%s` |\n" % (name, url, timestamp)
+                        message += "| :--- | -: |\n"
+                        message += "| TTP Type / Kill-chain Phase | `%s` |\n" % (category,)
+                        message += "| Indicator of Compromise type(s) | `%s` |\n" % (type,)
+                        message += "| Suitable for IDS | `%s` |\n" % (to_ids,)
+                        if comment:
+                            message += "| Comment | `%s` |\n" % (comment,)
+                        if tags:
+                            for tag in tags:
+                                if len(tag)>1:
+                                    value = tag[1:].join(':').capitalize() if len(tag)>2 else tag[1]
+                                else:
+                                    value = "N/A"
+                                message += "| *Extra Tag*: `%s` | `%s` |\n" % (tag[0].capitalize(), value)
+                        message += "\n\n"
+                        messages.append({'text': message})
+                else:
+                    messages.append({'text': 'MISP search for `%s` returned no results.' % (params,)})
+        else:
+            messages.append({'text': 'At least ask me something, %s!' % (username,)})
+    except Exception as e:
+        messages.append({'text': 'An error occurred querying MISP: `%s`' % (str(e),)})
+    finally:
+        return {'messages': messages}
