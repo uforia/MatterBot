@@ -41,7 +41,7 @@ def process(command, channel, username, params):
                     messages.append({'text': 'MISP search for `%s`:' % (params,)})
                     for result in results:
                         name = result['Event']['info'].replace('\n', ' ')
-                        comment = result['Event']['comment'].replace('\n', ' ') if 'comment' in Event else None
+                        comment = result['Event']['comment'].replace('\n', ' ') if 'comment' in result['Event'] else None
                         timestamp = datetime.datetime.utcfromtimestamp(int(result['timestamp'])).strftime('%Y-%m-%dT%H:%M:%SZ')
                         category = result['category']
                         type = result['type'].replace('|','` and `')
