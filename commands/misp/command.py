@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
-import json
-import pymisp
+import datetime
 import requests
 from pathlib import Path
 try:
@@ -36,12 +35,27 @@ def process(command, channel, username, params):
             results = answer['response']['Attribute']
             resultset = set()
             if len(results)>0:
-                message = 'MISP search for `%s`:\n' % (params,)
+                message = 'MISP search for `%s`:' % (params,)
                 for result in results:
-                    line = '- `' + result['Event']['info'].replace('\n', ' ') + '`: ' + settings.APIURL + '/events/view/' + result['event_id'] + '\n'
-                    if line not in resultset:
-                        resultset.add(line)
-                        message += line
+                    name = result['Event']['info'].replace('\n', ' ')
+                    timestamp = datetime.datetime.utcfromtimestamp(int(result['timestamp'])).strftime('%Y-%m-%dT%H:%M:%SZ')
+                    category = result['category']
+                    type = result['type']
+                    to_ids = result['to_ids']
+                    to_ids = "Yes" if to_ids else "No"
+                    if 'Tag' in result:
+                        tags = [_['name'].split(':') for _ in result['Tag']]
+                    url = settings.APIURL + '/events/view/' + result['event_id']
+                    message += "\n\n"
+                    message += "| Event: [%s](%s) | Date/Time: `%s` |\n" % (name, url, timestamp)
+                    message += "| :--- | -: |\n"
+                    message += "| TTP type / Kill-chain phase | %s |\n" % (category,)
+                    message += "| Indicator of Compromise type | %s |\n" % (type,)
+                    message += "| Suitable for IDS | %s |\n" % (to_ids,)
+                    if tags:
+                        for tag in tags:
+                            message += "| *Extra tag*: %s | %s |\n" % (tag[0].capitalize(), tag[1].capitalize())
+                message += "\n\n"
             else:
                 message = 'MISP search for `%s` returned no results.' % (params,)
             return {'messages': [
