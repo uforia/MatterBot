@@ -58,7 +58,7 @@ def process(command, channel, username, params):
                                 message += '| [Link](%s) ' % (entry['tweet'],)
                             else:
                                 message += '| `N/A` '
-                                message += '|\n'
+                            message += '|\n'
                     message += '\n\n'
                     messages.append({'text': message})
     except Exception as e:
