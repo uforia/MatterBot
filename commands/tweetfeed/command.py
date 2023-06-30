@@ -32,13 +32,13 @@ def process(command, channel, username, params):
     params = regex.sub('',params[0]).replace('hxxp','http')
     messages = []
     try:
-        if len(params)>4:
+        if len(params)>3:
             APIENDPOINT = settings.APIURL['tweetfeed']['url']
             with requests.get(APIENDPOINT, headers=headers) as response:
                 json_response = response.json()
                 if len(json_response):
                     for entry in json_response:
-                        if params.lower() in entry['value'].lower():
+                        if params.lower() in entry['value'].lower() or params.lower() in ' '.join(entry['tags']):
                             if not len(messages):
                                 messages.append({'text': 'Tweetfeed search results for `%s`:' % (params,)})
                                 message = '\n'
