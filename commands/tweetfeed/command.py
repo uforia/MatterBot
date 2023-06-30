@@ -39,8 +39,7 @@ def process(command, channel, username, params):
                 if len(json_response):
                     if len(json_response)<=settings.LIMIT:
                         for entry in json_response:
-                            if (params.lower() in entry['value'].lower()) or (params.lower() in ' '.join(entry['tags'])):
-                                print(entry)
+                            if params.lower() in entry['value'].lower():
                                 if not len(messages):
                                     messages.append({'text': 'Tweetfeed search results for `%s`:' % (params,)})
                                     message = '\n'
@@ -63,7 +62,6 @@ def process(command, channel, username, params):
                                 message += '|\n'
                         message += '\n\n'
                         messages.append({'text': message})
-                        print(message)
                     else:
                         messages.append({'text': 'Tweetfeed search exceeded limit of '+str(settings.LIMIT)+' results: '+str(len(response))+'. Raw JSON output:', 'uploads': [
                             {'filename': 'tweetfeed-'+params+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content}
