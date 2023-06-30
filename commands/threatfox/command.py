@@ -67,10 +67,6 @@ def process(command, channel, username, params):
                                 return {'messages': [
                                     {'text': message.strip()},
                                 ]}
-                    else:
-                        return {'messages': [
-                            {'text': 'ThreatFox search for `%s` returned no results.' % (params,)}
-                        ]}
         except Exception as e:
             return {'messages': [
                 {'text': 'An error occurred searching ThreatFox for `%s`:\nError: `%s`' % (params, e.message)},

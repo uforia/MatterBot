@@ -76,10 +76,6 @@ def process(command, channel, username, params):
                             message += '|\n'
                         message += '|\n\n'
                         messages.append({'text': message})
-                    else:
-                        messages.append({'text': 'No results for SSLMate Certificate Transparency lookup of: `%s`' % (params,)})
-            else:
-                messages.append({'text': 'SSLMate: `%s` is not a valid domain name!' % (params,)})
         except Exception as e:
             messages.append({'text': "An error occurred querying the SSLMate Certificate Transparency API for `%s`:\nError: `%s`" % (params, str(e))})
         finally:

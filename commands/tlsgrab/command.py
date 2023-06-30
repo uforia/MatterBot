@@ -36,8 +36,6 @@ def process(command, channel, username, params):
                             CNs.append(component[1].decode('utf-8').replace('.','[.]'))
                     if len(CNs)>0:
                         message += '`'+'`, `'.join(CNs)+'`'
-                    else:
-                        message += 'No results for `%s`.' % (param,)
                 except:
                     message += 'could not be retrieved.'
                 messages.append({'text': message})

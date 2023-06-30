@@ -328,10 +328,6 @@ def process(command, channel, username, params):
                             return {'messages': [
                                 {'text': text}
                             ]}
-                    else:
-                        return {'messages': [
-                            {'text': 'VirusTotal search for `%s` returned no results.' % (params,)}
-                        ]}
         except Exception as e:
             return {'messages': [
                 {'text': 'An error occurred searching VirusTotal for `%s`:\nError: `%s`' % (params, e)},

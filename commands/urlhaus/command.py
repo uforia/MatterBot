@@ -66,8 +66,6 @@ def process(command, channel, username, params):
                         message += ' | Status: `%s`' % (url_status,)
                         message += ' | Reference: [URLhaus ID %s](%s)' % (id, urlhaus_reference)
                         message += '\n'
-                    else:
-                        message = 'URLhaus search for `%s` returned no results.' % (params,)
                     return {'messages': [
                         {'text': message.strip()},
                     ]}
@@ -86,8 +84,6 @@ def process(command, channel, username, params):
                                 message += '- URL: `%s`' % (link,)
                                 message += ' | Payload: `%s` (%s)' % (filename, file_type)
                                 message += ' | Reference: [URLhaus ID %s](%s)' % (id, urlhaus_reference)
-                    else:
-                        message = 'URLhaus search for `%s` returned no results.' % (params,)
                     return {'messages': [
                         {'text': message.strip()},
                     ]}

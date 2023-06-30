@@ -56,14 +56,16 @@ def process(command, channel, username, params):
                         if 'error' in json_response:
                             error = json_response['error']
                             if 'No information available' in error:
-                                text += 'no results found.'
-                                return {'messages': [{'text': text}]}
+                                #text += 'no results found.'
+                                #return {'messages': [{'text': text}]}
+                                return
                             else:
                                 return {'messages': [{'text': 'An error occurred searching Shodan: ' + error}]}
                         if 'total' in json_response:
                             total = json_response['total']
                             if total==0:
-                                return {'messages': [{'text': 'No results found.'}]}
+                                #return {'messages': [{'text': 'No results found.'}]}
+                                return
                         text += '\n\n'
                         text += '| Hostname(s) | Service | Port | Proto | Vulns | SSL/TLS | Product | Banner |\n'
                         text += '|:----------- |--------:| ----:| -----:| -----:| -------:|:------- |:-------|\n'
@@ -117,11 +119,13 @@ def process(command, channel, username, params):
                         if 'total' in json_response:
                             total = json_response['total']
                             if total==0:
-                                return {'messages': [{'text': 'No results found.'}]}
+                                #return {'messages': [{'text': 'No results found.'}]}
+                                return
                         if 'error' in json_response:
                             error = json_response['error']
                             if 'No information available' in error:
-                                return {'messages': [{'text': 'No results found.'}]}
+                                #return {'messages': [{'text': 'No results found.'}]}
+                                return
                             else:
                                 return {'messages': [{'text': 'An error occurred searching Shodan: ' + error}]}
                         text += '\n\n'

@@ -117,9 +117,6 @@ def process(command, channel, username, params):
                                 messages.append({'text': 'Censys JSON output:', 'uploads': [
                                                     {'filename': 'censys-'+querytype+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content}
                                                 ]})
-                            else:
-                                text += 'no results found.'
-                                messages.append({'text': text})
                 else:
                     text += ' invalid IP address!'
                     messages.append({'text': text})
@@ -184,9 +181,6 @@ def process(command, channel, username, params):
                                                 cursor = None
                                     messages.append({'text': text})
                                     messages.append({'text': 'Censys JSON output:', 'uploads': uploads})
-                                else:
-                                    text += 'no results.'
-                                    messages.append({'text': text})
 
                 else:
                     messages.append({'text': 'Censys error: invalid SHA256 fingerprint `%s`' % (params,)})

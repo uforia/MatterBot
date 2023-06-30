@@ -52,10 +52,6 @@ def process(command, channel, username, params):
                             return {'messages': [
                                 {'text': message.strip()},
                             ]}
-                    else:
-                        return {'messages': [
-                            {'text': 'asnwhois search for `%s` returned no results.' % (params,)},
-                        ]}
         except Exception as e:
             return {'messages': [
                 {'text': "An error occurred searching ASN WHOIS data for `%s`:\nError: `%s`" % (params, str(e))},

@@ -94,9 +94,8 @@ def process(command, channel, username, params):
                                         data += '('+associatedReference['url']+')'
                                 else:
                                     data += '\n'+outputFields[outputField]+': `'+json_response[outputField]+'`'
-                        if not len(data):
-                            data = ' no results.'
-                        messages.append({'text': message + data})
+                        if len(data):
+                            messages.append({'text': message + data})
         except Exception as e:
             messages.append({'text': "An error occurred searching Broadcom Symantec Security Cloud for `%s`:\nError: `%s`" % (params, str(e))})
         finally:

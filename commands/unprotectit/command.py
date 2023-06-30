@@ -194,9 +194,6 @@ def process(command, channel, username, params):
                     if len(uploads):
                         detection = '\n\n---\n\n**Detection Rules**:'
                         messages.append({'text': detection, 'uploads': uploads})
-            if not len(messages):
-                text = 'Unprotect.it search for `' + '`, `'.join(params) + '`: no results found'
-                messages.append({'text': text})
         except Exception as e:
             messages.append({'text': 'An error occurred searching Unprotect.it:\nError: ' + str(e)})
         finally:

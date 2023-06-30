@@ -52,10 +52,6 @@ def process(command, channel, username, params):
                         return {'messages': [
                             {'text': message.strip()},
                         ]}
-                    else:
-                        return {'messages': [
-                            {'text': 'IPWHOIS search for `%s` returned no results.' % (params,)},
-                        ]}
         except Exception as e:
             return {'messages': [
                 {'text': "An error occurred searching IPWHOIS for `%s`:\nError: `%s`" % (params, e.message)},

@@ -69,10 +69,6 @@ def process(command, channel, username, params):
                         return {'messages': [
                             {'text': message.strip()}
                         ]}
-                    else:
-                        return {'messages': [
-                            {'text': 'RIPE WHOIS search for `%s` returned no results.' % (params,)}
-                        ]}
         except Exception as e:
             return {'messages': [
                 {'text': 'An error occurred searching RIPE WHOIS:\nError: ' + str(e)}

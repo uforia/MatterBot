@@ -76,8 +76,6 @@ def process(command, channel, username, params):
                                 message += "| *Extra Tag*: `%s` | `%s` |\n" % (tag[0].capitalize(), value)
                         message += "\n\n"
                         messages.append({'text': message})
-                else:
-                    messages.append({'text': 'MISP search for `%s` returned no results.' % (params,)})
         else:
             messages.append({'text': 'At least ask me something, %s!' % (username,)})
     except Exception as e:
