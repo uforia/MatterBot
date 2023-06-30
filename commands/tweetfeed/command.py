@@ -42,10 +42,10 @@ def process(command, channel, username, params):
                         if params in entry['value']:
                             if not len(messages):
                                 messages.append({'text': 'Tweetfeed search results for `%s`:' % (params,)})
-                            message = '\n'
-                            message += '\n| Date | User | Type | Value | Tags | URL |'
-                            message += '\n| :- | :- | :- | :- | :- | :- |'
-                            message += '\n'
+                                message = '\n'
+                                message += '\n| Date | User | Type | Value | Tags | URL |'
+                                message += '\n| :- | :- | :- | :- | :- | :- |'
+                                message += '\n'
                             for k in ('date', 'user', 'type', 'value', 'tags'):
                                 if k in entry:
                                     if isinstance(entry[k], list):
