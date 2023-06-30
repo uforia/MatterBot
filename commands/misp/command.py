@@ -29,7 +29,8 @@ def process(command, channel, username, params):
                 "Accept": settings.CONTENTTYPE,
                 "Content-Type": settings.CONTENTTYPE,
                 "Authorization": "%s" % (settings.APIKEY,),
-                "enforceWarninglist": "1",
+                "enforceWarninglist": "True",
+                "searchAll": "True",
                 "order": "Event.date desc"
             }
             data = '{"returnformat":"json", "value":"%s"}' % (params,)
