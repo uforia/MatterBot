@@ -32,7 +32,7 @@ def process(command, channel, username, params):
     params = regex.sub('',params[0]).replace('hxxp','http')
     messages = []
     try:
-        if len(params):
+        if len(params)>4:
             APIENDPOINT = settings.APIURL['tweetfeed']['url']
             with requests.get(APIENDPOINT, headers=headers) as response:
                 json_response = response.json()
