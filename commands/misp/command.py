@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import datetime
+import json
 import requests
 from pathlib import Path
 try:
@@ -29,12 +30,20 @@ def process(command, channel, username, params):
                 "Accept": settings.CONTENTTYPE,
                 "Content-Type": settings.CONTENTTYPE,
                 "Authorization": "%s" % (settings.APIKEY,),
-                "enforceWarninglist": "True",
-                "searchAll": "True",
-                "order": "Event.date desc"
+                "enforceWarninglist": "1",
+                "searchAll": "1",
+                "quickfilter": "1",
+                "order": "Event.date desc",
             }
-            data = '{"returnformat":"json", "value":"%s"}' % (params,)
-            with requests.post(settings.APIENDPOINT, data=data, headers=headers) as response:
+            data = {
+                "returnformat": "json",
+                "enforceWarninglist": "1",
+                "searchAll": "1",
+                "quickfilter": "1",
+                "order": "Event.date desc",
+                "value": params,
+            }
+            with requests.post(settings.APIENDPOINT, data=json.dumps(data), headers=headers) as response:
                 answer = response.json()
                 results = answer['response']['Attribute']
                 resultset = set()
