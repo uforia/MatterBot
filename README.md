@@ -33,6 +33,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | NCSC Netherlands Advisories     | RSS            | No               | No                |
 | NCSC United Kingdom Advisories  | RSS            | No               | No                |
 | PacketStorm Security            | RSS            | No               | No                |
+| Ransomwatch                     | JSON           | No               | No                |
 | SecureList News                 | RSS            | No               | No                |
 | TheHackerNews News              | RSS            | No               | No                |
 | Threatpost News                 | RSS            | No               | No                |
