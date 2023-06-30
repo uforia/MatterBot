@@ -37,9 +37,10 @@ def process(command, channel, username, params):
         else:
             params = params[1:]
         if not querytype in querytypes:
-            return {'messages': [
-                {'text': 'Please specify one of these query types: `' + '`, `'.join(querytypes) + '`'}
-            ]}
+            return
+            #return {'messages': [
+            #    {'text': 'Please specify one of these query types: `' + '`, `'.join(querytypes) + '`'}
+            #]}
         headers = {
             'Content-Type': settings.CONTENTTYPE,
         }
