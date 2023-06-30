@@ -63,7 +63,10 @@ def process(command, channel, username, params):
                         message += '\n\n'
                         messages.append({'text': message})
                     else:
-                        messages.append({'text': 'Tweetfeed search exceed the limit of `%s` results.' % (settings.LIMIT,)})
+                        messages.append({'text': 'Tweetfeed search exceeded limit of `%s` results.' % (settings.LIMIT,)})
+                        messages.append({'text': 'Tweetfeed JSON output:', 'uploads': [
+                            {'filename': 'tweetfeed-'+params+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content}
+                        ]})
     except Exception as e:
         messages.append({'text': 'A Python error occurred searching Tweetfeed:\nError:' + e})
     finally:
