@@ -12,35 +12,40 @@
 # <channel>: basically the destination channel in Mattermost, e.g. 'Newsfeed', 'Incident', etc.
 # <content>: the content of the message, MD format possible
 
-import feedparser
+import requests
 from pathlib import Path
 try:
-    from modules.welivesecurity import defaults as settings
+    from modules.ransomwatch import defaults as settings
 except ModuleNotFoundError: # local test run
     import defaults as settings
     if Path('settings.py').is_file():
         import settings
 else:
-    if Path('modules/welivesecurity/settings.py').is_file():
+    if Path('modules/ransomwatch/settings.py').is_file():
         try:
-            from modules.welivesecurity import settings
+            from modules.ransomwatch import settings
         except ModuleNotFoundError: # local test run
             import settings
 
 def query(MAX=settings.ENTRIES):
     items = []
-    feed = feedparser.parse(settings.URL)
-    count = 0
-    while count < MAX:
-        try:
-            title = feed.entries[count].title
-            link = feed.entries[count].link
-            content = '[' + title + '](' + link + ')'
+    try:
+        with requests.get(settings.URL) as response:
+            feed = response.json()
+        entries = feed[-MAX:]
+        for entry in entries:
+            victim = entry['post_title']
+            group = entry['group_name']
+            date = entry['discovered'].split('.')[0]
+            if '.' in victim:
+                victim = '[%s](%s)' % (victim, victim)
+            content = 'Ransomware Update: `%s` claims `%s` at `%s`' % (group, victim, date)
             items.append([settings.CHANNEL, content])
-            count+=1
-        except IndexError:
-            return items # No more items
-    return items
+    except Exception as e:
+        content = "An error occurred during the Ransomwatch feed parsing."
+        items.append([settings.CHANNEL,content])
+    finally:
+        return items
 
 if __name__ == "__main__":
     print(query())

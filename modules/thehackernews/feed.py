@@ -12,7 +12,6 @@
 # <channel>: basically the destination channel in Mattermost, e.g. 'Newsfeed', 'Incident', etc.
 # <content>: the content of the message, MD format possible
 
-import requests
 import feedparser
 from pathlib import Path
 try:
