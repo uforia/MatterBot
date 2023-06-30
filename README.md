@@ -80,7 +80,7 @@ The Matterbot component listens in a given set of channels (configurable per mod
 | Unprotect.it                            | Threat Intel          | Search the Unprotect.it project for information on TTPs, code snippets and detection rules. Returns code snippets and detection rules as a download, if available.                                             | No                                                                  | No                                                                                                                                 |     |
 | URLhaus                                 | Threat Intel          | Look up reputation info on URLhaus for URLs and MD5 / SHA1 / SHA256 URL hashes.                                                                                                                                | No                                                                  | No                                                                                                                                 |     |
 | VirusTotal                              | Threat Intel          | Search VirusTotal for IP addresses, MD5/SHA1/SHA256 hashes, URLs and domains. Returned results will include maliciousness, TTP sets, malware family names, etc., if available.                                 | Yes                                                                 | No: basic functionality<br />Yes: paid VT features, throttling limit removal, etc.                                                 |     |
-| WikiJS                                  | Information Retrieval | Search through WikiJS pages' contents for the given search terms. Returns links to the pages where the contents were found.                                                                                    | Yes                                                                 | Yes: currently requires a Microsoft Azure Search instance  that indexes the WikiJS instance (*Note: this is a WikiJS limitation!*) |     |
+| WikiJS                                  | Information Retrieval | Search through WikiJS pages' contents for the given search terms. Returns links to the pages where the contents were found.                                                                                    | Yes                                                                 | Yes: currently requires a Microsoft Azure Search instance that indexes the WikiJS instance (*Note: this is a WikiJS limitation!*) |     |
 
 New Matterbot modules can be created. A boilerplate example can be found in the `commands` directory.
 
@@ -90,7 +90,7 @@ New Matterbot modules can be created. A boilerplate example can be found in the 
 
 - Tested with Python 3.10+, although earlier Python 3 versions might work (test at your own discretion). Most modern distributions should be able to run this.
 - Make sure to install the Python requirements (see `requirements.txt`).
-- For GraphViz support (e.g. AttackMatrix API calls), you will need to install GraphViz for your distribution/OS. Make sure that it includes **GTS** *(GNU Triangulated Surface)* support.
+- For GraphViz support (e.g. AttackMatrix visual graph generation), you will need to install GraphViz for your distribution/OS. Make sure that it includes **GTS** *(GNU Triangulated Surface)* support.
 
 ### Mattermost
 
@@ -102,7 +102,7 @@ New Matterbot modules can be created. A boilerplate example can be found in the 
 
 ### General information
 
-`matterfeed.py` goes through the `modules` directory and will run all detected modules every 5 minutes, outputting the results to the specified channels. Every module has its own custom configuration: you'll need to check the individual directories for more information. For example, the Twitter module requires you to have a Twitter account with API/bot access, and you'll need to put the API key etc. in the configuration for it to work.
+`matterfeed.py` goes through the `modules` directory and will run all detected modules every 5 minutes, outputting the results to the specified channels. Every module has its own custom configuration: you'll need to check the individual directories for more information. For example, the WikiJS module requires you to have a WikiJS instance with GraphQL API access, as well as a Microsoft Azure Search instance. You'll need to put the API key etc. in its configuration for it to work properly.
 
 ### Getting started
 
