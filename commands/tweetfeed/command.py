@@ -48,7 +48,7 @@ def process(command, channel, username, params):
                             for k in ('date', 'user', 'type', 'value', 'tags'):
                                 if k in entry:
                                     if isinstance(entry[k], list):
-                                        v = ', '.join(entry[k])
+                                        v = '`, `'.join(entry[k])
                                     else:
                                         v = entry[k]
                                     message += '| `%s` ' % (v,)
