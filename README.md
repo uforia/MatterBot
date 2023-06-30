@@ -17,29 +17,38 @@ MatterBot consists of two parts that can be run independently: matterbot and mat
 
 Matterfeed reports news updates on a set schedule. The currently supported sources are listed in the table below:
 
-| Name                            | Type           | API Key Required | Paid Subscription |
-| ------------------------------- |:--------------:|:----------------:|:-----------------:|
-| Bruce Schneier's Blog           | RSS            | No               | No                |
-| CISA.gov Security Announcements | RSS            | No               | No                |
-| Cqure Blog                      | RSS            | No               | No                |
-| DarkReading News                | RSS            | No               | No                |
-| DataBreachSecurity News         | RSS            | No               | No                |
-| GBHackers News                  | RSS            | No               | No                |
-| Kitploit Tool Updates           | RSS            | No               | No                |
-| KnowBe4 News                    | RSS            | No               | No                |
-| KrebsOnSecurity Blog            | RSS            | No               | No                |
-| MajorLeagueHacking News         | RSS            | No               | No                |
-| Microsoft Vulnerability Reports | RSS            | No               | No                |
-| NCSC Netherlands Advisories     | RSS            | No               | No                |
-| NCSC United Kingdom Advisories  | RSS            | No               | No                |
-| PacketStorm Security            | RSS            | No               | No                |
-| Ransomwatch                     | JSON           | No               | No                |
-| SecureList News                 | RSS            | No               | No                |
-| TheHackerNews News              | RSS            | No               | No                |
-| Threatpost News                 | RSS            | No               | No                |
-| Velociraptor News/Updates       | RSS            | No               | No                |
-| WeLiveSecurity News             | RSS            | No               | No                |
-| WikiJS Page Updates             | WikiJS GraphQL | Yes              | No                |
+| Name                                                                                             | Type           | API Key Required | Paid Subscription |
+| ------------------------------------------------------------------------------------------------ |:--------------:|:----------------:|:-----------------:|
+| Bruce Schneier's Blog                                                                            | RSS            | No               | No                |
+| CISA.gov Security Announcements                                                                  | RSS            | No               | No                |
+| CISecurity                                                                                       | RSS            | No               | No                |
+| Cqure Blog                                                                                       | RSS            | No               | No                |
+| CSHub (configurable list of CSHub feeds)                                                         | RSS            | No               | No                |
+| DarkNet                                                                                          | RSS            | No               | No                |
+| DarkReading News                                                                                 | RSS            | No               | No                |
+| DataBreachSecurity News                                                                          | RSS            | No               | No                |
+| GBHackers News                                                                                   | RSS            | No               | No                |
+| InfoSec Institute (Malware Analysis, Threat Intelligence)                                        | RSS            | No               | No                |
+| Kitploit Tool Updates                                                                            | RSS            | No               | No                |
+| KnowBe4 News                                                                                     | RSS            | No               | No                |
+| KrebsOnSecurity Blog                                                                             | RSS            | No               | No                |
+| MajorLeagueHacking News                                                                          | RSS            | No               | No                |
+| Microsoft Vulnerability Reports                                                                  | RSS            | No               | No                |
+| NaoSec                                                                                           | RSS            | No               | No                |
+| NCSC Netherlands Advisories                                                                      | RSS            | No               | No                |
+| NCSC United Kingdom Advisories                                                                   | RSS            | No               | No                |
+| PacketStorm Security                                                                             | RSS            | No               | No                |
+| Ransomwatch                                                                                      | JSON           | No               | No                |
+| Reddit (configurable list of subreddits)                                                         | RSS            | No               | No                |
+| SANS Internet Storm Center                                                                       | RSS            | No               | No                |
+| SebDraven                                                                                        | RSS            | No               | No                |
+| SecureList News                                                                                  | RSS            | No               | No                |
+| TheHackerNews News                                                                               | RSS            | No               | No                |
+| Threatpost News                                                                                  | RSS            | No               | No                |
+| US-CERT National Cyber Awareness System (Advisories, Alerts, Analysis Reports, Current Activity) | RSS            | No               | No                |
+| Velociraptor News/Updates                                                                        | RSS            | No               | No                |
+| WeLiveSecurity News                                                                              | RSS            | No               | No                |
+| WikiJS Page Updates                                                                              | WikiJS GraphQL | Yes              | No                |
 
 New Matterfeed modules can be created. A boilerplate example can be found in the `modules` directory.
 
