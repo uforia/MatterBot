@@ -20,12 +20,10 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | Name                                                                                             | Type           | API Key Required | Paid Subscription |
 | ------------------------------------------------------------------------------------------------ |:--------------:|:----------------:|:-----------------:|
 | Bruce Schneier's Blog                                                                            | RSS            | No               | No                |
-| CISA.gov Security Announcements                                                                  | RSS            | No               | No                |
 | CISecurity                                                                                       | RSS            | No               | No                |
 | Cqure Blog                                                                                       | RSS            | No               | No                |
 | CSHub (configurable list of CSHub feeds)                                                         | RSS            | No               | No                |
-| DarkNet                                                                                          | RSS            | No               | No                |
-| DarkReading News                                                                                 | RSS            | No               | No                |
+| DarkNet blog                                                                                     | RSS            | No               | No                |
 | DataBreachSecurity News                                                                          | RSS            | No               | No                |
 | GBHackers News                                                                                   | RSS            | No               | No                |
 | InfoSec Institute (Malware Analysis, Threat Intelligence)                                        | RSS            | No               | No                |

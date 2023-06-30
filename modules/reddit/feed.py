@@ -29,14 +29,14 @@ else:
 
 def query(MAX=settings.ENTRIES):
     items = []
-    for feedurl in settings.SUBREDDITS:
-        feed = feedparser.parse("https://www.reddit.com/r/"+feedurl+"/.rss")
+    for subreddit in settings.SUBREDDITS:
+        feed = feedparser.parse("https://www.reddit.com/r/"+subreddit+"/.rss")
         count = 0
         while count < MAX:
             try:
                 title = feed.entries[count].title
                 link = feed.entries[count].link
-                content = '[' + title + '](' + link + ')'
+                content = 'Reddit post in /r/' + subreddit + ': [' + title + '](' + link + ')'
                 items.append([settings.CHANNEL, content])
                 count+=1
             except IndexError:

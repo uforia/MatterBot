@@ -39,7 +39,7 @@ def query(MAX=settings.ENTRIES):
             date = entry['discovered'].split('.')[0]
             if '.' in victim:
                 victim = '[%s](%s)' % (victim, victim)
-            content = 'Ransomware Update: `%s` claims `%s` at `%s`' % (group, victim, date)
+            content = settings.NAME + ': `%s` claims `%s` at `%s`' % (group, victim, date)
             items.append([settings.CHANNEL, content])
     except Exception as e:
         content = "An error occurred during the Ransomwatch feed parsing."

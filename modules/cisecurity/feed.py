@@ -35,7 +35,7 @@ def query(MAX=settings.ENTRIES):
         try:
             title = feed.entries[count].title
             link = feed.entries[count].link
-            content = '[' + title + '](' + link + ')'
+            content = settings.NAME + ': [' + title + '](' + link + ')'
             items.append([settings.CHANNEL, content])
             count+=1
         except IndexError:

@@ -49,7 +49,7 @@ def query(MAX=0):
                     url = settings.API + '/' + json[count]['path']
                     title = json[count]['title']
                     link = '**[' + title + '](' + url + ')**'
-                    content = settings.WIKINAME + ' ' + link + ' wiki page updated at ' + timestamp + ' UTC'
+                    content = settings.NAME + ': ' + link + ' wiki page updated at ' + timestamp + ' UTC'
                     items.append([settings.CHANNEL, content])
                     count-=1
                 except Exception as e:
