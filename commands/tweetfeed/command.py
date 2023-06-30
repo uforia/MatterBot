@@ -22,24 +22,25 @@ else:
             import settings
 
 def process(command, channel, username, params):
-    # Methods to query Tweetfeed info
+    params = ' '.join(params)
     headers = {
         'Accept-Encoding': settings.CONTENTTYPE,
         'Content-Type': settings.CONTENTTYPE,
     }
-    stripchars = '`\n\r\'\"\[\]'
-    regex = re.compile('[%s]' % stripchars)
-    params = regex.sub('',params[0]).replace('hxxp','http')
     messages = []
     try:
         if len(params)>3:
+            stripchars = '`\n\r\'\"\[\]'
+            regex = re.compile('[%s]' % stripchars)
+            params = regex.sub('',params[0]).replace('hxxp','http')
             APIENDPOINT = settings.APIURL['tweetfeed']['url']
             with requests.get(APIENDPOINT, headers=headers) as response:
                 json_response = response.json()
                 if len(json_response):
                     if len(json_response)<=settings.LIMIT:
                         for entry in json_response:
-                            if params.lower() in entry['value'].lower() or params.lower() in ' '.join(entry['tags']):
+                            if (params.lower() in entry['value'].lower()) or (params.lower() in ' '.join(entry['tags'])):
+                                print(entry)
                                 if not len(messages):
                                     messages.append({'text': 'Tweetfeed search results for `%s`:' % (params,)})
                                     message = '\n'
@@ -62,8 +63,9 @@ def process(command, channel, username, params):
                                 message += '|\n'
                         message += '\n\n'
                         messages.append({'text': message})
+                        print(message)
                     else:
-                        messages.append({'text': 'Tweetfeed search exceeded limit of '+str(settings.LIMIT)+' results ('+str(len(response))+'). Raw JSON output:', 'uploads': [
+                        messages.append({'text': 'Tweetfeed search exceeded limit of '+str(settings.LIMIT)+' results: '+str(len(response))+'. Raw JSON output:', 'uploads': [
                             {'filename': 'tweetfeed-'+params+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content}
                         ]})
     except Exception as e:
