@@ -39,7 +39,7 @@ def process(command, channel, username, params):
                 if len(json_response):
                     count = 0
                     for entry in json_response:
-                        if params.lower() in entry['value'].lower() or params.lower() in ' '.join(entry['tags']):
+                        if params.lower() in entry['value'].lower() or params.lower() in ' '.join(entry['tags']).lower():
                             count += 1
                             if not len(messages):
                                 messages.append({'text': 'Tweetfeed search results for `%s`:' % (params,)})
