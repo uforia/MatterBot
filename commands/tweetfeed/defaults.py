@@ -7,6 +7,7 @@ APIURL = {
     'tweetfeed':   {'url': 'https://api.tweetfeed.live/v1/month',}
 }
 CONTENTTYPE = 'application/json'
+LIMIT = 20
 HELP = {
     'DEFAULT': {
         'args': '<any IP, domain, URL, SHA256 or MD5>',

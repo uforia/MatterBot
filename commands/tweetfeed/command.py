@@ -37,30 +37,33 @@ def process(command, channel, username, params):
             with requests.get(APIENDPOINT, headers=headers) as response:
                 json_response = response.json()
                 if len(json_response):
-                    for entry in json_response:
-                        if params.lower() in entry['value'].lower() or params.lower() in ' '.join(entry['tags']):
-                            if not len(messages):
-                                messages.append({'text': 'Tweetfeed search results for `%s`:' % (params,)})
-                                message = '\n'
-                                message += '\n| Date | User | Type | Value | Tags | URL |'
-                                message += '\n| :- | :- | :- | :- | :- | :- |'
-                                message += '\n'
-                            for k in ('date', 'user', 'type', 'value', 'tags'):
-                                if k in entry:
-                                    if isinstance(entry[k], list):
-                                        v = '`, `'.join(entry[k])
+                    if len(json_response)<=settings.LIMIT:
+                        for entry in json_response:
+                            if params.lower() in entry['value'].lower() or params.lower() in ' '.join(entry['tags']):
+                                if not len(messages):
+                                    messages.append({'text': 'Tweetfeed search results for `%s`:' % (params,)})
+                                    message = '\n'
+                                    message += '\n| Date | User | Type | Value | Tags | URL |'
+                                    message += '\n| :- | :- | :- | :- | :- | :- |'
+                                    message += '\n'
+                                for k in ('date', 'user', 'type', 'value', 'tags'):
+                                    if k in entry:
+                                        if isinstance(entry[k], list):
+                                            v = '`, `'.join(entry[k])
+                                        else:
+                                            v = entry[k]
+                                        message += '| `%s` ' % (v,)
                                     else:
-                                        v = entry[k]
-                                    message += '| `%s` ' % (v,)
+                                        message += '| `N/A` '
+                                if 'tweet' in entry:
+                                    message += '| [Link](%s) ' % (entry['tweet'],)
                                 else:
                                     message += '| `N/A` '
-                            if 'tweet' in entry:
-                                message += '| [Link](%s) ' % (entry['tweet'],)
-                            else:
-                                message += '| `N/A` '
-                            message += '|\n'
-                    message += '\n\n'
-                    messages.append({'text': message})
+                                message += '|\n'
+                        message += '\n\n'
+                        messages.append({'text': message})
+                    else:
+                        messages.append({'text': 'Tweetfeed search exceed the limit of `%s` results.' % (settings.LIMIT,)})
     except Exception as e:
         messages.append({'text': 'A Python error occurred searching Tweetfeed:\nError:' + e})
     finally:
