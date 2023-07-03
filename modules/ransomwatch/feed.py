@@ -12,6 +12,7 @@
 # <channel>: basically the destination channel in Mattermost, e.g. 'Newsfeed', 'Incident', etc.
 # <content>: the content of the message, MD format possible
 
+import html
 import requests
 from pathlib import Path
 try:
@@ -34,9 +35,9 @@ def query(MAX=settings.ENTRIES):
             feed = response.json()
         entries = feed[-MAX:]
         for entry in entries:
-            victim = entry['post_title']
-            group = entry['group_name']
-            date = entry['discovered'].split('.')[0]
+            victim = html.unescape(entry['post_title']).strip(' \r\n')
+            group = html.unescape(entry['group_name']).strip(' \r\n')
+            date = entry['discovered'].split('.')[0].strip(' \r\n')
             if '.' in victim:
                 victim = '[%s](%s)' % (victim, victim)
             content = settings.NAME + ': Group **%s** claims **%s** at `%s`' % (group.title(), victim.title(), date)
