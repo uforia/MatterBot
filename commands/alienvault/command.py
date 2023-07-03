@@ -89,7 +89,8 @@ def process(command, channel, username, params):
                                     for detection in entry['detections']:
                                         if entry['detections'][detection]:
                                             detections.add(entry['detections'][detection])
-                                    message += '\n| **Hash**: `%s` | `%s` |' % (entry['hash'], '`, `'.join(sorted(detections)))
+                                    if len(detections):
+                                        message += '\n| **Hash**: `%s` | `%s` |' % (entry['hash'], '`, `'.join(sorted(detections)))
                         if 'url_list' in json_response:
                             urls = set()
                             for entry in json_response['url_list']:
