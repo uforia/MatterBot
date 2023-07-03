@@ -67,11 +67,6 @@ def process(command, channel, username, params):
                     endpoints = ('file/'+query+'/analysis',)
                 if querytype in ('url'):
                     endpoints = ('url/'+query+'/url_list',)
-                displayHeader = True
-                header = ''
-                header += '| **AlienVault OTX %s Result** | `%s` |' % (querytype, query)
-                header += '\n| -: | :- |'
-                header += '\n\n'
                 for endpoint in endpoints:
                     APIENDPOINT = settings.APIURL['alienvault']['url']+endpoint+'?limit=10'
                     with requests.get(APIENDPOINT, headers=headers) as response:
@@ -158,11 +153,8 @@ def process(command, channel, username, params):
                                                 message += '\n| **Detections** | `%s` |' % '`, `'.join(sorted(detections))
                                             if len(families):
                                                 message += '\n| **Families** | `%s` |' % '`, `'.join(sorted(families))
-                        if displayHeader:
-                            messages.append({'text': header})
-                            displayHeader = False
                         if len(message):
-                            table = '| **AlienVault Information Type** | **Value(s)** |\n| -: | :- |'+message+'\n\n'
+                            table = '| **AlienVault %s Lookup** | **Value(s)** |\n| -: | :- |'+message+'\n\n' % (querytype,)
                             messages.append({'text': table})
     except Exception as e:
         messages.append({'text': 'A Python error occurred searching AlienVault OTX:\nError:' + str(e)})
