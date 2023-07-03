@@ -154,7 +154,7 @@ def process(command, channel, username, params):
                                             if len(families):
                                                 message += '\n| **Families** | `%s` |' % '`, `'.join(sorted(families))
                         if len(message):
-                            table = '| **AlienVault %s Lookup** | **Value(s)** |\n| -: | :- |'+message+'\n\n' % (querytype,)
+                            table = '| **AlienVault OTX** | **%s** |\n| -: | :- |'+message+'\n\n' % (query,)
                             messages.append({'text': table})
     except Exception as e:
         messages.append({'text': 'A Python error occurred searching AlienVault OTX:\nError:' + str(e)})
