@@ -5,7 +5,6 @@ import math
 import random
 import re
 import requests
-import sys
 import urllib
 from pathlib import Path
 try:
