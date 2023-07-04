@@ -51,6 +51,9 @@ def process(command, channel, username, params):
             elif re.search(r"((\d*):(\w*):(\w*)|(\d*):(\w*)\+(\w*):(\w*))", query):
                 endpoint = 'search/terms'
                 querytype = 'ssdeep'
+            else:
+                endpoint = 'search/terms'
+                querytype = 'vx-family'
             if querytype:
                 headers = {
                     'User-Agent': 'VxApi CLI Connector',
