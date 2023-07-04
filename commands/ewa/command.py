@@ -91,6 +91,7 @@ def process(command, channel, username, params):
                                     footer = f.read()
                                 html = header + pypandoc.convert_text(content, 'html', format=format, extra_args=extra_args) + footer
                                 html = html.replace('\n</div>','\n</div><div class="logo"><img src="template/img/kpn-logo-groen.png" /></div>')
+                                html = html.replace('always;"></div></div>','always;"></div><div class="logo"><img src="template/img/kpn-logo-groen.png" /></div>')
                                 with open(mdfile, 'wb') as f:
                                     f.write(content.encode())
                                     f.flush()
