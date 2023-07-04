@@ -128,6 +128,7 @@ def process(command, channel, username, params):
                                         'submit_name': 'Submitted Name',
                                         'verdict': 'Verdict',
                                         'analysis_start_time': 'Submitted at',
+                                        'sha256': 'SHA256 hash',
                                         'vx_family': 'Malware family',
                                     }
                                     for singlefield in singlefields:
