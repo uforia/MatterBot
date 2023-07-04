@@ -116,7 +116,7 @@ def process(command, channel, username, params):
                                     # Only display the first five results for now
                                     if count>3:
                                         messages.append({
-                                            'text': 'More than 3 results, attaching complete JSON.',
+                                            'text': 'More than 3 results ('+len(json_response['result'])+'), attaching complete JSON.',
                                             'uploads': [
                                                 {'filename': 'hybridanalysis-'+querytype+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content}
                                             ]
