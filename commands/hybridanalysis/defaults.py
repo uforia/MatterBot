@@ -4,7 +4,8 @@ BINDS = ['@hybridanalysis', '@ha']
 CHANS = ['debug']
 APIURL = {
     'hybridanalysis':   {'url': 'https://www.hybrid-analysis.com/api/v2/',
-                         'key': '<your-api-key>'},
+                         'key': '<your-api-key>',
+                         'secret': '<your-api-secret>'},
 }
 CONTENTTYPE = 'application/json'
 HELP = {
