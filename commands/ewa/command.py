@@ -90,7 +90,7 @@ def process(command, channel, username, params):
                                 with open(MODULEDIR+settings.HTMLFOOTER) as f:
                                     footer = f.read()
                                 html = header + pypandoc.convert_text(content, 'html', format=format, extra_args=extra_args) + footer
-                                html = html.replace('<div style="page-break-before: always"></div>','<div style="page-break-before: always"></div><div class="logo"><img src="template/img/kpn-logo-groen.png" /></div>')
+                                html = html.replace('<div style="page-break-before: always;"></div>','<div style="page-break-before: always;"></div><div class="logo"><img src="template/img/kpn-logo-groen.png" /></div>')
                                 with open(mdfile, 'wb') as f:
                                     f.write(content.encode())
                                     f.flush()
