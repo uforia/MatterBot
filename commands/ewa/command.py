@@ -90,8 +90,7 @@ def process(command, channel, username, params):
                                 with open(MODULEDIR+settings.HTMLFOOTER) as f:
                                     footer = f.read()
                                 html = header + pypandoc.convert_text(content, 'html', format=format, extra_args=extra_args) + footer
-                                html = html.replace('\n</div>','\n</div><div class="logo"><img src="template/img/kpn-logo-groen.png" /></div>')
-                                html = html.replace('always;"></div></div>','always;"></div><div class="logo"><img src="template/img/kpn-logo-groen.png" /></div>')
+                                html = html.replace('<!-- Pagebreak -->',settings.HTMLPAGEBREAK)
                                 with open(mdfile, 'wb') as f:
                                     f.write(content.encode())
                                     f.flush()
@@ -199,7 +198,7 @@ def process(command, channel, username, params):
                                     content = content[:-2]
                                     content += " |"
                                 content += "\n\n"
-                                content += "\n<div style=\"page-break-after: always;\"></div>"
+                                content += "\n<!-- Pagebreak -->"
                                 content += "\n\n"
                                 content += "\n## **%s**" % (settings.ADDDESCTEXT)
                                 content += "\n\n"
@@ -209,7 +208,7 @@ def process(command, channel, username, params):
                                 content += "\n\n"
                                 content += "..."
                                 content += "\n\n"
-                                content += "\n<div style=\"page-break-after: always;\"></div>"
+                                content += "\n<!-- Pagebreak -->"
                                 content += "\n\n"
                                 content += "\n# %s" % (settings.FAQTEXT)
                                 content += "\n"
