@@ -36,11 +36,13 @@ def query(MAX=settings.ENTRIES):
         entries = feed[-MAX:]
         for entry in entries:
             victim = html.unescape(entry['post_title']).strip(' \r\n')
-            group = html.unescape(entry['group_name']).strip(' \r\n')
+            group = html.unescape(entry['group_name']).strip(' \r\n').title()
             date = entry['discovered'].split('.')[0].strip(' \r\n')
             if '.' in victim:
                 victim = '[%s](%s)' % (victim, victim)
-            content = settings.NAME + ': Group **%s** claims **%s** at `%s`' % (group.title(), victim.title(), date)
+            else:
+                victim = victim.title()
+            content = settings.NAME + ': Group **%s** claims **%s** at `%s`' % (group, victim, date)
             items.append([settings.CHANNEL, content])
     except Exception as e:
         content = "An error occurred during the Ransomwatch feed parsing."
