@@ -53,7 +53,7 @@ def process(command, channel, username, params):
                 querytype = 'ssdeep'
             else:
                 endpoint = 'search/terms'
-                querytype = 'vx-family'
+                querytype = 'vx_family'
             if querytype:
                 headers = {
                     'User-Agent': 'VxApi CLI Connector',
