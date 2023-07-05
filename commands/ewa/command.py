@@ -90,6 +90,7 @@ def process(command, channel, username, params):
                                 with open(MODULEDIR+settings.HTMLFOOTER) as f:
                                     footer = f.read()
                                 html = header + pypandoc.convert_text(content, 'html', format=format, extra_args=extra_args) + footer
+                                html = html.replace('<!-- Titlebreak -->',settings.HTMLTITLEBREAK)
                                 html = html.replace('<!-- Pagebreak -->',settings.HTMLPAGEBREAK)
                                 with open(mdfile, 'wb') as f:
                                     f.write(content.encode())
