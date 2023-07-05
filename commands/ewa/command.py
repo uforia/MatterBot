@@ -130,7 +130,7 @@ def process(command, channel, username, params):
                                             ]
                                         })
                                     os.unlink(mdfile)
-                                    #os.unlink(htmlfile)
+                                    os.unlink(htmlfile)
                                     os.unlink(pdffile)
                                 except:
                                     raise
