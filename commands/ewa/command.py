@@ -111,9 +111,9 @@ def process(command, channel, username, params):
                                                 {'filename': cve+'.pdf', 'bytes': bytes}
                                             ]
                                         })
-                                    #os.unlink(mdfile)
-                                    #os.unlink(htmlfile)
-                                    #os.unlink(pdffile)
+                                    os.unlink(mdfile)
+                                    os.unlink(htmlfile)
+                                    os.unlink(pdffile)
                                 except:
                                     raise
                         except:
