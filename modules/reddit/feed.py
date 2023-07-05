@@ -36,7 +36,7 @@ def query(MAX=settings.ENTRIES):
             try:
                 title = feed.entries[count].title
                 link = feed.entries[count].link
-                content = 'Reddit post in /r/' + subreddit + ': [' + title + '](' + link + ')'
+                content = 'Reddit post in [/r/' + subreddit + '](https://www.reddit.com/r/'+subreddit+'): [' + title + '](' + link + ')'
                 items.append([settings.CHANNEL, content])
                 count+=1
             except IndexError:
