@@ -4,7 +4,9 @@ import datetime
 import json
 import os
 import pypandoc
+import re
 import requests
+import sys
 import weasyprint
 from pathlib import Path
 try:
@@ -85,13 +87,29 @@ def process(command, channel, username, params):
                                     header = f.read()
                                     header = header.replace('%title%', settings.EWAHEADER)
                                     header = header.replace('%subtitle%', cve)
-                                    header = header.replace('%toc%', '[TOC]')
                                     header = header.replace('%date%', datetime.datetime.now().strftime('%A, %d %B %Y'))
                                 with open(MODULEDIR+settings.HTMLFOOTER) as f:
                                     footer = f.read()
                                 html = header + pypandoc.convert_text(content, 'html', format=format, extra_args=extra_args) + footer
                                 html = html.replace('<!-- Titlebreak -->',settings.HTMLTITLEBREAK)
                                 html = html.replace('<!-- Pagebreak -->',settings.HTMLPAGEBREAK)
+                                html = html.replace('<!-- TOC -->',settings.HTMLTOC)
+                                html = html.replace('</section>','')
+                                if settings.HTMLTOC in html:
+                                    toc = ''
+                                    sections = re.findall(r'<section id=[^>]+>',html,re.DOTALL)
+                                    for section in sections:
+                                        html = re.sub('</h1>','</h1></section>',html,flags=re.DOTALL)
+                                        html = re.sub('</h2>','</h2></section>',html,flags=re.DOTALL)
+                                        html = re.sub('</h3>','</h3></section>',html,flags=re.DOTALL)
+                                        html = re.sub('</h4>','</h4></section>',html,flags=re.DOTALL)
+                                        html = re.sub('</h5>','</h5></section>',html,flags=re.DOTALL)
+                                        html = re.sub('</h6>','</h6></section>',html,flags=re.DOTALL)
+                                        m = re.search('id=\"(.+?)\"', section)
+                                        if m:
+                                            chaptertitle = m.group(1)
+                                            toc += '\n<li><a href="#'+chaptertitle+'" class="toctext"></a> <a href="'+chaptertitle+'" class="tocpagenr"> </a></li>'
+                                    html = html.replace('%TOC%',toc)
                                 with open(mdfile, 'wb') as f:
                                     f.write(content.encode())
                                     f.flush()
@@ -112,7 +130,7 @@ def process(command, channel, username, params):
                                             ]
                                         })
                                     os.unlink(mdfile)
-                                    os.unlink(htmlfile)
+                                    #os.unlink(htmlfile)
                                     os.unlink(pdffile)
                                 except:
                                     raise
