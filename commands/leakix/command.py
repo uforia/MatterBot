@@ -37,12 +37,10 @@ def process(command, channel, username, params):
             elif re.search(r"^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))", query):
                 endpoints = ['host/']
             elif re.search(r"^(((?!\-))(xn\-\-)?[a-z0-9\-_]{0,61}[a-z0-9]{1,1}\.)*(xn\-\-)?([a-z0-9\-]{1,61}|[a-z0-9\-]{1,30})\.[a-z]{2,}$", query):
-                endpoints = ['domain/',]
-                #endpoints = ['domain/', 'subdomains/']
+                endpoints = ['domain/', 'api/subdomains/']
             elif 'http' in query:
                 query = query.split('://')[1].split('/')[0]
-                endpoints = ['domain/',]
-                #endpoints = ['domain/', 'subdomains/']
+                endpoints = ['domain/', 'api/subdomains/']
             if endpoints:
                 headers = {
                     'accept': settings.CONTENTTYPE,
@@ -54,6 +52,39 @@ def process(command, channel, username, params):
                     with requests.get(APIENDPOINT,headers=headers) as response:
                         json_response = response.json()
                         querytype = endpoint.strip('/')
+                        if 'subdomains' in APIENDPOINT:
+                            if len(json_response)>0:
+                                count = 0
+                                fieldnames = {
+                                    'subdomain': 'Subdomain',
+                                    'distinct_ips': 'Unique IPs',
+                                    'last_seen': 'Last Seen',
+                                }
+                                title = True
+                                if title:
+                                    message = '| **LeakIX `%s` lookup** |' % (query,)
+                                    for fieldname in fieldnames:
+                                        message += ' **%s** |' % (fieldnames[fieldname])
+                                    message += '\n'
+                                    message += '| -: |'
+                                    message += ':- |'*(len(fieldnames))
+                                    title = False
+                                for subdomain in json_response:
+                                    count += 1
+                                    message += '\n| **Result** `%s` | ' % (count,)
+                                    for fieldname in fieldnames:
+                                        value = subdomain[fieldname]
+                                        message += '`%s` |' % (value,)
+                                message += '\n\n'
+                                if count>=10:
+                                    message += '\n\nOnly showing first 10 records - check JSON for complete output.'
+                                    messages.append({'text': message, 'uploads': [
+                                        {'filename': 'leakix-'+querytype+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content}
+                                    ]})
+                                    break
+                            if count>0 and count<=10:
+                                message += '\n\n'
+                                messages.append({'text': message})
                         if 'Services' in json_response:
                             if json_response['Services']:
                                 fieldnames = {
