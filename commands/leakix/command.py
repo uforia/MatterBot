@@ -75,13 +75,12 @@ def process(command, channel, username, params):
                                     for fieldname in fieldnames:
                                         value = subdomain[fieldname]
                                         message += '`%s` |' % (value,)
-                                message += '\n\n'
-                                if count>=10:
-                                    message += '\n\nOnly showing first 10 records - check JSON for complete output.'
-                                    messages.append({'text': message, 'uploads': [
-                                        {'filename': 'leakix-'+querytype+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content}
-                                    ]})
-                                    break
+                                    if count>=10:
+                                        message += '\n\nOnly showing first 10 records - check JSON for complete output.'
+                                        messages.append({'text': message, 'uploads': [
+                                            {'filename': 'leakix-'+querytype+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content}
+                                        ]})
+                                        break
                             if count>0 and count<=10:
                                 message += '\n\n'
                                 messages.append({'text': message})
