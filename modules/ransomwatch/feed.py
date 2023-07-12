@@ -38,7 +38,7 @@ def query(MAX=settings.ENTRIES):
             victim = html.unescape(entry['post_title']).strip(' \r\n')
             group = html.unescape(entry['group_name']).strip(' \r\n').title()
             date = entry['discovered'].split('.')[0].strip(' \r\n')
-            if '.' in victim:
+            if 'http' in victim:
                 victim = '[%s](%s)' % (victim, victim)
             else:
                 victim = victim.title()
