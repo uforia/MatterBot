@@ -4,6 +4,7 @@ import csv
 import datetime
 import requests
 import sys
+import traceback
 from io import StringIO
 from pathlib import Path
 try:
@@ -21,18 +22,19 @@ else:
 
 
 def process(command, channel, username, params):
-    if len(params)>0:
+    try:
         messages = []
-        try:
-            if len(params)<2:
-                messages.append({'text': 'You need to specify the relevant ID and language!'})
+        if len(params)<3:
+            messages.append({'text': 'You need to specify the relevant language, type and customer ID!'})
+        else:
+            headers = {
+                'Authorization': 'Bearer %s' % settings.APIURL['docgen']['token'],
+                'Content-Type': settings.CONTENTTYPE,
+            }
+            language = params[0]
+            if not language in settings.LANGMAP:
+                messages.append({'text': 'Language `%s` not recognized' % (language,)})
             else:
-                headers = {
-                    'Authorization': 'Bearer %s' % settings.APIURL['docgen']['token'],
-                    'Content-Type': settings.CONTENTTYPE,
-                }
-                casenummer = params[0].lower().strip()
-                language = params[1].lower().strip()
                 query = '{"query":"query { pages { list (orderBy: PATH) { id path title }}}"}'
                 with requests.post(settings.APIURL['docgen']['url'], headers=headers, data=query) as response:
                     pages = response.json()
@@ -49,7 +51,17 @@ def process(command, channel, username, params):
                                 with requests.post(settings.APIURL['docgen']['url'], headers=headers, data=query) as response:
                                     pagecontent = response.json()
                                     if 'data' in pagecontent:
-                                        template_id_chain_content = csv.DictReader(StringIO(pagecontent['data']['pages']['single']['content']))
+                                        template_idchain_content = csv.DictReader(StringIO(pagecontent['data']['pages']['single']['content']))
+                            if page['title'].lower() == settings.TEMPLATECUSTOMERS.lower():
+                                query = '{"query":"query { pages { single (id: %d) { content }}}"}' % (page['id'],)
+                                with requests.post(settings.APIURL['docgen']['url'], headers=headers, data=query) as response:
+                                    pagecontent = response.json()
+                                    if 'data' in pagecontent:
+                                        template_customers_content = csv.DictReader(StringIO(pagecontent['data']['pages']['single']['content']))
+                print(template_idchain_content)
+                print(template_customers_content)
+                print(template_variables_content)
+                """
                 template_variables = None
                 if template_variables_content and template_id_chain_content:
                     for entry in template_variables_content:
@@ -98,7 +110,9 @@ def process(command, channel, username, params):
                         ]})
                 else:
                     messages.append({'text': 'Document type `%s` is not implemented yet.' % (template_variables['type'],)})
-        except Exception as e:
-            messages.append({'text': "An error occurred retrieving WikiJS content for `%s`:\nError: `%s`" % (params, str(e))})
-        finally:
-            return {'messages': messages}
+                """
+    except Exception as e:
+        print(traceback.format_exc())
+        messages.append({'text': 'A Python error occurred during document generation:\nError:' + str(e)})
+    finally:
+        return {'messages': messages}

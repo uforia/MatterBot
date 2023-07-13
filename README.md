@@ -21,6 +21,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 
 | Name                                                                                             | Type           | API Key Required | Paid Subscription |
 | ------------------------------------------------------------------------------------------------ |:--------------:|:----------------:|:-----------------:|
+| Aqua Security Blog                                                                               | RSS            | No               | No                |
 | Bruce Schneier's Blog                                                                            | RSS            | No               | No                |
 | CISecurity                                                                                       | RSS            | No               | No                |
 | Cqure Blog                                                                                       | RSS            | No               | No                |

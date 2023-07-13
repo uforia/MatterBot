@@ -10,10 +10,14 @@ __pycache__/
 .Python
 build/
 config.yaml
+# Do not upload configurations
 commands/*/settings.py
-commands/*/template/*
-CVE-*
 modules/*/settings.py
+# Do not share proprietary content
+commands/*/template/*
+# Not really useful for public use
+commands/docgen/*
+CVE-*
 *.json
 *.log
 develop-eggs/
