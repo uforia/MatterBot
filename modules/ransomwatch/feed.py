@@ -13,6 +13,7 @@
 # <content>: the content of the message, MD format possible
 
 import html
+import re
 import requests
 from pathlib import Path
 try:
@@ -38,7 +39,7 @@ def query(MAX=settings.ENTRIES):
             victim = html.unescape(entry['post_title']).strip(' \r\n')
             group = html.unescape(entry['group_name']).strip(' \r\n').title()
             date = entry['discovered'].split('.')[0].strip(' \r\n')
-            if 'http' in victim:
+            if re.search(r"^(((?!\-))(xn\-\-)?[a-z0-9\-_]{0,61}[a-z0-9]{1,1}\.)*(xn\-\-)?([a-z0-9\-]{1,61}|[a-z0-9\-]{1,30})\.[a-z]{2,}$", victim) or 'http' in victim:
                 victim = '[%s](%s)' % (victim, victim)
             else:
                 victim = victim.title()
