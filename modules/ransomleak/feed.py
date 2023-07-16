@@ -38,7 +38,7 @@ def query(MAX=settings.ENTRIES):
             ENDPOINT = settings.URL+group+'.json'
             with requests.get(ENDPOINT, auth=authentication) as response:
                 feed = yaml.safe_load(response.content)
-            entries = sorted(feed, key=lambda feed: feed['scrape'])[-MAX:]
+            entries = sorted(feed, key=lambda feed: feed['scrape'], reverse=True)[-MAX:]
             for entry in entries:
                 group = entry['group']
                 date = entry['published']
