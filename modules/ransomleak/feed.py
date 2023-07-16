@@ -44,9 +44,9 @@ def query(MAX=settings.ENTRIES):
                 date = entry['published']
                 scrape = entry['scrape']
                 victim = entry['company']
-                size = entry['size'] if 'size' in entry else 'an unknown amount'
+                size = '`'+entry['size']+'`' if 'size' in entry else 'an unknown amount'
                 content = settings.NAME + ': Actor **%s**' % (group,)
-                content += ' has leaked `%s` of data' % (size,)
+                content += ' has leaked %s of data' % (size,)
                 content += ' from victim **%s**' % (victim,)
                 if date == 'unknown':
                     content += ' possibly at `%s`' % (scrape,)
