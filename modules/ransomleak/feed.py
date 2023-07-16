@@ -13,6 +13,7 @@
 # <content>: the content of the message, MD format possible
 
 import requests
+import traceback
 import yaml
 from pathlib import Path
 try:
@@ -37,7 +38,7 @@ def query(MAX=settings.ENTRIES):
             ENDPOINT = settings.URL+group+'.json'
             with requests.get(ENDPOINT, auth=authentication) as response:
                 feed = yaml.safe_load(response.content)
-            entries = feed[-MAX:]
+            entries = sorted(feed, key=lambda feed: feed['published'])[-MAX:]
             for entry in entries:
                 group = entry['group']
                 date = entry['published'] if 'published' in entry else 'N/A'
@@ -50,6 +51,7 @@ def query(MAX=settings.ENTRIES):
                     content += ' at `%s`' % (date,)
                 items.append([settings.CHANNEL, content])
     except Exception as e:
+        print(traceback.format_exc())
         content = "An error occurred during the Ransomleaks feed parsing."
         items.append([settings.CHANNEL,content])
     finally:
