@@ -38,16 +38,19 @@ def query(MAX=settings.ENTRIES):
             ENDPOINT = settings.URL+group+'.json'
             with requests.get(ENDPOINT, auth=authentication) as response:
                 feed = yaml.safe_load(response.content)
-            entries = sorted(feed, key=lambda feed: feed['published'])[-MAX:]
+            entries = sorted(feed, key=lambda feed: feed['scrape'])[-MAX:]
             for entry in entries:
                 group = entry['group']
-                date = entry['published'] if 'published' in entry else 'N/A'
+                date = entry['published']
+                scrape = entry['scrape']
                 victim = entry['company']
                 size = entry['size'] if 'size' in entry else 'an unknown amount'
                 content = settings.NAME + ': Actor **%s**' % (group,)
                 content += ' has leaked `%s` of data' % (size,)
                 content += ' from victim **%s**' % (victim,)
-                if date:
+                if date == 'unknown':
+                    content += ' possibly at `%s`' % (scrape,)
+                else:
                     content += ' at `%s`' % (date,)
                 items.append([settings.CHANNEL, content])
     except Exception as e:
