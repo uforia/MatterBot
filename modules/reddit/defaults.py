@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
 NAME = "Reddit"
-CHANNEL = "news"
+CHANNELS = (
+    "news",
+)
 SUBREDDITS = [
     'cybersecurity',
     'netsec',

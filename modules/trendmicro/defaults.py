@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 NAME = "TrendMicro Research"
-CHANNEL = "news"
+CHANNELS = (
+    "news",
+)
 URL = "http://feeds.trendmicro.com/TrendMicroResearch"
 ENTRIES = 10

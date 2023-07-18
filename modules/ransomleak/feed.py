@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Every module must set the CHANNEL variable to indicate where information should be sent to in Mattermost
+# Every module must set the CHANNELS variable to indicate where information should be sent to in Mattermost
 #
 # Every module must implement the query() function.
 # This query() function is called by the main worker and has only one parameter: the number of historic

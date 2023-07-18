@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
 NAME = "US-CERT"
-CHANNEL = "news"
+CHANNELS = (
+    "news",
+)
 CATEGORIES = [
     "ics/advisories/advisories",
     "ncas/alerts",
