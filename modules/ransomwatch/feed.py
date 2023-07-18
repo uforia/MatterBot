@@ -44,10 +44,12 @@ def query(MAX=settings.ENTRIES):
             else:
                 victim = victim.title()
             content = settings.NAME + ': Actor **%s** claims to have ransomwared **%s** at `%s`' % (group, victim, date)
-            items.append([settings.CHANNEL, content])
+            for channel in settings.CHANNELS:
+                items.append([channel, content])
     except Exception as e:
         content = "An error occurred during the Ransomwatch feed parsing."
-        items.append([settings.CHANNEL,content])
+        for channel in settings.CHANNELS:
+            items.append([channel,content])
     finally:
         return items
 

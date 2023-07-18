@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
 NAME = "RansomLeak"
-CHANNEL = "news"
+CHANNELS = (
+    "news",
+)
 URL = "<URL-to-JSONs>"
 AUTH = {
     'username': None,
