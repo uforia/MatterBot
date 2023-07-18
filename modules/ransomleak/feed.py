@@ -41,7 +41,10 @@ def query(MAX=settings.ENTRIES):
             entries = sorted(feed, key=lambda feed: feed['scrape'], reverse=True)[:MAX]
             for entry in entries:
                 group = entry['group']
-                date = entry['published']
+                if 'published' in entry:
+                    date = entry['published']
+                else:
+                    date = 'unknown'
                 scrape = entry['scrape']
                 victim = entry['company']
                 size = '`'+entry['size']+'`' if 'size' in entry else 'an unknown amount'

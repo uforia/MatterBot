@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-NAME = "RansomLeak"
+NAME = "Ransomware Data Leak"
 CHANNELS = (
     "news",
 )
