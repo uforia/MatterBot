@@ -179,14 +179,16 @@ if __name__ == '__main__' :
         thread = ModuleWorker(mm, module, logQueue, msgQueue)
         threads.append(thread)
         thread.start()
-        print('Starting {}'.format(module))
-        #thread = threading.Thread(target=runModule, args=(mm, module, logQueue, msgQueue), daemon=True)
 
     while len(threads)>0:
         try:
             threads = [t.join(1) for t in threads if t is not None and t.is_alive()]
         except KeyboardInterrupt:
             logQueue.put(('INFO', 'Shutting down all workers and exiting ...'))
+            if logThread is not None and logThread.is_alive():
+                logThread.join()
+            if postThread is not None and postThread.is_alive():
+                postThread.join()
             for thread in threads:
                 thread.kill_received = True
     sys.exit(0)
