@@ -114,19 +114,20 @@ class ModuleWorker(threading.Thread):
                 first_run = True
             else:
                 first_run = False
-            for item in items:
-                if not item in history[self.module]:
-                    channel, content = item
-                    history[self.module].append(item)
-                    if first_run:
-                        if options.debug:
-                            self.logQueue.put(('DEBUG', 'Storing : ' + module + ' => ' + channel + ' => ' + content[:60] + '...'))
-                    else:
-                        if options.debug:
-                            self.logQueue.put(('DEBUG', 'Posting : ' + module + ' => ' + channel + ' => ' + content[:60] + '...'))
+            if len(items):
+                for item in items:
+                    if not item in history[self.module]:
+                        channel, content = item
+                        history[self.module].append(item)
+                        if first_run:
+                            if options.debug:
+                                self.logQueue.put(('DEBUG', 'Storing : ' + module + ' => ' + channel + ' => ' + content[:60] + '...'))
                         else:
-                            self.logQueue.put(('INFO', 'Posting : ' + module + ' => ' + channel + ' => ' + content[:60] + '...'))
-                            self.msgQueue.put((channel, module.title(), content))
+                            if options.debug:
+                                self.logQueue.put(('DEBUG', 'Posting : ' + module + ' => ' + channel + ' => ' + content[:60] + '...'))
+                            else:
+                                self.logQueue.put(('INFO', 'Posting : ' + module + ' => ' + channel + ' => ' + content[:60] + '...'))
+                                self.msgQueue.put((channel, module.title(), content))
             if options.debug:
                 logQueue.put(('DEBUG', 'Summary : ' + self.module + ' => '+ str(len(items)) + ' messages ...'))
             history.sync()
