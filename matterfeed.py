@@ -128,6 +128,7 @@ class ModuleWorker(threading.Thread):
                             self.msgQueue.put((channel, module.title(), content))
             if options.debug:
                 logQueue.put(('DEBUG', 'Summary : ' + self.module + ' => '+ str(len(items)) + ' messages ...'))
+            history.sync()
             history.close()
         logQueue.put(('INFO', 'Completed: ' + self.module + ' => sleeping for ' + str(options.Modules['timer']) + ' seconds ...'))
         time.sleep(options.Modules['timer'])
