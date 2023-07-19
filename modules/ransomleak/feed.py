@@ -15,6 +15,7 @@
 import requests
 import traceback
 import yaml
+from bs4 import BeautifulSoup
 from pathlib import Path
 try:
     from modules.ransomleak import defaults as settings
@@ -34,29 +35,34 @@ def query(MAX=settings.ENTRIES):
     if settings.AUTH['username'] and settings.AUTH['password']:
         authentication = (settings.AUTH['username'],settings.AUTH['password'])
     try:
-        for group in settings.GROUPS:
-            ENDPOINT = settings.URL+group+'.json'
+        ENDPOINT = settings.URL
+        with requests.get(ENDPOINT, auth=authentication) as response:
+            soup = BeautifulSoup(response.text,'html.parser')
+            groups = [node.get('href') for node in soup.find_all('a') if node.get('href').endswith('.json')]
+        for group in groups:
+            ENDPOINT = settings.URL+'/'+group
             with requests.get(ENDPOINT, auth=authentication) as response:
                 feed = yaml.safe_load(response.content)
-            entries = sorted(feed, key=lambda feed: feed['scrape'], reverse=True)[:MAX]
-            for entry in entries:
-                group = entry['group'].strip()
-                if 'published' in entry:
-                    date = entry['published'].strip()
-                else:
-                    date = 'unknown'
-                scrape = entry['scrape'].strip()
-                victim = entry['company'].strip()
-                size = '`'+entry['size'].strip()+'`' if 'size' in entry else 'an unknown amount'
-                content = settings.NAME + ': Actor **%s**' % (group,)
-                content += ' has leaked %s of data' % (size,)
-                content += ' from victim **%s**' % (victim,)
-                if date == 'unknown':
-                    content += ', possibly at `%s` (date scraped)' % (scrape,)
-                else:
-                    content += ' at `%s`' % (date,)
-                for channel in settings.CHANNELS:
-                    items.append([channel, content])
+            if len(feed)>0:
+                entries = sorted(feed, key=lambda feed: feed['scrape'], reverse=True)[:MAX]
+                for entry in entries:
+                    group = entry['group'].strip()
+                    if 'published' in entry:
+                        date = entry['published'].strip()
+                    else:
+                        date = 'unknown'
+                    scrape = entry['scrape'].strip()
+                    victim = entry['company'].strip()
+                    size = '`'+entry['size'].strip()+'`' if 'size' in entry else 'an unknown amount'
+                    content = settings.NAME + ': Actor **%s**' % (group,)
+                    content += ' has leaked %s of data' % (size,)
+                    content += ' from victim **%s**' % (victim,)
+                    if date == 'unknown':
+                        content += ', possibly at `%s` (date scraped)' % (scrape,)
+                    else:
+                        content += ' at `%s`' % (date,)
+                    for channel in settings.CHANNELS:
+                        items.append([channel, content])
     except Exception as e:
         print(traceback.format_exc())
         content = "An error occurred during the Ransomleaks feed parsing."

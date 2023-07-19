@@ -9,7 +9,4 @@ AUTH = {
     'username': None,
     'password': None,
 }
-GROUPS = (
-    'Lorenz',
-)
 ENTRIES = 10

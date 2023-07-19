@@ -1,5 +1,6 @@
 azure-storage-blob==12.14.1
 azure-search-documents==11.3.0
+BeautifulSoup4==4.12.2
 ConfigArgParse==1.5.3
 feedparser==6.0.10
 graphviz==0.20.1
