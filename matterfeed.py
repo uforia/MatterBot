@@ -114,7 +114,7 @@ class ModuleWorker(threading.Thread):
                 first_run = True
             else:
                 first_run = False
-            if len(items):
+            if items:
                 for item in items:
                     if not item in history[self.module]:
                         channel, content = item
