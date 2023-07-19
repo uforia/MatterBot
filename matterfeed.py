@@ -100,7 +100,7 @@ class ModuleWorker(threading.Thread):
         self.msgQueue = msgQueue
 
     def runModule(self):
-        logQueue.put(('INFO', 'Starting : ' + self.module.lower()))
+        logQueue.put(('INFO', 'Starting : ' + self.module))
         if options.debug:
             logQueue.put(('DEBUG', 'Creating: ' + self.module + ' window of ' + str(options.Modules['window']) + ' entries...'))
         try:
@@ -120,15 +120,12 @@ class ModuleWorker(threading.Thread):
                         if not item in history[self.module]:
                             channel, content = item
                             history[self.module].append(item)
-                            if first_run:
+                            if not first_run:
                                 if options.debug:
-                                    self.logQueue.put(('DEBUG', 'Storing : ' + self.module + ' => ' + channel + ' => ' + content[:60] + '...'))
-                            else:
-                                if options.debug:
-                                    self.logQueue.put(('DEBUG', 'Posting : ' + self.module + ' => ' + channel + ' => ' + content[:60] + '...'))
+                                    self.logQueue.put(('DEBUG', 'Posting : ' + self.module + ' => ' + channel + ' => ' + content[:80] + '...'))
                                 else:
-                                    self.logQueue.put(('INFO', 'Posting : ' + self.module + ' => ' + channel + ' => ' + content[:60] + '...'))
-                                    self.msgQueue.put((channel, self.module.title(), content))
+                                    self.logQueue.put(('INFO', 'Posting : ' + self.module + ' => ' + channel + ' => ' + content[:80] + '...'))
+                                    self.msgQueue.put((channel, self.module, content))
                 if options.debug:
                     logQueue.put(('DEBUG', 'Summary : ' + self.module + ' => '+ str(len(items)) + ' messages ...'))
                 history.sync()
