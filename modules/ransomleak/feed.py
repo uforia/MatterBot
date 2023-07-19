@@ -40,14 +40,14 @@ def query(MAX=settings.ENTRIES):
                 feed = yaml.safe_load(response.content)
             entries = sorted(feed, key=lambda feed: feed['scrape'], reverse=True)[:MAX]
             for entry in entries:
-                group = entry['group']
+                group = entry['group'].strip()
                 if 'published' in entry:
-                    date = entry['published']
+                    date = entry['published'].strip()
                 else:
                     date = 'unknown'
-                scrape = entry['scrape']
-                victim = entry['company']
-                size = '`'+entry['size']+'`' if 'size' in entry else 'an unknown amount'
+                scrape = entry['scrape'].strip()
+                victim = entry['company'].strip()
+                size = '`'+entry['size'].strip()+'`' if 'size' in entry else 'an unknown amount'
                 content = settings.NAME + ': Actor **%s**' % (group,)
                 content += ' has leaked %s of data' % (size,)
                 content += ' from victim **%s**' % (victim,)
