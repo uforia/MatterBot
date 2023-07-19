@@ -13,8 +13,7 @@ Matterbot:
 Modules:
   moduledir: "modules"
   commanddir: "commands"
-  lookback: 20
-  window: 5
+  window: 20
   timer: 600
 
 debug: False

@@ -12,6 +12,8 @@ build/
 config.yaml
 # Do not upload configurations
 commands/*/settings.py
+modules/*/*.cache
+modules/*/*.json
 modules/*/settings.py
 # Do not share proprietary content
 commands/*/template/*
@@ -29,6 +31,7 @@ lib/
 lib64/
 parts/
 sdist/
+temp/
 var/
 wheels/
 pip-wheel-metadata/

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 NAME = "Cyber Security Hub"
-CHANNEL = (
+CHANNELS = (
     "news",
 )
 CATEGORIES = [

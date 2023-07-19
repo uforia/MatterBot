@@ -1,21 +1,18 @@
 #!/usr/bin/env python3
 
-import logging
-import requests
-import threading
-import queue
-import time
-import datetime
-import os
-import sys
+import ast
+import configargparse
 import fnmatch
 import importlib.util
-import concurrent.futures
-import configargparse
-import ast
-import asyncio
-import json
-
+import logging
+import random
+import requests
+import os
+import queue
+import shelve
+import sys
+import threading
+import time
 from mattermostdriver import Driver
 
 class TokenAuth(requests.auth.AuthBase):
@@ -93,28 +90,52 @@ def loadModules():
             modules[module_name] = getattr(module, 'query')
     return modules
 
-def runModule(mm, module, logQueue, msgQueue, history, first_run=False):
-    logQueue.put(('INFO', 'Starting : ' + module.lower()))
-    items = modules[module](options.Modules['window'])
-    if items:
-        for item in items:
-            channel, content = item
-            if first_run:
-                history[module].append(item)
-                if options.debug:
-                    logQueue.put(('DEBUG', 'Storing : ' + module + ' => ' + channel + ' => ' + content[:20] + '...'))
-            else:
-                if not item in history[module]:
-                    history[module].append(item)
-                    if options.debug:
-                        logQueue.put(('DEBUG', 'Posting : ' + module + ' => ' + channel + ' => ' + content[:20] + '...'))
-                    msgQueue.put((channel, module.title(), content))
-                else:
-                    if options.debug:
-                        logQueue.put(('DEBUG', 'Ignoring: ' + module + ' => ' + channel + ' => ' + content[:20] + '...'))
+class ModuleWorker(threading.Thread):
+    def __init__(self, mm, module, logQueue, msgQueue):
+        threading.Thread.__init__(self)
+        self.terminate = False
+        self.mm = mm
+        self.module = module
+        self.logQueue = logQueue
+        self.msgQueue = msgQueue
+
+    def runModule(self):
+        logQueue.put(('INFO', 'Starting : ' + self.module.lower()))
         if options.debug:
-            logQueue.put(('DEBUG', 'Summary : ' + module + ' => '+ str(len(items)) + ' messages ...'))
-    logQueue.put(('INFO', 'Completed: ' + module))
+            logQueue.put(('DEBUG', 'Creating: ' + self.module + ' window of ' + str(options.Modules['window']) + ' entries...'))
+        items = modules[module](options.Modules['window'])
+        modulepath = options.Modules['moduledir']+'/'+self.module+'/'+self.module+'.cache'
+        if os.path.isfile(modulepath):
+            if options.debug:
+                logQueue.put(('DEBUG', 'Found   : ' + self.module + ' database at ' + modulepath + ' location...'))
+        with shelve.open(modulepath,writeback=True) as history:
+            if not self.module in history:
+                history[self.module] = []
+                first_run = True
+            else:
+                first_run = False
+            for item in items:
+                if not item in history[self.module]:
+                    channel, content = item
+                    history[self.module].append(item)
+                    if first_run:
+                        if options.debug:
+                            self.logQueue.put(('DEBUG', 'Storing : ' + module + ' => ' + channel + ' => ' + content[:60] + '...'))
+                    else:
+                        if options.debug:
+                            self.logQueue.put(('DEBUG', 'Posting : ' + module + ' => ' + channel + ' => ' + content[:60] + '...'))
+                        else:
+                            self.msgQueue.put((channel, module.title(), content))
+            if options.debug:
+                logQueue.put(('DEBUG', 'Summary : ' + self.module + ' => '+ str(len(items)) + ' messages ...'))
+            history.close()
+        logQueue.put(('INFO', 'Completed: ' + self.module + ' => sleeping for ' + str(options.Modules['timer']) + ' seconds ...'))
+        time.sleep(options.Modules['timer'])
+    
+    def run(self):
+        while not self.terminate:
+            self.runModule()
+
 
 if __name__ == '__main__' :
     '''
@@ -148,32 +169,24 @@ if __name__ == '__main__' :
     # Find and load all modules concurrently, and build a lookback history
     modules = loadModules()
     history = {}
-    if len(modules) > 0:
-        threads = {}
-        for module in modules:
-            history[module] = []
-            threads[module] = threading.Thread(target=runModule, args=(mm, module, logQueue, msgQueue, history, True))
-            threads[module].start()
-    else:
+    if len(modules)<=0:
         logQueue.put(('ERROR'), 'No modules found - exiting!')
         sys.exit(1)
-    for thread in threads:
-        threads[thread].join()
-    first_run = False
 
     # Schedule the module polling and run forever
-    try:
-        while True:
-            time.sleep(options.Modules['timer'])
-            if len(modules) > 0:
-                threads = {}
-                for module in modules:
-                    threads[module] = threading.Thread(target=runModule, args=(mm, module, logQueue, msgQueue, history, False))
-                    threads[module].start()
-            else:
-                logQueue.put(('ERROR'), 'No modules found - exiting!')
-                sys.exit(1)
-    except KeyboardInterrupt:
-        logQueue.put(('INFO', 'Shutting down all workers and exiting ...'))
-        for module in threads:
-            threads[module].join()
+    threads = []
+    for module in modules:
+        thread = ModuleWorker(mm, module, logQueue, msgQueue)
+        threads.append(thread)
+        thread.start()
+        print('Starting {}'.format(module))
+        #thread = threading.Thread(target=runModule, args=(mm, module, logQueue, msgQueue), daemon=True)
+
+    while len(threads)>0:
+        try:
+            threads = [t.join(1) for t in threads if t is not None and t.is_alive()]
+        except KeyboardInterrupt:
+            logQueue.put(('INFO', 'Shutting down all workers and exiting ...'))
+            for thread in threads:
+                thread.kill_received = True
+    sys.exit(0)
