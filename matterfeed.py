@@ -128,7 +128,7 @@ class ModuleWorker(threading.Thread):
                                     self.logQueue.put(('DEBUG', 'Posting : ' + self.module + ' => ' + channel + ' => ' + content[:60] + '...'))
                                 else:
                                     self.logQueue.put(('INFO', 'Posting : ' + self.module + ' => ' + channel + ' => ' + content[:60] + '...'))
-                                    self.msgQueue.put((channel, module.title(), content))
+                                    self.msgQueue.put((channel, self.module.title(), content))
                 if options.debug:
                     logQueue.put(('DEBUG', 'Summary : ' + self.module + ' => '+ str(len(items)) + ' messages ...'))
                 history.sync()
