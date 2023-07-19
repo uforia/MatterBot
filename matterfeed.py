@@ -104,7 +104,7 @@ class ModuleWorker(threading.Thread):
         if options.debug:
             logQueue.put(('DEBUG', 'Creating: ' + self.module + ' window of ' + str(options.Modules['window']) + ' entries...'))
         try:
-            items = modules[module](options.Modules['window'])
+            items = modules[self.module](options.Modules['window'])
             modulepath = options.Modules['moduledir']+'/'+self.module+'/'+self.module+'.cache'
             if os.path.isfile(modulepath):
                 if options.debug:
@@ -122,12 +122,12 @@ class ModuleWorker(threading.Thread):
                             history[self.module].append(item)
                             if first_run:
                                 if options.debug:
-                                    self.logQueue.put(('DEBUG', 'Storing : ' + module + ' => ' + channel + ' => ' + content[:60] + '...'))
+                                    self.logQueue.put(('DEBUG', 'Storing : ' + self.module + ' => ' + channel + ' => ' + content[:60] + '...'))
                             else:
                                 if options.debug:
-                                    self.logQueue.put(('DEBUG', 'Posting : ' + module + ' => ' + channel + ' => ' + content[:60] + '...'))
+                                    self.logQueue.put(('DEBUG', 'Posting : ' + self.module + ' => ' + channel + ' => ' + content[:60] + '...'))
                                 else:
-                                    self.logQueue.put(('INFO', 'Posting : ' + module + ' => ' + channel + ' => ' + content[:60] + '...'))
+                                    self.logQueue.put(('INFO', 'Posting : ' + self.module + ' => ' + channel + ' => ' + content[:60] + '...'))
                                     self.msgQueue.put((channel, module.title(), content))
                 if options.debug:
                     logQueue.put(('DEBUG', 'Summary : ' + self.module + ' => '+ str(len(items)) + ' messages ...'))
