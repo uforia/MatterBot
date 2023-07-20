@@ -12,6 +12,7 @@
 # <channel>: basically the destination channel in Mattermost, e.g. 'Newsfeed', 'Incident', etc.
 # <content>: the content of the message, MD format possible
 
+import re
 import requests
 import traceback
 import yaml
@@ -52,11 +53,26 @@ def query(MAX=settings.ENTRIES):
                     else:
                         date = 'unknown'
                     scrape = entry['scrape'].strip()
-                    victim = entry['company'].strip()
+                    if 'company' in entry:
+                        company = entry['company'].strip()
+                    else:
+                        company = None
+                    if 'domain' in entry:
+                        domain = entry['domain'].strip()
+                        if re.search(r"^(((?!\-))(xn\-\-)?[a-z0-9\-_]{0,61}[a-z0-9]{1,1}\.)*(xn\-\-)?([a-z0-9\-]{1,61}|[a-z0-9\-]{1,30})\.[a-z]{2,}$", domain) or 'http' in domain:
+                            if company:
+                                victim = '[%s](%s)' % (company,domain)
+                            else:
+                                victim = '[%s](%s)' % (domain,domain)
+                    else:
+                        if company:
+                            victim = '**%s**' % (company,)
+                        else:
+                            victim = '`an unknown company`'
                     size = '`'+entry['size'].strip()+'`' if 'size' in entry else 'an unknown amount'
                     content = settings.NAME + ': Actor **%s**' % (group,)
                     content += ' has leaked %s of data' % (size,)
-                    content += ' from victim **%s**' % (victim,)
+                    content += ' from victim %s' % (victim,)
                     if date == 'unknown':
                         content += ', possibly at `%s` (date scraped)' % (scrape,)
                     else:

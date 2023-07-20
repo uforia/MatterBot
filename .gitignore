@@ -12,6 +12,7 @@ build/
 config.yaml
 # Do not upload configurations
 commands/*/settings.py
+commands/csirt*/*
 modules/*/*.cache
 modules/*/*.json
 modules/*/settings.py
