@@ -50,6 +50,8 @@ def query(MAX=settings.ENTRIES):
                     group = entry['group'].strip()
                     if 'published' in entry:
                         date = entry['published'].strip()
+                        if not len(date):
+                            date = 'unknown'
                     else:
                         date = 'unknown'
                     scrape = entry['scrape'].strip()
