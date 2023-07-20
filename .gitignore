@@ -15,6 +15,7 @@ commands/*/settings.py
 modules/*/*.cache
 modules/*/*.json
 modules/*/settings.py
+modules/csirt*/*
 # Do not share proprietary content
 commands/*/template/*
 # Not really useful for public use
