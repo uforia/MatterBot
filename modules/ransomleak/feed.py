@@ -61,14 +61,14 @@ def query(MAX=settings.ENTRIES):
                         victim = None
                     if 'domain' in entry:
                         domain = entry['domain'].strip()
-                        if re.search(r"^(((?!\-))(xn\-\-)?[a-z0-9\-_]{0,61}[a-z0-9]{1,1}\.)*(xn\-\-)?([a-z0-9\-]{1,61}|[a-z0-9\-]{1,30})\.[a-z]{2,}$", domain) or 'http' in domain:
+                        if re.search(r"^(((?!\-))(xn\-\-)?[a-zA-Z0-9\-_]{0,61}[a-zA-Z0-9]{1,1}\.)*(xn\-\-)?([a-zA-Z0-9\-]{1,61}|[a-zA-Z0-9\-]{1,30})\.[a-zA-Z]{2,}$", domain) or 'http' in domain:
                             if victim:
                                 victim = '[%s](%s)' % (victim,domain)
                             else:
                                 victim = '[%s](%s)' % (domain,domain)
                     else:
                         if victim:
-                            if re.search(r"^(((?!\-))(xn\-\-)?[a-z0-9\-_]{0,61}[a-z0-9]{1,1}\.)*(xn\-\-)?([a-z0-9\-]{1,61}|[a-z0-9\-]{1,30})\.[a-z]{2,}$", victim) or 'http' in victim:
+                            if re.search(r"^(((?!\-))(xn\-\-)?[a-zA-Z0-9\-_]{0,61}[a-zA-Z0-9]{1,1}\.)*(xn\-\-)?([a-zA-Z0-9\-]{1,61}|[a-zA-Z0-9\-]{1,30})\.[a-zA-Z]{2,}$", victim) or 'http' in victim:
                                 victim = '[%s](%s)' % (victim,victim)
                             else:
                                 victim = '**%s**' % (victim,)
