@@ -16,6 +16,9 @@ else:
             import settings
 
 def process(command, channel, username, params):
+    return {'messages': [
+        {'text': 'Sorry, but this command is currently disabled due to OpenAI changes, %s!' % (username,)},
+    ]}
     if len(params)>0:
         params = ' '.join(params)
         headers = {

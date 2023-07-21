@@ -56,19 +56,19 @@ def query(MAX=settings.ENTRIES):
                         date = 'unknown'
                     scrape = entry['scrape'].strip()
                     if 'company' in entry:
-                        company = entry['company'].strip()
+                        victim = entry['company'].strip()
                     else:
-                        company = None
+                        victim = None
                     if 'domain' in entry:
                         domain = entry['domain'].strip()
                         if re.search(r"^(((?!\-))(xn\-\-)?[a-z0-9\-_]{0,61}[a-z0-9]{1,1}\.)*(xn\-\-)?([a-z0-9\-]{1,61}|[a-z0-9\-]{1,30})\.[a-z]{2,}$", domain) or 'http' in domain:
-                            if company:
-                                victim = '[%s](%s)' % (company,domain)
+                            if victim:
+                                victim = '[%s](%s)' % (victim,domain)
                             else:
                                 victim = '[%s](%s)' % (domain,domain)
                     else:
-                        if company:
-                            victim = '**%s**' % (company,)
+                        if victim:
+                            victim = '**%s**' % (victim,)
                         else:
                             victim = '`an unknown company`'
                     size = '`'+entry['size'].strip()+'`' if 'size' in entry else 'an unknown amount'
