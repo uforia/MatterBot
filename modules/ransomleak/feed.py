@@ -68,7 +68,10 @@ def query(MAX=settings.ENTRIES):
                                 victim = '[%s](%s)' % (domain,domain)
                     else:
                         if victim:
-                            victim = '**%s**' % (victim,)
+                            if re.search(r"^(((?!\-))(xn\-\-)?[a-z0-9\-_]{0,61}[a-z0-9]{1,1}\.)*(xn\-\-)?([a-z0-9\-]{1,61}|[a-z0-9\-]{1,30})\.[a-z]{2,}$", domain) or 'http' in victim:
+                                victim = '[%s](%s)' % (victim,victim)
+                            else:
+                                victim = '**%s**' % (victim,)
                         else:
                             victim = '`an unknown company`'
                     size = '`'+entry['size'].strip()+'`' if 'size' in entry else 'an unknown amount'
