@@ -34,7 +34,7 @@ def query(MAX=settings.ENTRIES):
     while count < MAX:
         try:
             title = feed.entries[count].title
-            link = feed.entries[count].link
+            link = feed.entries[count].href
             content = settings.NAME + ': [' + title + '](' + link + ')'
             for channel in settings.CHANNELS:
                 items.append([channel, content])
