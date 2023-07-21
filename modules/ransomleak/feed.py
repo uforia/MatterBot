@@ -76,9 +76,9 @@ def query(MAX=settings.ENTRIES):
                     content += ' has leaked %s of data' % (size,)
                     content += ' from victim %s' % (victim,)
                     if date == 'unknown':
-                        content += ', possibly at `%s` (date scraped)' % (scrape,)
+                        content += ' at an unknown date.'
                     else:
-                        content += ' at `%s`' % (date,)
+                        content += ' at `%s`.' % (date,)
                     for channel in settings.CHANNELS:
                         items.append([channel, content])
     except Exception as e:
