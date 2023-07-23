@@ -74,7 +74,13 @@ def query(MAX=settings.ENTRIES):
                                 victim = '**%s**' % (victim,)
                         else:
                             victim = '`an unknown company`'
-                    size = '`'+entry['size'].strip()+'`' if 'size' in entry else 'an unknown amount'
+                    if 'size' in entry:
+                        if len(entry['size']):
+                            size = '`'+entry['size'].strip()+'`'
+                        else:
+                            size = 'an unknown amount'
+                    else:
+                        size = 'an unknown amount'
                     content = settings.NAME + ': Actor **%s**' % (group,)
                     content += ' has leaked %s of data' % (size,)
                     content += ' from victim %s' % (victim,)
