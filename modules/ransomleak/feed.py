@@ -88,8 +88,9 @@ def query(MAX=settings.ENTRIES):
                         content += ' at an unknown date.'
                     else:
                         content += ' at `%s`.' % (date,)
-                    for channel in settings.CHANNELS:
-                        items.append([channel, content])
+                    if victim:
+                        for channel in settings.CHANNELS:
+                            items.append([channel, content])
     except Exception as e:
         print(traceback.format_exc())
         content = "An error occurred during the Ransomleaks feed parsing."
