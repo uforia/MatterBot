@@ -12,6 +12,7 @@
 # <channel>: basically the destination channel in Mattermost, e.g. 'Newsfeed', 'Incident', etc.
 # <content>: the content of the message, MD format possible
 
+import html
 import re
 import requests
 import traceback
@@ -56,7 +57,7 @@ def query(MAX=settings.ENTRIES):
                         date = 'unknown'
                     scrape = entry['scrape'].strip()
                     if 'company' in entry:
-                        victim = entry['company'].strip()
+                        victim = html.unescape(entry['company'].strip())
                     else:
                         victim = None
                     if 'domain' in entry:
