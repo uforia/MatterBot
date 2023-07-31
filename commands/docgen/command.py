@@ -116,9 +116,9 @@ def process(command, channel, username, params):
                         nameid = customerdata['customername'].replace(' ','_')
                         MODULEDIR = "commands/docgen/"
                         templatefiles = {}
-                        mdfile = now+'-'+doctype+'-'+nameid+'.md'.replace(' ','_')
-                        htmlfile = now+'-'+doctype+'-'+nameid+'.html'.replace(' ','_')
-                        pdffile = now+'-'+doctype+'-'+nameid+'.pdf'.replace(' ','_')
+                        mdfile = MODULEDIR+now+'-'+doctype+'-'+nameid+'.md'.replace(' ','_')
+                        htmlfile = MODULEDIR+now+'-'+doctype+'-'+nameid+'.html'.replace(' ','_')
+                        pdffile = MODULEDIR+now+'-'+doctype+'-'+nameid+'.pdf'.replace(' ','_')
                         for templatefile in settings.LANGMAP[language]:
                             with open(MODULEDIR+settings.LANGMAP[language][templatefile],'r') as f:
                                 templatefiles[templatefile] = f.read()
@@ -165,11 +165,12 @@ def process(command, channel, username, params):
                         try:
                             with open(pdffile, 'rb') as f:
                                 filecontent = f.read()
+                                filename = pdffile.replace(MODULEDIR,'')
                             if len(filecontent):
                                 messages.append({
-                                    'text': '**Document Generated Successfully**: `%s`' % (pdffile,),
+                                    'text': '**Document Generated Successfully**: `%s`' % (filename,),
                                     'uploads': [
-                                        {'filename': pdffile, 'bytes': filecontent}
+                                        {'filename': filename, 'bytes': filecontent}
                                     ]
                                 })
                             os.unlink(mdfile)
