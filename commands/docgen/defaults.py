@@ -12,10 +12,10 @@ APIURL = {
 HELP = {
     'DEFAULT': {
         'args': '<lang> <type> <customer>',
-        'desc': 'Create a new composite `type` document in language `lang` for customer ID `customer`. E.g.: `@docgen en_US memo 27`.',
+        'desc': 'Create a new composite `type` document in language `lang` for case number `casenumber`. E.g.: `@docgen en_US memo 2023041101`.',
     },
 }
-TEMPLATEVARS = 'Template Variables'
+TEMPLATECASES = 'Template Cases'
 TEMPLATEIDCHAIN = 'Template ID Chain'
 TEMPLATECUSTOMERS = 'Template Customers'
 # Set your default language
