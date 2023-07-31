@@ -12,7 +12,7 @@
 # <channel>: basically the destination channel in Mattermost, e.g. 'Newsfeed', 'Incident', etc.
 # <content>: the content of the message, MD format possible
 
-import html
+import collections
 import re
 import requests
 import traceback
@@ -34,6 +34,8 @@ else:
 
 def query(MAX=settings.ENTRIES):
     items = []
+    stripchars = '`\n\r\'\"\|'
+    regex = re.compile('[%s]' % stripchars)
     if settings.AUTH['username'] and settings.AUTH['password']:
         authentication = (settings.AUTH['username'],settings.AUTH['password'])
     try:
@@ -42,61 +44,50 @@ def query(MAX=settings.ENTRIES):
             soup = BeautifulSoup(response.text,'html.parser')
             groups = [node.get('href') for node in soup.find_all('a') if node.get('href').endswith('.json')]
         for group in groups:
+            fields = collections.OrderedDict({
+                'group': 'Group',
+                'company': 'Victim',
+                'domain': 'URL',
+                'published': 'Publication',
+                'released': 'Leak Date',
+                'size': 'Size',
+            })
             ENDPOINT = settings.URL+'/'+group
             with requests.get(ENDPOINT, auth=authentication) as response:
                 feed = yaml.safe_load(response.content)
             if len(feed)>0:
-                entries = sorted(feed, key=lambda feed: feed['scrape'], reverse=True)[:MAX]
+                entries = sorted(feed, key=lambda feed: feed['published'], reverse=True)[:MAX]
                 for entry in entries:
-                    group = entry['group'].strip()
-                    if 'published' in entry:
-                        date = entry['published'].strip()
-                        if not len(date):
-                            date = 'unknown'
-                    else:
-                        date = 'unknown'
-                    scrape = entry['scrape'].strip()
-                    if 'company' in entry:
-                        victim = html.unescape(entry['company'].strip())
-                    else:
-                        victim = None
-                    if 'domain' in entry:
-                        domain = entry['domain'].strip()
-                        if re.search(r"^(((?!\-))(xn\-\-)?[a-zA-Z0-9\-_]{0,61}[a-zA-Z0-9]{1,1}\.)*(xn\-\-)?([a-zA-Z0-9\-]{1,61}|[a-zA-Z0-9\-]{1,30})\.[a-zA-Z]{2,}$", domain) or 'http' in domain:
-                            if victim:
-                                victim = '[%s](%s)' % (victim,domain)
-                            else:
-                                victim = '[%s](%s)' % (domain,domain)
-                    else:
-                        if victim:
-                            if re.search(r"^(((?!\-))(xn\-\-)?[a-zA-Z0-9\-_]{0,61}[a-zA-Z0-9]{1,1}\.)*(xn\-\-)?([a-zA-Z0-9\-]{1,61}|[a-zA-Z0-9\-]{1,30})\.[a-zA-Z]{2,}$", victim) or 'http' in victim:
-                                victim = '[%s](%s)' % (victim,victim)
-                            else:
-                                victim = '**%s**' % (victim,)
+                    message = ''
+                    for field in fields:
+                        message += '| %s ' % (fields[field])
+                    message += '|\n'
+                    for field in fields:
+                        if field in ('published','released','size'):
+                            message += '| -: '
                         else:
-                            victim = '`an unknown company`'
-                    if 'size' in entry:
-                        if len(entry['size']):
-                            size = '`'+entry['size'].strip()+'`'
-                        else:
-                            size = 'an unknown amount'
-                    else:
-                        size = 'an unknown amount'
-                    content = settings.NAME + ': Actor **%s**' % (group,)
-                    content += ' has leaked %s of data' % (size,)
-                    content += ' from victim %s' % (victim,)
-                    if date == 'unknown':
-                        content += ' at an unknown date.'
-                    else:
-                        content += ' at `%s`.' % (date,)
-                    if victim:
-                        for channel in settings.CHANNELS:
-                            items.append([channel, content])
+                            message += '| :- '
+                    message += '|\n'
+                    for field in fields:
+                        if field in entry:
+                            value = regex.sub(' ', entry[field]).strip()
+                            if field == 'size':
+                                if len(entry['released']) and not len(entry['size']):
+                                    value = 'Unclear'
+                            if len(value):
+                                if field == 'domain':
+                                    if re.search(r"^(((?!\-))(xn\-\-)?[a-zA-Z0-9\-_]{0,61}[a-zA-Z0-9]{1,1}\.)*(xn\-\-)?([a-zA-Z0-9\-]{1,61}|[a-zA-Z0-9\-]{1,30})\.[a-zA-Z]{2,}$", value) or 'http' in value:
+                                        value = '[%s](%s)' % (value,value)
+                            else:
+                                value = '-'
+                            message += '| %s ' % (value,)
+                    message += '|\n\n\n'
+                    for channel in settings.CHANNELS:
+                        items.append([channel,message])
     except Exception as e:
-        print(traceback.format_exc())
-        content = "An error occurred during the Ransomleaks feed parsing."
+        message = "An error occurred during the Ransomleaks feed parsing:\n%s" % str(traceback.format_exc())
         for channel in settings.CHANNELS:
-            items.append([channel,content])
+            items.append([channel,message])
     finally:
         return items
 
