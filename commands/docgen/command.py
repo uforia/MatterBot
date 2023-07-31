@@ -110,15 +110,15 @@ def process(command, channel, username, params):
                                         target = template_customer_entry[template_customer_variable]
                                         customerdata[source] = target
                     if len(skeletondocument):
-                        doctype = template_cases['reporttypename']
+                        doctype = template_cases['reporttypename'].replace(' ','_')
                         # To-Do: needs database of customer info
                         now = template_cases['currentdate']
-                        nameid = casenumber
+                        nameid = customerdata['customername'].replace(' ','_')
                         MODULEDIR = "commands/docgen/"
                         templatefiles = {}
-                        mdfile = MODULEDIR+now+'-'+doctype+'-'+nameid+'.md'.replace(' ','_')
-                        htmlfile = MODULEDIR+now+'-'+doctype+'-'+nameid+'.html'.replace(' ','_')
-                        pdffile = MODULEDIR+now+'-'+doctype+'-'+nameid+'.pdf'.replace(' ','_')
+                        mdfile = now+'-'+doctype+'-'+nameid+'.md'.replace(' ','_')
+                        htmlfile = now+'-'+doctype+'-'+nameid+'.html'.replace(' ','_')
+                        pdffile = now+'-'+doctype+'-'+nameid+'.pdf'.replace(' ','_')
                         for templatefile in settings.LANGMAP[language]:
                             with open(MODULEDIR+settings.LANGMAP[language][templatefile],'r') as f:
                                 templatefiles[templatefile] = f.read()
