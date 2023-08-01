@@ -89,34 +89,14 @@ def query(MAX=settings.ENTRIES):
                                         pass
                             if field == 'company':
                                 if len(entry['domain'].strip()) and not len(entry['company']):
-                                    domain = entry['domain'].strip()
-                                    if not 'http' in domain:
-                                        url = 'https://'+domain
-                                    else:
-                                        url = domain
+                                    query = entry['domain'].strip()
                                     try:
-                                        headers = {
-                                            'Host': domain,
-                                            'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:15.0) Gecko/20100101 Firefox/15.0.1',
-                                        }
-                                        session = requests.Session()
-                                        session.max_redirects = 2
-                                        session.headers = headers
-                                        session.verify = False
-                                        with session.get(url,verify=False,allow_redirects=True,timeout=5) as response:
-                                            session.cookies.update(session.cookies)
-                                        with session.get(url,verify=False,allow_redirects=True,timeout=5) as response:
-                                            if response.status_code == 200:
-                                                html = bs4.BeautifulSoup(response.text,"lxml")
-                                                value = regex.sub('-',html.title.text).strip()
-                                            else:
-                                                value = '*Error '+str(response.status_code)+'*'
-                                    except requests.exceptions.TooManyRedirects:
-                                        value = '*Redirects Exceeded*'
-                                    except requests.exceptions.Timeout:
-                                        value = '*Timeout*'
+                                        with DDGS(timeout=3) as ddgs:
+                                            for result in ddgs.text(query,timelimit='y',safesearch='Off'):
+                                                value = regex.sub('-',result['title'])
+                                                break
                                     except:
-                                        value = '*Unknown Error*'
+                                        pass
                             if field == 'size':
                                 if len(entry['released']) and not len(entry['size']):
                                     value = '*Unclear*'
