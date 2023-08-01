@@ -79,7 +79,7 @@ def query(MAX=settings.ENTRIES):
                                 if len(entry['company']) and not len(entry['domain'].strip()):
                                     try:
                                         with DDGS(timeout=3) as ddgs:
-                                            for result in ddgs.text(entry['company'],timelimit='y',safesearch='Off'):
+                                            for result in ddgs.text(entry['company']+' website',timelimit='y',safesearch='Off'):
                                                 if not 'wikipedia.org' in result['href']:
                                                     value = result['href']
                                                     break
