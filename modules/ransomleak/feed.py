@@ -82,7 +82,6 @@ def query(MAX=settings.ENTRIES):
                                         url = 'https://'+domain
                                     else:
                                         url = domain
-                                    query = entry['domain'].strip()
                                     try:
                                         headers = {
                                             'Host': domain,
@@ -104,6 +103,8 @@ def query(MAX=settings.ENTRIES):
                                         value = '*Redirects Exceeded*'
                                     except requests.exceptions.Timeout:
                                         value = '*Timeout*'
+                                    except:
+                                        value = '*Unknown Error*'
                             if field == 'size':
                                 if len(entry['released']) and not len(entry['size']):
                                     value = '*Unclear*'
