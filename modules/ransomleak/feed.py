@@ -47,7 +47,6 @@ def query(MAX=settings.ENTRIES):
         with requests.get(ENDPOINT, auth=authentication) as response:
             soup = BeautifulSoup(response.text,features='lxml')
             groups = [node.get('href') for node in soup.find_all('a') if node.get('href').endswith('.json')]
-            groups = ['Lockbit3.json']
         for group in groups:
             fields = collections.OrderedDict({
                 'group': 'Group',
