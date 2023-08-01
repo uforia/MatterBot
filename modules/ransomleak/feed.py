@@ -75,28 +75,6 @@ def query(MAX=settings.ENTRIES):
                     for field in fields:
                         if field in entry:
                             value = regex.sub(' ', entry[field]).strip()
-                            if field == 'domain':
-                                if len(entry['company']) and not len(entry['domain'].strip()):
-                                    try:
-                                        with DDGS(timeout=3) as ddgs:
-                                            for result in ddgs.text(entry['company']+' website',timelimit='y',safesearch='Off'):
-                                                if not 'wikipedia.org' in result['href']:
-                                                    value = result['href']
-                                                    break
-                                                else:
-                                                    continue
-                                    except:
-                                        pass
-                            if field == 'company':
-                                if len(entry['domain'].strip()) and not len(entry['company']):
-                                    query = entry['domain'].strip()
-                                    try:
-                                        with DDGS(timeout=3) as ddgs:
-                                            for result in ddgs.text(query,timelimit='y',safesearch='Off'):
-                                                value = regex.sub('-',result['title'])
-                                                break
-                                    except:
-                                        pass
                             if field == 'size':
                                 if len(entry['released']) and not len(entry['size']):
                                     value = '*Unclear*'
