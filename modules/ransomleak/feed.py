@@ -16,6 +16,8 @@ import bs4
 import collections
 import re
 import requests
+import shelve
+import sys
 import traceback
 import yaml
 from bs4 import BeautifulSoup
@@ -37,7 +39,7 @@ else:
             import settings
 
 def query(MAX=settings.ENTRIES):
-    items = []
+    announcements = []
     stripchars = '`\t\n\r\'\"\|'
     regex = re.compile('[%s]' % stripchars)
     if settings.AUTH['username'] and settings.AUTH['password']:
@@ -47,31 +49,23 @@ def query(MAX=settings.ENTRIES):
         with requests.get(ENDPOINT, auth=authentication) as response:
             soup = BeautifulSoup(response.text,features='lxml')
             groups = [node.get('href') for node in soup.find_all('a') if node.get('href').endswith('.json')]
+        fields = collections.OrderedDict({
+            'group': 'Group',
+            'company': 'Victim',
+            'domain': 'URL',
+            'published': 'Publication',
+            'released': 'Leak Date',
+            'size': 'Size',
+        })
+        items = []
         for group in groups:
-            fields = collections.OrderedDict({
-                'group': 'Group',
-                'company': 'Victim',
-                'domain': 'URL',
-                'published': 'Publication',
-                'released': 'Leak Date',
-                'size': 'Size',
-            })
             ENDPOINT = settings.URL+'/'+group
             with requests.get(ENDPOINT, auth=authentication) as response:
                 feed = yaml.safe_load(response.content)
             if len(feed)>0:
                 entries = sorted(feed, key=lambda feed: feed['published'], reverse=True)[:MAX]
                 for entry in entries:
-                    message = ''
-                    for field in fields:
-                        message += '| %s ' % (fields[field])
-                    message += '|\n'
-                    for field in fields:
-                        if field in ('published','released','size'):
-                            message += '| -: '
-                        else:
-                            message += '| :- '
-                    message += '|\n'
+                    item = ''
                     for field in fields:
                         if field in entry:
                             value = regex.sub(' ', entry[field]).strip()
@@ -114,16 +108,56 @@ def query(MAX=settings.ENTRIES):
                                         value = '[%s](%s)' % (value,value)
                             else:
                                 value = '-'
-                            message += '| %s ' % (value,)
-                    message += '|\n\n\n'
-                    for channel in settings.CHANNELS:
-                        items.append([channel,message])
+                        item += '| %s ' % (value,)
+                    item += '|'
+                    items.append(item)
+        messages = []
+        try:
+            if Path(settings.HISTORY).is_file():
+                history = shelve.open(settings.HISTORY,writeback=True)
+            else:
+                if Path('modules/ransomleak/'+settings.HISTORY).is_file():
+                    history = shelve.open('modules/ransomleak/'+settings.HISTORY,writeback=True)
+            if not Path(settings.HISTORY).is_file() and not Path('modules/ransomleak/'+settings.HISTORY).is_file():
+                if Path('feed.py').is_file():
+                    history = shelve.open(settings.HISTORY,writeback=True)
+                else:
+                    if Path('modules/ransomleak/feed.py').is_file():
+                        history = shelve.open('modules/ransomleak/'+settings.HISTORY,writeback=True)
+            if not 'ransomleak' in history:
+                history['ransomleak'] = []
+            for item in items:
+                if not item in history['ransomleak']:
+                    history['ransomleak'].append(item)
+                    messages.append(item)
+            history.sync()
+            history.close()
+        except:
+            raise
+        if len(messages):
+            announcements = []
+            table = ''
+            for field in fields:
+                table += '| %s ' % (fields[field])
+            table += '|\n'
+            for field in fields:
+                if field in ('published','released','size'):
+                    table += '| -: '
+                else:
+                    table += '| :- '
+            table += '|\n'
+            for message in messages:
+                table += message
+                table += '\n'
+            table += '\n\n'
+            for channel in settings.CHANNELS:
+                announcements.append([channel,table])
     except Exception as e:
         message = "An error occurred during the Ransomleaks feed parsing:\n%s" % str(traceback.format_exc())
         for channel in settings.CHANNELS:
-            items.append([channel,message])
+            announcements.append([channel,message])
     finally:
-        return items
+        return announcements
 
 if __name__ == "__main__":
     print(query())
