@@ -84,7 +84,7 @@ def process(command, channel, username, params):
                             pages = response.json()
                         if 'data' in pages:
                             for page in pages['data']['pages']['list']:
-                                if pid in page['path'].lower():
+                                if pid.lower() == page['path'].lower():
                                     pagecontent = '{"query":"query { pages { single (id: %d) { content }}}"}' % (page['id'],)
                                     with requests.post(settings.APIURL['docgen']['url'], headers=headers, data=pagecontent) as response:
                                         pagecontent = response.json()
