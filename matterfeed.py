@@ -122,7 +122,7 @@ class ModuleWorker(threading.Thread):
                             history[self.module].append(item)
                             if not first_run:
                                 if options.debug:
-                                    self.logQueue.put(('DEBUG', 'Posting : ' + self.module + ' => ' + channel + ' => ' + content[:80] + '...'))
+                                    self.logQueue.put(('DEBUG', 'Posting : ' + self.module + ' => ' + channel + ' => ' + content + '...'))
                                 else:
                                     self.logQueue.put(('INFO', 'Posting : ' + self.module + ' => ' + channel + ' => ' + content[:80] + '...'))
                                     self.msgQueue.put((channel, self.module, content))
