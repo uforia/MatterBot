@@ -107,7 +107,6 @@ def process(command, channel, username, params):
                                     }
                                     multifields = {
                                         'tags': 'Tags',
-                                        'classification_tags': 'Classifications',
                                         'domains': 'Domains',
                                         'compromised_hosts': 'Compromised hosts',
                                         'hosts': 'Hosts',
