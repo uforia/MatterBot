@@ -3,6 +3,7 @@
 import datetime
 import re
 import requests
+import traceback
 from pathlib import Path
 try:
     from commands.hybridanalysis import defaults as settings
@@ -124,7 +125,18 @@ def process(command, channel, username, params):
                                         if multifield in entry:
                                             value = entry[multifield]
                                             if value:
-                                                message += '\n| %s | `%s` |' % (multifields[multifield], '`, `'.join(entry[multifield]))
+                                                # Multifield is a string
+                                                # Value is a list, possibly containing dictionaries
+                                                values = set()
+                                                for item in value:
+                                                    if isinstance(item,str):
+                                                        values.add(item)
+                                                    if isinstance(item,dict):
+                                                        for key in item.keys():
+                                                            if key in multifields:
+                                                                values.add(value[item][key])
+                                                if len(values):
+                                                    message += '\n| %s | `%s` |' % (multifield, '`, `'.join(values))
                                     message += '\n\n'
                                     messages.append({'text': message})
                             # Deal with /search/terms output
@@ -158,6 +170,6 @@ def process(command, channel, username, params):
                                         message += '\n\n'
                                         messages.append({'text': message})
     except Exception as e:
-        messages.append({'text': 'A Python error occurred searching Hybrid-Analysis:\nError:' + str(e)})
+        messages.append({'text': 'A Python error occurred searching Hybrid-Analysis: %s\n%s' % (str(e),traceback.format_exc())})
     finally:
         return {'messages': messages}
