@@ -6,9 +6,6 @@ Matterbot:
   password: "<mattermost bot password>"
   teamname: "<mattermost team identifier>"
   logfile: "matterfeed.log"
-  channelmap:
-    news: "newsfeed"
-    debug: "debug"
 
 Modules:
   moduledir: "modules"

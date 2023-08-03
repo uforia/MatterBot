@@ -40,12 +40,6 @@ class MattermostManager(object):
         self.me = self.mmDriver.users.get_user( user_id='me' )
         self.my_team_id = self.mmDriver.teams.get_team_by_name(options.Matterbot['teamname'])['id']
 
-        # Create the channel map
-        self.channel_ids = {}
-        for channel in options.Matterbot['channelmap']:
-            channelname = channel.lower()
-            self.channel_ids[channelname] = self.mmDriver.channels.get_channel_by_name(self.my_team_id, options.Matterbot['channelmap'][channelname])['id']
-
         # Map all the commands to their modules
         self.commands = {}
         modulepath = options.Modules['commanddir'].strip('/')

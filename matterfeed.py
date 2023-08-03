@@ -5,7 +5,6 @@ import configargparse
 import fnmatch
 import importlib.util
 import logging
-import random
 import requests
 import os
 import queue
@@ -35,8 +34,11 @@ class MattermostManager(object):
         self.me = self.mmDriver.users.get_user( user_id='me' )
         self.my_team_id = self.mmDriver.teams.get_team_by_name(options.Matterbot['teamname'])['id']
         self.channels = {}
-        for channel in options.Matterbot['channelmap']:
-            self.channels[channel] = self.mmDriver.channels.get_channel_by_name(self.my_team_id, options.Matterbot['channelmap'][channel])['id']
+        self.test = {}
+        userchannels = self.mmDriver.channels.get_channels_for_user(self.me['id'],self.my_team_id)
+        for userchannel in userchannels:
+            channel_info = self.mmDriver.channels.get_channel(userchannel['id'])
+            self.channels[channel_info['name']] = channel_info['id']
 
     def createPost( self, channel, content) :
         self.mmDriver.posts.create_post( options={'channel_id': channel,
@@ -51,7 +53,7 @@ def postMsg():
         newsItem = msgQueue.get()
         channel, module, content = newsItem
         logQueue.put(('INFO', 'Message: ' + module.lower() + ' => ' + mm.channels[channel] + ' => ' + content[:20] + '...'))
-        mm.createPost(mm.channels[channel], content)
+        #mm.createPost(mm.channels[channel], content)
         msgQueue.task_done()
 
 def logger():
