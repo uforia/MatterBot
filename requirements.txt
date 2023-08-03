@@ -5,6 +5,7 @@ ConfigArgParse==1.5.3
 feedparser==6.0.10
 graphviz==0.20.1
 mattermostdriver==7.3.2
+paramiko==3.3.1 
 pymisp==2.4.172
 pyOpenSSL==23.2.0
 pypandoc==1.11
