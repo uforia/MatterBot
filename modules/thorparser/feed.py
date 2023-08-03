@@ -42,7 +42,6 @@ def query(MAX=settings.ENTRIES):
             client.connect(settings.SFTPSERVER['hostname'],username=settings.SFTPSERVER['username'],password=settings.SFTPSERVER['password'])
             sftp = client.open_sftp()
         except Exception as e:
-            print(traceback.format_exc())
             content = "An error occurred during the THOR parsing:\n"+str(traceback.format_exc())
             for channel in settings.CHANNELS:
                 items.append([channel,content])
@@ -77,7 +76,6 @@ def query(MAX=settings.ENTRIES):
                     try:
                         sftp.posix_rename(file,settings.SFTPSERVER['archive']+'/'+file)
                     except Exception as e:
-                        print(traceback.format_exc())
                         content = "An error occurred archiving the CSV file: `%s`\n%s" % (file,str(traceback.format_exc()))
                         for channel in settings.CHANNELS:
                             items.append([channel,content])
@@ -107,7 +105,6 @@ def query(MAX=settings.ENTRIES):
                         items.append([channel,content])
             # Move the processed CSVs if all went well
     except Exception as e:
-        print(traceback.format_exc())
         content = "An error occurred during the THOR parsing:\n"+str(traceback.format_exc())
         items.append([channel,content])
     finally:
