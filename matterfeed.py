@@ -52,7 +52,7 @@ def postMsg():
     while True:
         newsItem = msgQueue.get()
         channel, module, content = newsItem
-        logQueue.put(('INFO', 'Message: ' + module.lower() + ' => ' + mm.channels[channel] + ' => ' + content[:20] + '...'))
+        logQueue.put(('INFO', 'Message: ' + module.lower() + ' => ' + channel + ' => ' + content[:20] + '...'))
         mm.createPost(mm.channels[channel], content)
         msgQueue.task_done()
 
