@@ -77,16 +77,17 @@ def query(MAX=settings.ENTRIES):
                     try:
                         sftp.posix_rename(file,settings.SFTPSERVER['archive']+'/'+file)
                     except Exception as e:
+                        print(traceback.format_exc())
                         content = "An error occurred archiving the CSV file: `%s`\n%s" % (file,str(traceback.format_exc()))
                         for channel in settings.CHANNELS:
                             items.append([channel,content])
             sftp.close()
             if len(sus_files):
                 for host in sus_files:
-                    content = '> **THOR APT Scanner Results** - **Hostname**: `%s` - **Timestamp**: `%s` - **Threshold**: %s' % (host,sus_files[host]['date'],settings.THOR['subscore_threshold'])
+                    content = '> **THOR APT Scanner Results** - **Hostname**: `%s` - **Timestamp**: `%s` - **Threshold**: %s\n' % (host,sus_files[host]['date'],settings.THOR['subscore_threshold'])
                     for channel in settings.CHANNELS:
                         items.append([channel,content])
-                    content += '\n\n| **MD5** | **Path** | **Subscore** | **Severity** |'
+                    content = '| **MD5** | **Path** | **Subscore** | **Severity** |'
                     content += '\n| :- | :- | -: | -: |'
                     for row in sorted(sus_files[host]['sus_files'], key=lambda x: x['subscore'], reverse=True):
                         md5 = row['md5']
@@ -106,9 +107,11 @@ def query(MAX=settings.ENTRIES):
                         items.append([channel,content])
             # Move the processed CSVs if all went well
     except Exception as e:
+        print(traceback.format_exc())
         content = "An error occurred during the THOR parsing:\n"+str(traceback.format_exc())
         items.append([channel,content])
     finally:
+        items = [['20237clearwater','test']]
         return items
 
 if __name__ == "__main__":
