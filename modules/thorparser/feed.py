@@ -34,7 +34,6 @@ else:
 
 def query(MAX=settings.ENTRIES):
     items = []
-    messages = []
     try:
         csvattachments = []
         try:
@@ -79,12 +78,14 @@ def query(MAX=settings.ENTRIES):
                         sftp.posix_rename(file,settings.SFTPSERVER['archive']+'/'+file)
                     except Exception as e:
                         content = "An error occurred archiving the CSV file: `%s`\n%s" % (file,str(traceback.format_exc()))
-                        messages.append(content)
+                        for channel in settings.CHANNELS:
+                            items.append([channel,content])
             sftp.close()
             if len(sus_files):
                 for host in sus_files:
                     content = '> **THOR APT Scanner Results** - **Hostname**: `%s` - **Timestamp**: `%s` - **Threshold**: %s' % (host,sus_files[host]['date'],settings.THOR['subscore_threshold'])
-                    messages.append(content)
+                    for channel in settings.CHANNELS:
+                        items.append([channel,content])
                     content += '\n\n| **MD5** | **Path** | **Subscore** | **Severity** |'
                     content += '\n| :- | :- | -: | -: |'
                     for row in sorted(sus_files[host]['sus_files'], key=lambda x: x['subscore'], reverse=True):
@@ -101,15 +102,13 @@ def query(MAX=settings.ENTRIES):
                             severity = 'Info'
                         content += '\n| `%s` | `%s` | `%s` | `%s` |' % (md5,path,subscore,severity)
                     content += '\n\nNumber of \'low scoring\' (subscore below: `%s`) files: `%s`' % (settings.THOR['subscore_low'],sus_files[host]['info_files'])
-                    messages.append(content)
+                    for channel in settings.CHANNELS:
+                        items.append([channel,content])
             # Move the processed CSVs if all went well
     except Exception as e:
         content = "An error occurred during the THOR parsing:\n"+str(traceback.format_exc())
-        messages.append(content)
+        items.append([channel,content])
     finally:
-        for message in messages:
-            for channel in settings.CHANNELS:
-                items.append([channel,message])
         return items
 
 if __name__ == "__main__":
