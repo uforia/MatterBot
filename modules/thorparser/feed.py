@@ -108,7 +108,6 @@ def query(MAX=settings.ENTRIES):
         content = "An error occurred during the THOR parsing:\n"+str(traceback.format_exc())
         items.append([channel,content])
     finally:
-        items = [['20237clearwater','test']]
         return items
 
 if __name__ == "__main__":
