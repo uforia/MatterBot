@@ -5,6 +5,7 @@ import math
 import random
 import re
 import requests
+import traceback
 import urllib
 from pathlib import Path
 try:
@@ -120,7 +121,7 @@ def process(command, channel, username, params):
                                     }
                                     for field in exiftoolfields:
                                         if field in json_response['analysis']['plugins']['exiftool']['results']:
-                                            value = json_response['analysis']['plugins']['exiftool']['results'][field]
+                                            value = str(json_response['analysis']['plugins']['exiftool']['results'][field])
                                             if len(value):
                                                 message += '\n| **%s** | `%s` |' % (exiftoolfields[field], value)
                             if 'info' in json_response['analysis']:
@@ -135,29 +136,31 @@ def process(command, channel, username, params):
                                     }
                                     for field in infofields:
                                         if field in json_response['analysis']['info']['results']:
-                                            value = json_response['analysis']['info']['results'][field]
+                                            value = str(json_response['analysis']['info']['results'][field])
                                             if len(value):
                                                 message += '\n| **%s** | `%s` |' % (infofields[field], value)
                             if 'plugins' in json_response['analysis']:
                                 if 'cuckoo' in json_response['analysis']['plugins']:
-                                    for signature in json_response['analysis']['plugins']['cuckoo']['result']['signatures']:
-                                        if signature['name'] == 'antivirus_virustotal':
-                                            detections = set()
-                                            families = set()
-                                            for detection in signature['data']:
-                                                for k in detection:
-                                                    detections.add(detection[k])
-                                            for family in signature['families']:
-                                                for k in family:
-                                                    families.add(family[k])
-                                            if len(detections):
-                                                message += '\n| **Detections** | `%s` |' % '`, `'.join(sorted(detections))
-                                            if len(families):
-                                                message += '\n| **Families** | `%s` |' % '`, `'.join(sorted(families))
+                                    if 'result' in json_response['analysis']['plugins']['cuckoo']:
+                                        if 'signatures' in json_response['analysis']['plugins']['cuckoo']['result']:
+                                            for signature in json_response['analysis']['plugins']['cuckoo']['result']['signatures']:
+                                                if signature['name'] == 'antivirus_virustotal':
+                                                    detections = set()
+                                                    families = set()
+                                                    for detection in signature['data']:
+                                                        for k in detection:
+                                                            detections.add(detection[k])
+                                                    for family in signature['families']:
+                                                        for k in family:
+                                                            families.add(family[k])
+                                                    if len(detections):
+                                                        message += '\n| **Detections** | `%s` |' % '`, `'.join(sorted(detections))
+                                                    if len(families):
+                                                        message += '\n| **Families** | `%s` |' % '`, `'.join(sorted(families))
                         if len(message):
                             table = '| **AlienVault OTX** | **'+query+'** |\n| -: | :- |'+message+'\n\n'
                             messages.append({'text': table})
     except Exception as e:
-        messages.append({'text': 'A Python error occurred searching AlienVault OTX:\nError:' + str(e)})
+        messages.append({'text': 'A Python error occurred searching AlienVault OTX:%s\n%s' % (str(e), traceback.format_exc())})
     finally:
         return {'messages': messages}
