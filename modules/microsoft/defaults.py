@@ -2,7 +2,7 @@
 
 NAME = "Microsoft Research Center"
 CHANNELS = (
-    "news",
+    "newsfeed",
 )
 URL = "https://api.msrc.microsoft.com/update-guide/rss"
 ENTRIES = 30

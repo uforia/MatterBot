@@ -2,7 +2,7 @@
 
 NAME = "Cyber Security Hub"
 CHANNELS = (
-    "news",
+    "newsfeed",
 )
 CATEGORIES = [
     "attacks",

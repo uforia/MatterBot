@@ -2,7 +2,7 @@
 
 NAME = "Ransomware Data Leak"
 CHANNELS = (
-    "news",
+    "newsfeed",
 )
 HISTORY = "history.cache"
 URL = "<URL-to-JSONs>"

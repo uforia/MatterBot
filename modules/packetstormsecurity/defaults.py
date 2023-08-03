@@ -2,7 +2,7 @@
 
 NAME = "Packet Storm Security news"
 CHANNELS = (
-    "news",
+    "newsfeed",
 )
 URL = "https://rss.packetstormsecurity.com/"
 ENTRIES = 10

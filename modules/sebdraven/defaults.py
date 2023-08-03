@@ -2,7 +2,7 @@
 
 NAME = "SebDraven blog"
 CHANNELS = (
-    "news",
+    "newsfeed",
 )
 URL = "https://medium.com/feed/@sebdraven"
 ENTRIES = 10

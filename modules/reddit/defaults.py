@@ -2,7 +2,7 @@
 
 NAME = "Reddit"
 CHANNELS = (
-    "news",
+    "newsfeed",
 )
 SUBREDDITS = [
     'cybersecurity',

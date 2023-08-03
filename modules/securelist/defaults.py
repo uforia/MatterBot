@@ -2,7 +2,7 @@
 
 NAME = "Kaspersky SecureList news"
 CHANNELS = (
-    "news",
+    "newsfeed",
 )
 URL = "https://securelist.com/feed/"
 ENTRIES = 10

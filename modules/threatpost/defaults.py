@@ -2,7 +2,7 @@
 
 NAME = "Threatpost news"
 CHANNELS = (
-    "news",
+    "newsfeed",
 )
 URL = "https://threatpost.com/feed"
 ENTRIES = 10

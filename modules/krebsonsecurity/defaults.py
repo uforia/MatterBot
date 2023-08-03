@@ -2,7 +2,7 @@
 
 NAME = "Brian Krebs on Security blog"
 CHANNELS = (
-    "news",
+    "newsfeed",
 )
 URL = "http://krebsonsecurity.com/feed/"
 ENTRIES = 10

@@ -2,7 +2,7 @@
 
 NAME = "InfoSec Institute"
 CHANNELS = (
-    "news",
+    "newsfeed",
 )
 CATEGORIES = [
     "malware-analysis",

@@ -2,7 +2,7 @@
 
 NAME = "NCSC-NL Advisories"
 CHANNELS = (
-    "news",
+    "newsfeed",
 )
 URL = "https://advisories.ncsc.nl/rss/advisories"
 ENTRIES = 30

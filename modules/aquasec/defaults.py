@@ -2,7 +2,7 @@
 
 NAME = "Aqua Security Blog"
 CHANNELS = (
-    "news",
+    "newsfeed",
 )
 URL = "http://blog.aquasec.com/rss.xml"
 ENTRIES = 10

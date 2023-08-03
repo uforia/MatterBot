@@ -2,7 +2,7 @@
 
 NAME = "Data Breach Today news"
 CHANNELS = (
-    "news",
+    "newsfeed",
 )
 URL = "https://ransomware.databreachtoday.com/rss-feeds"
 ENTRIES = 10

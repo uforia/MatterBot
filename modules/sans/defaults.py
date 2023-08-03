@@ -2,7 +2,7 @@
 
 NAME = "SANS Internet Storm Center news"
 CHANNELS = (
-    "news",
+    "newsfeed",
 )
 URL = "https://isc.sans.edu/rssfeed_full.xml"
 ENTRIES = 10

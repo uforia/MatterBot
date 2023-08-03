@@ -2,7 +2,7 @@
 
 NAME = "Cqure Academy blog"
 CHANNELS = (
-    "news",
+    "newsfeed",
 )
 URL = "https://cqureacademy.com/blog/feed"
 ENTRIES = 10

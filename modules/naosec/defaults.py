@@ -2,7 +2,7 @@
 
 NAME = "nao_sec blog"
 CHANNELS = (
-    "news",
+    "newsfeed",
 )
 URL = "https://nao-sec.org/feed"
 ENTRIES = 10

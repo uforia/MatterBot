@@ -2,7 +2,7 @@
 
 NAME = "US-CERT"
 CHANNELS = (
-    "news",
+    "newsfeed",
 )
 CATEGORIES = [
     "ics/advisories/advisories",

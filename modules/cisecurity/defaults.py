@@ -2,7 +2,7 @@
 
 NAME = "Center for Internet Security"
 CHANNELS = (
-    "news",
+    "newsfeed",
 )
 URL = "https://www.cisecurity.org/feed/advisories"
 ENTRIES = 10

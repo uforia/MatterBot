@@ -2,7 +2,7 @@
 
 NAME = "GBHackers On Security news"
 CHANNELS = (
-    "news",
+    "newsfeed",
 )
 URL = "https://gbhackers.com/feed/"
 ENTRIES = 10

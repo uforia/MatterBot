@@ -2,7 +2,7 @@
 
 NAME = "Kitploit news"
 CHANNELS = (
-    "news",
+    "newsfeed",
 )
 URL = "https://www.kitploit.com//feeds/posts/default"
 ENTRIES = 10

@@ -2,7 +2,7 @@
 
 NAME = "Major League Hacking news"
 CHANNELS = (
-    "news",
+    "newsfeed",
 )
 URL = "http://news.mlh.io/posts/feed"
 ENTRIES = 10

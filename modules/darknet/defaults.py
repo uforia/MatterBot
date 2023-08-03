@@ -2,7 +2,7 @@
 
 NAME = "Darknet blog"
 CHANNELS = (
-    "news",
+    "newsfeed",
 )
 URL = "http://www.darknet.org.uk/feed/"
 ENTRIES = 10

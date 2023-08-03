@@ -2,7 +2,7 @@
 
 NAME = "Rapid7 Velociraptor news"
 CHANNELS = (
-    "news",
+    "newsfeed",
 )
 URL = "https://docs.velociraptor.app/blog/index.xml"
 ENTRIES = 10

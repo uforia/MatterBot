@@ -2,7 +2,7 @@
 
 NAME = "TrendMicro Research"
 CHANNELS = (
-    "news",
+    "newsfeed",
 )
 URL = "http://feeds.trendmicro.com/TrendMicroResearch"
 ENTRIES = 10

@@ -2,7 +2,7 @@
 
 NAME = "NCSC-UK Advisories"
 CHANNELS = (
-    "news",
+    "newsfeed",
 )
 URL = "https://www.ncsc.gov.uk/api/1/services/v1/all-rss-feed.xml"
 ENTRIES = 30

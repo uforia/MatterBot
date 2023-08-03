@@ -2,7 +2,7 @@
 
 NAME = "ESET WeLiveSecurity news"
 CHANNELS = (
-    "news",
+    "newsfeed",
 )
 URL = "https://www.welivesecurity.com/feed/"
 ENTRIES = 10
