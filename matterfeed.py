@@ -119,7 +119,6 @@ class ModuleWorker(threading.Thread):
                     for item in items:
                         if not item in history[self.module]:
                             channel, content = item
-                            print(channel,content)
                             history[self.module].append(item)
                             if not first_run:
                                 if options.debug:
