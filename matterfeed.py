@@ -40,10 +40,31 @@ class MattermostManager(object):
             channel_info = self.mmDriver.channels.get_channel(userchannel['id'])
             self.channels[channel_info['name']] = channel_info['id']
 
-    def createPost( self, channel, content) :
-        self.mmDriver.posts.create_post( options={'channel_id': channel,
-                                                  'message': content,
-                                                  })
+    def createPost(self, channel, text):
+        try:
+            if len(text) > 4000: # Mattermost message limit
+                blocks = []
+                lines = text.split('\n')
+                blocksize = 0
+                block = ''
+                for line in lines:
+                    lensize = len(line)
+                    if (blocksize + lensize) < 4000:
+                        blocksize += lensize
+                        block += line + '\n'
+                    else:
+                        blocks.append(block.strip())
+                        blocksize = 0
+                        block = ''
+                blocks.append(block.strip())
+            else:
+                blocks = [text]
+            for block in blocks:
+                self.mmDriver.posts.create_post(options={'channel_id': channel,
+                                                            'message': block,
+                                                            })
+        except:
+            raise
 
 def postMsg():
     logQueue.put(('INFO', 'Connecting to Mattermost ...'))
