@@ -103,7 +103,6 @@ def query(MAX=settings.ENTRIES):
                     content += '\n\nNumber of \'low scoring\' (subscore below: `%s`) files: `%s`' % (settings.THOR['subscore_low'],sus_files[host]['info_files'])
                     for channel in settings.CHANNELS:
                         items.append([channel,content])
-            # Move the processed CSVs if all went well
     except Exception as e:
         content = "An error occurred during the THOR parsing:\n"+str(traceback.format_exc())
         items.append([channel,content])
