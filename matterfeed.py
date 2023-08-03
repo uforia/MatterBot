@@ -103,10 +103,8 @@ class ModuleWorker(threading.Thread):
 
     def runModule(self):
         logQueue.put(('INFO', 'Starting : ' + self.module))
-        if options.debug:
-            logQueue.put(('DEBUG', 'Creating: ' + self.module + ' window of ' + str(options.Modules['window']) + ' entries...'))
         try:
-            items = modules[self.module](options.Modules['window'])
+            items = modules[self.module]()
             modulepath = options.Modules['moduledir']+'/'+self.module+'/'+self.module+'.cache'
             if os.path.isfile(modulepath):
                 if options.debug:
@@ -121,6 +119,7 @@ class ModuleWorker(threading.Thread):
                     for item in items:
                         if not item in history[self.module]:
                             channel, content = item
+                            print(channel,content)
                             history[self.module].append(item)
                             if not first_run:
                                 if options.debug:
