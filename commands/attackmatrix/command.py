@@ -26,7 +26,7 @@ else:
             import defaults
             import settings
 
-def process(command, channel, username, params):
+def process(command, channel, username, params, files, conn):
     messages = []
     querytypes = ('search', 'mitre', 'actoroverlap', 'ttpoverlap', 'findactor', 'matrices', 'config')
     querytype = params[0].strip()

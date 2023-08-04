@@ -19,7 +19,7 @@ else:
             import settings
 
 
-def process(command, channel, username, params):
+def process(command, channel, username, params, files, conn):
     if len(params)>0:
         messages = []
         params = params[0].replace('[.]','.')

@@ -21,7 +21,7 @@ else:
             import defaults
             import settings
 
-def process(command, channel, username, params):
+def process(command, channel, username, params, files, conn):
     if len(params):
         stripchars = ' `\n\r\'\"'
         regex = re.compile('[%s]' % stripchars)

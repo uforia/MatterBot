@@ -22,7 +22,7 @@ else:
         except ModuleNotFoundError: # local test run
             import settings
 
-def process(command, channel, username, params):
+def process(command, channel, username, params, files, conn):
     stripchars = '`\n\r\'\"'
     regex = re.compile('[%s]' % stripchars)
     if len(params)>0:

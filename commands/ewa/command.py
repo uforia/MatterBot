@@ -23,7 +23,7 @@ else:
             import settings
 
 
-def process(command, channel, username, params):
+def process(command, channel, username, params, files, conn):
     messages = []
     try:
         if len(params)>1:

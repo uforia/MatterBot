@@ -117,7 +117,8 @@ class MattermostManager(object):
         channelid = channelinfo['id']
         message = post['message'].split(' ')
         commands = set()
-        if userid != my_id:
+        if True:
+        #if userid != my_id:
             command = message[0].lower().strip()
             try:
                 params = message[1:]
@@ -183,10 +184,15 @@ class MattermostManager(object):
                 if len(tasks):
                     try:
                         results = []
+                        files = []
+                        if 'metadata' in post:
+                            if 'files' in post['metadata']:
+                                if len(post['metadata']['files']):
+                                    files = post['metadata']['files']
                         with concurrent.futures.ThreadPoolExecutor(max_workers=None) as executor:
                             for task in tasks:
                                 try:
-                                    results.append(executor.submit(self.commands[task]['process'], command, channelname, username, params))
+                                    results.append(executor.submit(self.commands[task]['process'], command, channelname, username, params, files, self.mmDriver))
                                 except Exception as e:
                                     text = 'An error occurred within module: '+task+': '+str(type(e))+': '+e
                                     await self.send_message(channelid, text)

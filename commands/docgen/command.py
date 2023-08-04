@@ -25,7 +25,7 @@ else:
             import settings
 
 
-def process(command, channel, username, params):
+def process(command, channel, username, params, files, conn):
     try:
         messages = []
         if len(params)<2:

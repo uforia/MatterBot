@@ -20,7 +20,7 @@ else:
         except ModuleNotFoundError: # local test run
             import settings
 
-def process(command, channel, username, params):
+def process(command, channel, username, params, files, conn):
     # Methods to query the current API account info (credits etc.)
     querytypes = ['ip', 'credits', 'account', 'host', 'count', 'search']
     stripchars = '`\n\r\'\"'

@@ -15,7 +15,7 @@ else:
         except ModuleNotFoundError: # local test run
             import settings
 
-def process(command, channel, username, params):
+def process(command, channel, username, params, files, conn):
     if len(params)>0:
         params = ' '.join(params)
         headers = {
