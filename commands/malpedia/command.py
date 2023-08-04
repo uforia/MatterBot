@@ -29,6 +29,7 @@ def process(command, channel, username, params, files, conn):
             hash_algo = None
             bytes = None
             filename = None
+            text = None
             messages = []
             if re.search(r"^[A-Fa-f0-9]{32}$", params):
                 hash_algo = 'md5'
@@ -51,7 +52,8 @@ def process(command, channel, username, params, files, conn):
                         text = 'Malpedia hash search for `%s`:\n' % (params,)
                         if filename and bytes:
                             uploads = [{'filename': filename, 'bytes': bytes}]
-                messages.append({'text': text, 'uploads': uploads})
+                if text:
+                    messages.append({'text': text, 'uploads': uploads})
             if re.search(r"^[A-Za-z0-9]+$", params):
                 apipath = 'find/actor/%s' % (params,)
                 with requests.get(settings.APIURL['malpedia']['url'] + apipath, headers=headers) as response:
