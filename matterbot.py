@@ -118,7 +118,7 @@ class MattermostManager(object):
         message = post['message'].split(' ')
         commands = set()
         if True:
-        #if userid != my_id:
+        #if userid != my_id: <-- start working on self-calling bot mechanisms
             command = message[0].lower().strip()
             try:
                 params = message[1:]
