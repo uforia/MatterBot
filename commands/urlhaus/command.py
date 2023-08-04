@@ -66,9 +66,9 @@ def process(command, channel, username, params, files, conn):
                         message += ' | Status: `%s`' % (url_status,)
                         message += ' | Reference: [URLhaus ID %s](%s)' % (id, urlhaus_reference)
                         message += '\n'
-                    return {'messages': [
-                        {'text': message.strip()},
-                    ]}
+                        return {'messages': [
+                            {'text': message.strip()},
+                        ]}
             if type == 'hash':
                 with requests.post(settings.APIURL['urlhaus']['payload'], data=data) as response:
                     json_response = response.json()
@@ -85,9 +85,9 @@ def process(command, channel, username, params, files, conn):
                                 message += '- URL: `%s`' % (link,)
                                 message += ' | Payload: `%s` (%s)' % (filename, file_type)
                                 message += ' | Reference: [URLhaus ID %s](%s)' % (id, urlhaus_reference)
-                    return {'messages': [
-                        {'text': message.strip()},
-                    ]}
+                        return {'messages': [
+                            {'text': message.strip()},
+                        ]}
         except Exception as e:
             return {'messages': [
                 {'text': 'An error occurred searching URLhaus for `%s`:\nError: `%s`' % (params, e)},

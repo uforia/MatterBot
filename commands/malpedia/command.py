@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
 import base64
-import json
 import re
 import requests
+import traceback
 from pathlib import Path
 try:
     from commands.malpedia import defaults as settings
@@ -111,6 +111,6 @@ def process(command, channel, username, params, files, conn):
                         text += '\n**Malware family**: `' + entry + '`'
                     messages.append({'text': text})
         except Exception as e:
-            messages.append({'text': 'An error occurred searching Malpedia for `%s`:\nError: `%s`: `%s`' % (params, str(type(e)), str(e))},)
+            messages.append({'text': 'An error occurred searching Malpedia for `%s`:\n%s' % (params, traceback.format_exc())},)
         finally:
             return {'messages': messages}
