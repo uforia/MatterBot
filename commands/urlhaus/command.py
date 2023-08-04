@@ -24,7 +24,6 @@ def process(command, channel, username, params, files, conn):
             'Content-Type': settings.CONTENTTYPE,
         }
         try:
-            message = 'URLhaus search for `%s`:\n' % (params,)
             type = None
             if re.search(r"^[A-Fa-f0-9]{32}$", params):
                 hash_algo = 'md5_hash'
@@ -45,6 +44,7 @@ def process(command, channel, username, params, files, conn):
                 with requests.post(settings.APIURL['urlhaus']['url'], data=data) as response:
                     json_response = response.json()
                     if json_response['query_status'] == 'ok':
+                        message = 'URLhaus search for `%s`:\n' % (params,)
                         urlhaus_reference = json_response['urlhaus_reference']
                         id = json_response['id']
                         threat = json_response['threat']
@@ -76,6 +76,7 @@ def process(command, channel, username, params, files, conn):
                         urls = json_response['urls']
                         file_type = json_response['file_type']
                         if urls:
+                            message = 'URLhaus search for `%s`:\n' % (params,)
                             for url in urls:
                                 id = url['url_id']
                                 urlhaus_reference = url['urlhaus_reference']

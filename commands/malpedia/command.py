@@ -42,7 +42,8 @@ def process(command, channel, username, params, files, conn):
                     if 'detail' in json_response:
                         # You don't have a registered account/API key to get samples!
                         detail = json_response['detail']
-                        text = 'Malpedia hash search for `%s`: %s' % (params, detail)
+                        if not 'not found' in detail.lower():
+                            text = 'Malpedia hash search for `%s`: %s' % (params, detail)
                     elif 'zipped' in json_response:
                         # We found a sample!
                         filename = params
