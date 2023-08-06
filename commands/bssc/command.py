@@ -48,7 +48,7 @@ def process(command, channel, username, params, files, conn):
                 # SHA256 hash?
                 endpoint = settings.APIURL['bssc']['url'] + '/file/%s' % (params,)
             if endpoint:
-                message = '\n| **Broadcom Symantec Security Cloud** | IoC: `%s` |' % (params,)
+                message = '\n| **Broadcom Symantec Security Cloud** | `%s` |' % (params,)
                 message += '\n| :- | :- |'
                 if (token := getToken()):
                     outputFields = {
@@ -97,8 +97,9 @@ def process(command, channel, username, params, files, conn):
                                 else:
                                     data += '\n| '+outputFields[outputField]+' | `'+json_response[outputField]+'` |'
                         if len(data):
+                            message += data
                             message += '\n\n'
-                            messages.append({'text': message + data})
+                            messages.append({'text': message})
         except Exception as e:
             messages.append({'text': "An error occurred searching Broadcom Symantec Security Cloud:`%s`\nError: %s" % (str(e),traceback.format_exc())})
         finally:
