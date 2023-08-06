@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-import json
 import re
 import requests
+import traceback
 from pathlib import Path
 try:
     from commands.bssc import defaults as settings
@@ -48,7 +48,7 @@ def process(command, channel, username, params, files, conn):
                 # SHA256 hash?
                 endpoint = settings.APIURL['bssc']['url'] + '/file/%s' % (params,)
             if endpoint:
-                message = 'Broadcom Symantec Security Cloud lookup for `%s`:' % (params,)
+                message = '| **Broadcom Symantec Security Cloud** | `%s` |' % (params,)
                 if (token := getToken()):
                     outputFields = {
                         'threatRiskLevel': 'Threat Risk Level',
@@ -71,32 +71,33 @@ def process(command, channel, username, params, files, conn):
                         for outputField in outputFields.keys():
                             if outputField in json_response:
                                 if outputField == 'threatRiskLevel':
-                                    data += '\n'+outputFields[outputField]+': `'+str(json_response[outputField]['level'])+'`'
+                                    data += '\n| '+outputFields[outputField]+' | `'+str(json_response[outputField]['level'])+'` |'
                                 elif outputField == 'targetOrgs':
                                     if 'topCountries' in json_response['targetOrgs']:
                                         topCountries = '`, `'.join(json_response['targetOrgs']['topCountries'])
                                         if len(topCountries):
-                                            data += '\nTop Targeted Countries: `'+topCountries+'`'
+                                            data += '\n| Top Targeted Countries | `'+topCountries+'` |'
                                     if 'topIndustries' in json_response['targetOrgs']:
                                         topIndustries = '`, `'.join(json_response['targetOrgs']['topIndustries'])
                                         if len(topIndustries):
-                                            data += '\nTop Targeted Industries: `'+topIndustries+'`'
+                                            data += '\n| Top Targeted Industries | `'+topIndustries+'` |'
                                 elif outputField == 'categorization':
-                                    data += '\nCategories: '
+                                    data += '\n| Categories | '
                                     for category in json_response['categorization']['categories']:
                                         data += '`'+category['name']+' ('+str(category['id'])+')`, '
                                     data = data[:-2]
+                                    data += ' |'
                                 elif outputField == 'actors':
-                                    data += '\nAssociated Threat Actors: `'+'`, `'.join(json_response['actors'])+'`'
+                                    data += '\n| Associated Threat Actors | `'+'`, `'.join(json_response['actors'])+'` |'
                                 elif outputField == 'associatedReferences':
                                     for associatedReference in json_response['associatedReferences']:
-                                        data += '\nAssociated Reference: ['+associatedReference['description']+']'
+                                        data += '\n| Associated Reference | ['+associatedReference['description']+'] |'
                                         data += '('+associatedReference['url']+')'
                                 else:
-                                    data += '\n'+outputFields[outputField]+': `'+json_response[outputField]+'`'
+                                    data += '\n| '+outputFields[outputField]+' | `'+json_response[outputField]+'` |'
                         if len(data):
                             messages.append({'text': message + data})
         except Exception as e:
-            messages.append({'text': "An error occurred searching Broadcom Symantec Security Cloud for `%s`:\nError: `%s`" % (params, str(e))})
+            messages.append({'text': "An error occurred searching Broadcom Symantec Security Cloud:`%s`\nError: %s" % (str(e),traceback.format_exc())})
         finally:
             return {'messages': messages}
