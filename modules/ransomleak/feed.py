@@ -72,8 +72,7 @@ def query(MAX=settings.ENTRIES):
             if not 'ransomleak' in history:
                 history['ransomleak'] = []
         except Exception as e:
-            history.sync()
-            history.close()
+            print(traceback.format_exc())
             raise
         if history:
             for group in groups:
@@ -81,7 +80,7 @@ def query(MAX=settings.ENTRIES):
                 with requests.get(ENDPOINT, auth=authentication) as response:
                     feed = yaml.safe_load(response.content)
                 if len(feed)>0:
-                    entries = sorted(feed, key=lambda feed: feed['published'], reverse=True)[:MAX]
+                    entries = sorted(feed, key=lambda feed: feed['published'], reverse=True)
                     for entry in entries:
                         item = ''
                         for field in fields:
@@ -126,15 +125,18 @@ def query(MAX=settings.ENTRIES):
                                             value = '[%s](%s)' % (value,value)
                                 else:
                                     if field == 'published':
-                                        value = '%date%'
+                                        if not len(entry[field]):
+                                            value = '%date%'
+                                        else:
+                                            value = entry[field]
                                     else:
                                         value = '-'
                             item += '| %s ' % (value,)
                         item += '|'
                         items.append(item)
-            messages = []
-            if len(messages):
-                announcements = []
+            if len(items):
+                count = 0
+                messages = []
                 table = ''
                 for field in fields:
                     table += '| %s ' % (fields[field])
@@ -145,26 +147,22 @@ def query(MAX=settings.ENTRIES):
                     else:
                         table += '| :- '
                 table += '|\n'
-                for message in messages:
-                    table += message
-                    table += '\n'
+                for item in items:
+                    historyitem = item.replace('%date%','-')
+                    if not historyitem in history['ransomleak']:
+                        count += 1
+                        today = datetime.datetime.now().strftime('%Y-%m-%d')
+                        history['ransomleak'].append(historyitem)
+                        table += item.replace('%date%',today)+'\n'
                 table += '\n\n'
-                for channel in settings.CHANNELS:
-                    announcements.append([channel,table])
-            for item in items:
-                historyitem = item.replace('%date%','-')
-                if not historyitem in history['ransomleak']:
-                    today = datetime.datetime.now().strftime('%Y-%m-%d')
-                    history['ransomleak'].append(historyitem)
-                    messages.append(item.replace('%date%',today))
+                if count>0:
+                    messages.append(table)
     except Exception as e:
         message = "An error occurred during the Ransomleaks feed parsing:\n%s" % str(traceback.format_exc())
     finally:
         for message in messages:
             for channel in settings.CHANNELS:
                 announcements.append([channel,message])
-        history.sync()
-        history.close()
         return announcements
 
 if __name__ == "__main__":
