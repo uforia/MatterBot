@@ -15,6 +15,7 @@
 import html
 import re
 import requests
+import traceback
 from pathlib import Path
 try:
     from modules.ransomwatch import defaults as settings
@@ -36,6 +37,7 @@ def query(MAX=settings.ENTRIES):
             feed = response.json()
         entries = feed[-MAX:]
         for entry in entries:
+            print(entry)
             victim = entry['post_title'].replace('&amp;','&').replace('&amp;','&').strip('\r\n')
             group = entry['group_name'].replace('&amp;','&').replace('&amp;','&').strip('\r\n').title()
             date = entry['discovered'].split('.')[0].strip(' \r\n')
@@ -47,7 +49,7 @@ def query(MAX=settings.ENTRIES):
             for channel in settings.CHANNELS:
                 items.append([channel, content])
     except Exception as e:
-        content = "An error occurred during the Ransomwatch feed parsing."
+        content = "An error occurred during the Ransomwatch feed parsing: %s\n%s" % (str(e),traceback.format_exc())
         for channel in settings.CHANNELS:
             items.append([channel,content])
     finally:
