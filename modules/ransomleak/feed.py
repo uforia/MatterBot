@@ -80,7 +80,7 @@ def query(MAX=settings.ENTRIES):
                 with requests.get(ENDPOINT, auth=authentication) as response:
                     feed = yaml.safe_load(response.content)
                 if len(feed)>0:
-                    entries = sorted(feed, key=lambda feed: feed['published'], reverse=True)
+                    entries = sorted(feed, key=lambda feed: feed['published'], reverse=True)[:MAX]
                     for entry in entries:
                         item = ''
                         for field in fields:
