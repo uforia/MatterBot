@@ -48,7 +48,6 @@ def query(MAX=settings.ENTRIES):
         with requests.get(ENDPOINT, auth=authentication) as response:
             soup = BeautifulSoup(response.text,features='lxml')
             groups = [node.get('href') for node in soup.find_all('a') if node.get('href').endswith('.json')]
-            groups = ['BianLian.json']
         fields = collections.OrderedDict({
             'group': 'Group',
             'company': 'Victim',
