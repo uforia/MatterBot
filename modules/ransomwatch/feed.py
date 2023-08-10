@@ -37,7 +37,6 @@ def query(MAX=settings.ENTRIES):
             feed = response.json()
         entries = feed[-MAX:]
         for entry in entries:
-            print(entry)
             victim = entry['post_title'].replace('&amp;','&').replace('&amp;','&').strip('\r\n')
             group = entry['group_name'].replace('&amp;','&').replace('&amp;','&').strip('\r\n').title()
             date = entry['discovered'].split('.')[0].strip(' \r\n')
