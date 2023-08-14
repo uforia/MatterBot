@@ -46,7 +46,7 @@ def query(MAX=settings.ENTRIES):
                     description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text()).strip()
                     if len(description)>320:
                         description = description[:316]+' ...'
-                    content += '\n```\n'+description+'\n```\n'
+                    content += '\n>'+description+'\n'
                 for channel in settings.CHANNELS:
                     items.append([channel, content])
                 count+=1
