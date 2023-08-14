@@ -12,7 +12,9 @@
 # <channel>: basically the destination channel in Mattermost, e.g. 'Newsfeed', 'Incident', etc.
 # <content>: the content of the message, MD format possible
 
+import bs4
 import feedparser
+import re
 from pathlib import Path
 try:
     from modules.cshub import defaults as settings
@@ -29,14 +31,25 @@ else:
 
 def query(MAX=settings.ENTRIES):
     items = []
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:15.0) Gecko/20100101 Firefox/15.0.1',
+        'Content-type': 'application/rss+xml',
+    }
     for category in settings.CATEGORIES:
-        feed = feedparser.parse("https://www.cshub.com/rss/categories/"+category)
+        feed = feedparser.parse("https://www.cshub.com/rss/categories/"+category,request_headers=headers)
+        print(feed.headers)
+        print(feed)
         count = 0
+        stripchars = '`\[\]\'\"'
+        regex = re.compile('[%s]' % stripchars)
         while count < MAX:
             try:
                 title = feed.entries[count].title
                 link = feed.entries[count].link
                 content = settings.NAME + ': [' + title + '](' + link + ')'
+                if 'description' in feed.entries[count]:
+                    description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description).get_text())
+                    content += '\n```\n'+description+'\n```\n'
                 for channel in settings.CHANNELS:
                     items.append([channel, content])
                 count+=1

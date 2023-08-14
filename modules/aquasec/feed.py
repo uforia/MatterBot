@@ -12,7 +12,9 @@
 # <channel>: basically the destination channel in Mattermost, e.g. 'Newsfeed', 'Incident', etc.
 # <content>: the content of the message, MD format possible
 
+import bs4
 import feedparser
+import re
 from pathlib import Path
 try:
     from modules.aquasec import defaults as settings
@@ -31,11 +33,16 @@ def query(MAX=settings.ENTRIES):
     items = []
     feed = feedparser.parse(settings.URL)
     count = 0
+    stripchars = '`\[\]\'\"'
+    regex = re.compile('[%s]' % stripchars)
     while count < MAX:
         try:
             title = feed.entries[count].title
             link = feed.entries[count].link
             content = settings.NAME + ': [' + title + '](' + link + ')'
+            if 'description' in feed.entries[count]:
+                description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description).get_text())
+                content += '\n```\n'+description+'\n```\n'
             for channel in settings.CHANNELS:
                 items.append([channel, content])
             count+=1

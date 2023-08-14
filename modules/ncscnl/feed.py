@@ -35,7 +35,10 @@ def query(MAX=settings.ENTRIES):
         try:
             title = feed.entries[count].title
             link = feed.entries[count].link
-            content = settings.NAME + ': [' + title + '](' + link + ')'
+            content = settings.NAME + ': ['+title+']('+link+')'
+            if 'description' in feed.entries[count]:
+                description = feed.entries[count].description
+                content += '\n```\n'+description+'\n```\n'
             for channel in settings.CHANNELS:
                 items.append([channel, content])
             count+=1
