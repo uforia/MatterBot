@@ -46,7 +46,6 @@ def query(MAX=settings.ENTRIES):
                     if 'submitted by' in description:
                         description = description.split('submitted by')[0].strip()
                     if len(description):
-                        print(len(description))
                         if len(description)>320:
                             description = description[:316]+' ...'
                         content += '\n>'+description+'\n'
