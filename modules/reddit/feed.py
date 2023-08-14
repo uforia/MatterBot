@@ -44,8 +44,9 @@ def query(MAX=settings.ENTRIES):
                 if len(feed.entries[count].description):
                     description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip()
                     if 'submitted by' in description:
-                        description = description.split('submitted by')[0]
+                        description = description.split('submitted by')[0].strip()
                     if len(description):
+                        print(len(description))
                         if len(description)>320:
                             description = description[:316]+' ...'
                         content += '\n>'+description+'\n'
