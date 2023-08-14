@@ -15,6 +15,8 @@
 import bs4
 import feedparser
 import re
+import requests
+import traceback
 from pathlib import Path
 try:
     from modules.cshub import defaults as settings
@@ -36,27 +38,31 @@ def query(MAX=settings.ENTRIES):
         'Content-type': 'application/rss+xml',
     }
     for category in settings.CATEGORIES:
-        feed = feedparser.parse("https://www.cshub.com/rss/categories/"+category,request_headers=headers)
-        print(feed.headers)
-        print(feed)
-        count = 0
-        stripchars = '`\[\]\'\"'
-        regex = re.compile('[%s]' % stripchars)
-        while count < MAX:
-            try:
-                title = feed.entries[count].title
-                link = feed.entries[count].link
-                content = settings.NAME + ': [' + title + '](' + link + ')'
-                if len(feed.entries[count].description):
-                    description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description).get_text("\n")).strip()
-                    if len(description)>320:
-                        description = description[:316]+' ...'
-                    content += '\n>'+description+'\n'
-                for channel in settings.CHANNELS:
-                    items.append([channel, content])
-                count+=1
-            except IndexError:
-                return items # No more items
+        try:
+            with requests.get("https://www.cshub.com/rss/categories/"+category,headers=headers) as response:
+                feed = feedparser.parse(response.content)
+                count = 0
+                stripchars = '`\[\]\'\"'
+                regex = re.compile('[%s]' % stripchars)
+                while count < MAX:
+                    try:
+                        title = feed.entries[count].title
+                        link = feed.entries[count].link
+                        content = settings.NAME + ': [' + title + '](' + link + ')'
+                        if len(feed.entries[count].description):
+                            description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip()
+                            if len(description)>320:
+                                description = description[:316]+' ...'
+                            content += '\n>'+description+'\n'
+                        for channel in settings.CHANNELS:
+                            items.append([channel, content])
+                        count+=1
+                    except IndexError:
+                        return items # No more items
+        except Exception as e:
+            content = traceback.format_exc()
+            for channel in settings.CHANNELS:
+                items.append([channel, content])
     return items
 
 if __name__ == "__main__":
