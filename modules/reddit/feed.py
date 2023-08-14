@@ -43,7 +43,9 @@ def query(MAX=settings.ENTRIES):
                 content = 'Reddit post in [/r/' + subreddit + '](https://www.reddit.com/r/'+subreddit+'): [' + title + '](' + link + ')'
                 if len(feed.entries[count].description):
                     description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip()
-                    if not description.strip().startswith('submitted by'):
+                    if 'submitted by' in description:
+                        description = description.split('submitted by')[0]
+                    if len(description):
                         if len(description)>320:
                             description = description[:316]+' ...'
                         content += '\n>'+description+'\n'
