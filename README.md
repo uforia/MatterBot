@@ -29,13 +29,11 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | DarkNet blog                                                                                     | RSS            | No               | No                |
 | DataBreachSecurity News                                                                          | RSS            | No               | No                |
 | GBHackers News                                                                                   | RSS            | No               | No                |
-| InfoSec Institute (Malware Analysis, Threat Intelligence)                                        | RSS            | No               | No                |
 | Kitploit Tool Updates                                                                            | RSS            | No               | No                |
 | KnowBe4 News                                                                                     | RSS            | No               | No                |
 | KrebsOnSecurity Blog                                                                             | RSS            | No               | No                |
 | MajorLeagueHacking News                                                                          | RSS            | No               | No                |
 | Microsoft Vulnerability Reports                                                                  | RSS            | No               | No                |
-| NaoSec                                                                                           | RSS            | No               | No                |
 | NCSC Netherlands Advisories                                                                      | RSS            | No               | No                |
 | NCSC United Kingdom Advisories                                                                   | RSS            | No               | No                |
 | PacketStorm Security                                                                             | RSS            | No               | No                |

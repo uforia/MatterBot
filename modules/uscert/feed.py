@@ -12,7 +12,9 @@
 # <channel>: basically the destination channel in Mattermost, e.g. 'Newsfeed', 'Incident', etc.
 # <content>: the content of the message, MD format possible
 
+import bs4
 import feedparser
+import re
 from pathlib import Path
 try:
     from modules.uscert import defaults as settings
@@ -29,6 +31,8 @@ else:
 
 def query(MAX=settings.ENTRIES):
     items = []
+    stripchars = '`\[\]\'\"'
+    regex = re.compile('[%s]' % stripchars)
     for category in settings.CATEGORIES:
         feedurl = "https://us-cert.cisa.gov/"+category+".xml"
         feed = feedparser.parse(feedurl)
@@ -38,6 +42,11 @@ def query(MAX=settings.ENTRIES):
                 title = feed.entries[count].title
                 link = feed.entries[count].link
                 content = settings.NAME + ' ' + category.split('/')[-1].replace('-',' ').title() + ': [' + title + '](' + link + ')'
+                if 'description' in feed.entries[count]:
+                    description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text())
+                    if len(description)>240:
+                        description = description[:236]+' ...'
+                    content += '\n```\n'+description+'\n```\n'
                 for channel in settings.CHANNELS:
                     items.append([channel, content])
                 count+=1

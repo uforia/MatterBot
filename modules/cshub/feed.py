@@ -49,6 +49,8 @@ def query(MAX=settings.ENTRIES):
                 content = settings.NAME + ': [' + title + '](' + link + ')'
                 if 'description' in feed.entries[count]:
                     description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description).get_text())
+                    if len(description)>240:
+                        description = description[:236]+' ...'
                     content += '\n```\n'+description+'\n```\n'
                 for channel in settings.CHANNELS:
                     items.append([channel, content])
