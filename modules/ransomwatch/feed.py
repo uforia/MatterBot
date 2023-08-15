@@ -35,16 +35,21 @@ def query(MAX=settings.ENTRIES):
     try:
         with requests.get(settings.URL) as response:
             feed = response.json()
-        entries = feed[-MAX:]
-        for entry in entries:
-            victim = entry['post_title'].replace('&amp;','&').replace('&amp;','&').strip('\r\n')
-            group = entry['group_name'].replace('&amp;','&').replace('&amp;','&').strip('\r\n').title()
-            date = entry['discovered'].split('.')[0].strip(' \r\n')
-            if re.search(r"^(((?!\-))(xn\-\-)?[a-z0-9\-_]{0,61}[a-z0-9]{1,1}\.)*(xn\-\-)?([a-z0-9\-]{1,61}|[a-z0-9\-]{1,30})\.[a-z]{2,}$", victim) or 'http' in victim:
-                victim = '[%s](%s)' % (victim, victim)
-            else:
-                victim = victim.title()
-            content = settings.NAME + ': Actor **%s** claims to have ransomwared **%s** at `%s`' % (group, victim, date)
+        entries = sorted(feed, key=lambda feed: feed['discovered'], reverse=True)[:MAX]
+        if len(entries):
+            content = '**Ransomware Activity Update**\n'
+            content += '\n| **Group** | **Victim** | **Publication** |'
+            content += '\n| :- | :- | -: |'
+            for entry in entries:
+                victim = entry['post_title'].replace('&amp;','&').replace('&amp;','&').strip('\r\n')
+                group = entry['group_name'].replace('&amp;','&').replace('&amp;','&').strip('\r\n').title()
+                date = entry['discovered'].split('.')[0].strip(' \r\n')
+                if re.search(r"^(((?!\-))(xn\-\-)?[a-z0-9\-_]{0,61}[a-z0-9]{1,1}\.)*(xn\-\-)?([a-z0-9\-]{1,61}|[a-z0-9\-]{1,30})\.[a-z]{2,}$", victim) or 'http' in victim:
+                    victim = '[%s](%s)' % (victim, victim)
+                else:
+                    victim = victim.title()
+                content += '\n| %s | %s | %s |' % (group, victim, date)
+            content += '\n\n'
             for channel in settings.CHANNELS:
                 items.append([channel, content])
     except Exception as e:
