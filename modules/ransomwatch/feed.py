@@ -37,7 +37,7 @@ def query(MAX=settings.ENTRIES):
             feed = response.json()
         entries = sorted(feed, key=lambda feed: feed['discovered'], reverse=True)[:MAX]
         if len(entries):
-            content = '**Ransomware Activity Update**\n'
+            content = '**%s Update**\n' % (settings.NAME,)
             content += '\n| **Group** | **Victim** | **Publication** |'
             content += '\n| :- | :- | -: |'
             for entry in entries:

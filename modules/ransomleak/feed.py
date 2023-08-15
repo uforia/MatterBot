@@ -137,7 +137,7 @@ def query(MAX=settings.ENTRIES):
             if len(items):
                 count = 0
                 messages = []
-                table = ''
+                table = '**%s Update**\n\n' % (settings.NAME,)
                 for field in fields:
                     table += '| %s ' % (fields[field])
                 table += '|\n'
