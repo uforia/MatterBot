@@ -12,9 +12,9 @@
 # <channel>: basically the destination channel in Mattermost, e.g. 'Newsfeed', 'Incident', etc.
 # <content>: the content of the message, MD format possible
 
-import html
 import re
 import requests
+import shelve
 import traceback
 from pathlib import Path
 try:
@@ -33,10 +33,24 @@ else:
 def query(MAX=settings.ENTRIES):
     items = []
     try:
+        if Path(settings.HISTORY).is_file():
+            history = shelve.open(settings.HISTORY,writeback=True)
+        else:
+            if Path('modules/ransomwatch/'+settings.HISTORY).is_file():
+                history = shelve.open('modules/ransomwatch/'+settings.HISTORY,writeback=True)
+        if not Path(settings.HISTORY).is_file() and not Path('modules/ransomwatch/'+settings.HISTORY).is_file():
+            if Path('feed.py').is_file():
+                history = shelve.open(settings.HISTORY,writeback=True)
+            else:
+                if Path('modules/ransomwatch/feed.py').is_file():
+                    history = shelve.open('modules/ransomwatch/'+settings.HISTORY,writeback=True)
+        if not 'ransomwatch' in history:
+            history['ransomransomwatch'] = []
         with requests.get(settings.URL) as response:
             feed = response.json()
         entries = sorted(feed, key=lambda feed: feed['discovered'], reverse=True)[:MAX]
         if len(entries):
+            count = 0
             content = '**%s Update**\n' % (settings.NAME,)
             content += '\n| **Group** | **Victim** | **Publication** |'
             content += '\n| :- | :- | -: |'
@@ -48,10 +62,15 @@ def query(MAX=settings.ENTRIES):
                     victim = '[%s](%s)' % (victim, victim)
                 else:
                     victim = victim.title()
-                content += '\n| %s | %s | %s |' % (group, victim, date)
+                line = '\n| %s | %s | %s |' % (group, victim, date)
+                if not line in history['ransomwatch']:
+                    history['ransomwatch'].append(line)
+                    content += line
+                    count += 1
             content += '\n\n'
-            for channel in settings.CHANNELS:
-                items.append([channel, content])
+            if count>0:
+                for channel in settings.CHANNELS:
+                    items.append([channel, content])
     except Exception as e:
         content = "An error occurred during the Ransomwatch feed parsing: %s\n%s" % (str(e),traceback.format_exc())
         for channel in settings.CHANNELS:
