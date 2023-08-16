@@ -40,7 +40,7 @@ def query(MAX=settings.ENTRIES):
             title = feed.entries[count].title
             link = feed.entries[count].link
             content = settings.NAME + ': [' + title + '](' + link + ')'
-            description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip()
+            description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
             if len(description):
                 if len(description)>320:
                     description = description[:316]+' ...'

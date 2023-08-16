@@ -42,7 +42,7 @@ def query(MAX=settings.ENTRIES):
                 link = feed.entries[count].link
                 content = 'Reddit post in [/r/' + subreddit + '](https://www.reddit.com/r/'+subreddit+'): [' + title + '](' + link + ')'
                 if len(feed.entries[count].description):
-                    description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip()
+                    description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
                     if 'submitted by' in description:
                         description = description.split('submitted by')[0].strip()
                     if len(description):
