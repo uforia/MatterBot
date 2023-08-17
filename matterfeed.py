@@ -12,13 +12,16 @@ import shelve
 import sys
 import threading
 import time
+import traceback
 from mattermostdriver import Driver
+
 
 class TokenAuth(requests.auth.AuthBase):
     def __call__(self, r):
         r.headers['Authorization'] = "Bearer %s" % options.Matterbot['password']
         r.headers['X-Requested-With'] = "XMLHttpRequest"
         return r
+
 
 class MattermostManager(object):
     def __init__(self):
@@ -66,40 +69,63 @@ class MattermostManager(object):
         except:
             raise
 
-def postMsg():
-    logQueue.put(('INFO', 'Connecting to Mattermost ...'))
-    history = {}
-    logQueue.put(('INFO', 'Monitoring message queue ...'))
-    while True:
-        newsItem = msgQueue.get()
-        channel, module, content = newsItem
-        logQueue.put(('INFO', 'Message: ' + module.lower() + ' => ' + channel + ' => ' + content[:20] + '...'))
-        mm.createPost(mm.channels[channel], content)
-        msgQueue.task_done()
 
-def logger():
-    if not options.debug:
-        logging.basicConfig(filename=options.Matterbot['logfile'], format='%(levelname)s - %(name)s - %(asctime)s - %(message)s')
-    else:
-        logging.basicConfig(format='%(levelname)s - %(name)s - %(asctime)s - %(message)s')
-    log = logging.getLogger( 'MatterBot' )
-    if options.debug:
-        log.setLevel(logging.DEBUG)
-    else:
-        log.setLevel(logging.INFO)
-    log.info('Starting up log thread ...')
-    while True:
-        logItem = logQueue.get()
-        logLevel, logText = logItem
-        if logLevel.upper() == 'INFO':
-            log.info(logText)
-        elif logLevel.upper() == 'ERROR':
-            log.error(logText)
-        elif logLevel.upper() == 'DEBUG':
-            log.debug(logText)
+class MsgWorker(threading.Thread):
+    def __init__(self, mm, logQueue, msgQueue):
+        threading.Thread.__init__(self)
+        self.terminate = False
+        self.mm = mm
+        self.logQueue = logQueue
+        self.msgQueue = msgQueue
+
+    def HandleMsg(self):
+        self.logQueue.put(('INFO', 'Starting PostMsg Worker ...'))
+        while True:
+            newsItem = self.msgQueue.get()
+            channel, module, content = newsItem
+            self.logQueue.put(('INFO', 'Message: ' + module.lower() + ' => ' + channel + ' => ' + content[:20] + '...'))
+            self.mm.createPost(self.mm.channels[channel], content)
+            self.msgQueue.task_done()
+
+    def run(self):
+        while not self.terminate:
+            self.HandleMsg()
+
+
+class LogWorker(threading.Thread):
+    def __init__(self, logQueue):
+        threading.Thread.__init__(self)
+        self.terminate = False
+        self.logQueue = logQueue
+
+    def HandleLog(self):
+        if not options.debug:
+            logging.basicConfig(filename=options.Matterbot['logfile'], format='%(levelname)s - %(name)s - %(asctime)s - %(message)s')
         else:
-            log.info('Unhandled log entry: ' + logText)
-        logQueue.task_done()
+            logging.basicConfig(format='%(levelname)s - %(name)s - %(asctime)s - %(message)s')
+        log = logging.getLogger( 'MatterBot' )
+        if options.debug:
+            log.setLevel(logging.DEBUG)
+        else:
+            log.setLevel(logging.INFO)
+        log.info('Starting up log thread ...')
+        while True:
+            logItem = self.logQueue.get()
+            logLevel, logText = logItem
+            if logLevel.upper() == 'INFO':
+                log.info(logText)
+            elif logLevel.upper() == 'ERROR':
+                log.error(logText)
+            elif logLevel.upper() == 'DEBUG':
+                log.debug(logText)
+            else:
+                log.info('Unhandled log entry: ' + logText)
+            self.logQueue.task_done()
+
+    def run(self):
+        while not self.terminate:
+            self.HandleLog()
+
 
 def loadModules():
     modules = {}
@@ -112,6 +138,7 @@ def loadModules():
             module = importlib.import_module(module_name + '.' + 'feed')
             modules[module_name] = getattr(module, 'query')
     return modules
+
 
 class ModuleWorker(threading.Thread):
     def __init__(self, mm, module, logQueue, msgQueue):
@@ -176,43 +203,49 @@ if __name__ == '__main__' :
     options, unknown = parser.parse_known_args()
     options.Matterbot = ast.literal_eval(options.Matterbot)
     options.Modules = ast.literal_eval(options.Modules)
-
-    # Logging thread
-    logQueue = queue.Queue()
-    logThread = threading.Thread(target=logger).start()
-    logQueue.put(('INFO', 'Log thread started ...'))
-
-    # Mattermost post connection
-    mm = MattermostManager()
-
-    # Channel message handler
-    msgQueue = queue.Queue()
-    postThread = threading.Thread(target=postMsg).start()
-    logQueue.put(('INFO', 'Message thread started ...'))
-
-    # Find and load all modules concurrently, and build a lookback history
-    modules = loadModules()
-    history = {}
-    if len(modules)<=0:
-        logQueue.put(('ERROR'), 'No modules found - exiting!')
-        sys.exit(1)
-
-    # Schedule the module polling and run forever
     threads = []
-    for module in modules:
-        thread = ModuleWorker(mm, module, logQueue, msgQueue)
+
+    # Start the Mattermost connection
+    try:
+        # Start the logging thread
+        logQueue = queue.Queue()
+        thread = LogWorker(logQueue)
         threads.append(thread)
         thread.start()
+        logQueue.put(('INFO', 'Logging thread started ...'))
 
-    while len(threads)>0:
-        try:
-            threads = [t.join(1) for t in threads if t is not None and t.is_alive()]
-        except KeyboardInterrupt:
-            logQueue.put(('INFO', 'Shutting down all workers and exiting ...'))
-            if logThread is not None and logThread.is_alive():
-                logThread.join()
-            if postThread is not None and postThread.is_alive():
-                postThread.join()
-            for thread in threads:
-                thread.kill_received = True
-    sys.exit(0)
+        # Fire up the Mattermost connection
+        mm = MattermostManager()
+        if mm:
+            # Start the message handler
+            msgQueue = queue.Queue()
+            thread = MsgWorker(mm, logQueue, msgQueue)
+            threads.append(thread)
+            thread.start()
+            logQueue.put(('INFO', 'Message thread started ...'))
+
+            # Find and load all modules concurrently, and build a lookback history
+            modules = loadModules()
+            if len(modules):
+                # Schedule the modules and run forever
+                for module in modules:
+                    thread = ModuleWorker(mm, module, logQueue, msgQueue)
+                    threads.append(thread)
+                    thread.start()
+
+                while len(threads)>0:
+                    try:
+                        threads = [t.join(1) for t in threads if t is not None and t.is_alive()]
+                    except KeyboardInterrupt:
+                        logQueue.put(('INFO', 'Shutting down all workers and exiting ...'))
+                        for thread in threads:
+                            thread.terminate = True
+            else:
+                logQueue.put(('ERROR', 'No modules found - exiting!'))
+        else:
+            logQueue.put(('ERROR', 'Could not connect to Mattermost - exiting!'))
+    except Exception as e:
+        logQueue.put(('ERROR', 'Error occurred:\n%s' % (traceback.format_exc(),)))
+    finally:
+        logQueue.put(('INFO', 'Matterfeed main loop running ...'))
+        sys.exit(0)

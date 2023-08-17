@@ -71,6 +71,8 @@ def query(MAX=settings.ENTRIES):
             if count>0:
                 for channel in settings.CHANNELS:
                     items.append([channel, content])
+        history.sync()
+        history.close()
     except Exception as e:
         content = "An error occurred during the Ransomwatch feed parsing: %s\n%s" % (str(e),traceback.format_exc())
         for channel in settings.CHANNELS:
