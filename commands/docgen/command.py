@@ -123,7 +123,7 @@ def process(command, channel, username, params, files, conn):
                             with open(MODULEDIR+settings.LANGMAP[language][templatefile],'r') as f:
                                 templatefiles[templatefile] = f.read()
                         format = 'markdown'
-                        extra_args = ['--section-divs', '--number-offset=1']
+                        extra_args = ['--section-divs', '--number-offset=0']
                         html = templatefiles['header']+pypandoc.convert_text(skeletondocument, 'html', format=format, extra_args=extra_args)+templatefiles['footer']
                         for template_variable in templatefiles:
                             source = '%'+template_variable+'%'
