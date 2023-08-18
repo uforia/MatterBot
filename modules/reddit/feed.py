@@ -46,8 +46,8 @@ def query(MAX=settings.ENTRIES):
                     if 'submitted by' in description:
                         description = description.split('submitted by')[0].strip()
                     if len(description):
-                        if len(description)>320:
-                            description = description[:316]+' ...'
+                        if len(description)>400:
+                            description = description[:396]+' ...'
                         content += '\n>'+description+'\n'
                 for channel in settings.CHANNELS:
                     items.append([channel, content])
