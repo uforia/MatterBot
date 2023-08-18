@@ -42,9 +42,11 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | SANS Internet Storm Center                                                                       | RSS            | No               | No                |
 | SebDraven                                                                                        | RSS            | No               | No                |
 | SecureList News                                                                                  | RSS            | No               | No                |
+| SecurityAffairs News                                                                             | RSS            | No               | No                |
 | TheHackerNews News                                                                               | RSS            | No               | No                |
 | Threatpost News                                                                                  | RSS            | No               | No                |
 | TrendMicro Research                                                                              | RSS            | No               | No                |
+| Tripwire State of Security                                                                       | RSS            | No               | No                |
 | US-CERT National Cyber Awareness System (Advisories, Alerts, Analysis Reports, Current Activity) | RSS            | No               | No                |
 | Velociraptor News/Updates                                                                        | RSS            | No               | No                |
 | WeLiveSecurity News                                                                              | RSS            | No               | No                |
