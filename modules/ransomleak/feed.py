@@ -86,6 +86,9 @@ def query(MAX=settings.ENTRIES):
                         for field in fields:
                             if field in entry:
                                 value = regex.sub(' ', entry[field]).strip()
+                                if field == 'group':
+                                    if value in settings.RENAMES:
+                                        value = settings.RENAMES[value]
                                 if field == 'company':
                                     if len(entry['domain'].strip()) and not len(entry['company']):
                                         domain = entry['domain'].strip()
