@@ -108,7 +108,7 @@ def query(MAX=settings.ENTRIES):
                                             with session.get(url,verify=False,allow_redirects=False,timeout=10) as response:
                                                 session.cookies.update(session.cookies)
                                             with session.get(url,verify=False,allow_redirects=False,timeout=10) as response:
-                                                if response.status_code in (200, 301, 302):
+                                                if response.status_code in (200, 301, 302, 303, 307, 308):
                                                     html = bs4.BeautifulSoup(requests.get(url).content,"lxml")
                                                     value = regex.sub('-',html.title.text).strip()
                                                 else:
