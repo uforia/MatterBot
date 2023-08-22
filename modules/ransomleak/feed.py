@@ -102,14 +102,14 @@ def query(MAX=settings.ENTRIES):
                                                 'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:15.0) Gecko/20100101 Firefox/15.0.1',
                                             }
                                             session = requests.Session()
-                                            session.max_redirects = 2
+                                            session.max_redirects = 3
                                             session.headers = headers
                                             session.verify = False
-                                            with session.get(url,verify=False,allow_redirects=True,timeout=5) as response:
+                                            with session.get(url,verify=False,allow_redirects=False,timeout=10) as response:
                                                 session.cookies.update(session.cookies)
-                                            with session.get(url,verify=False,allow_redirects=True,timeout=5) as response:
-                                                if response.status_code == 200:
-                                                    html = bs4.BeautifulSoup(response.text,"lxml")
+                                            with session.get(url,verify=False,allow_redirects=False,timeout=10) as response:
+                                                if response.status_code in (200, 301, 302):
+                                                    html = bs4.BeautifulSoup(requests.get(url).content,"lxml")
                                                     value = regex.sub('-',html.title.text).strip()
                                                 else:
                                                     value = '*Error '+str(response.status_code)+'*'
