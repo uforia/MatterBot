@@ -105,6 +105,7 @@ def query(MAX=settings.ENTRIES):
                                                 'Host': domain,
                                                 'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:15.0) Gecko/20100101 Firefox/15.0.1',
                                             }
+<<<<<<< HEAD
                                             http = urllib3.PoolManager(
                                                 cert_reqs=ssl.CERT_NONE,
                                                 retries=10,
@@ -139,6 +140,23 @@ def query(MAX=settings.ENTRIES):
                                         except urllib3.exceptions.NewConnectionError:
                                             value = '*Connection Error*'
                                         except urllib3.exceptions.TimeoutError:
+=======
+                                            session = requests.Session()
+                                            session.max_redirects = 3
+                                            session.headers = headers
+                                            session.verify = False
+                                            with session.get(url,verify=False,allow_redirects=False,timeout=10) as response:
+                                                session.cookies.update(session.cookies)
+                                            with session.get(url,verify=False,allow_redirects=False,timeout=10) as response:
+                                                if response.status_code in (200, 301, 302):
+                                                    html = bs4.BeautifulSoup(requests.get(url).content,"lxml")
+                                                    value = regex.sub('-',html.title.text).strip()
+                                                else:
+                                                    value = '*Error '+str(response.status_code)+'*'
+                                        except requests.exceptions.TooManyRedirects:
+                                            value = '*Redirects Exceeded*'
+                                        except requests.exceptions.Timeout:
+>>>>>>> parent of 27e1b8c (Handle more redirect codes)
                                             value = '*Timeout*'
                                         except urllib3.exceptions.MaxRetryError:
                                             value = '*Redirects Exceeded*'
