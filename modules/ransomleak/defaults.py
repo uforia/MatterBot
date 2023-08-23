@@ -10,4 +10,7 @@ AUTH = {
     'username': None,
     'password': None,
 }
+RENAMES = {
+    'x_2': 'x',
+}
 ENTRIES = 100

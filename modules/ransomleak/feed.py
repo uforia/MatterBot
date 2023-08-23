@@ -18,7 +18,9 @@ import datetime
 import re
 import requests
 import shelve
+import ssl
 import traceback
+import urllib3
 import yaml
 from bs4 import BeautifulSoup
 from pathlib import Path
@@ -57,6 +59,7 @@ def query(MAX=settings.ENTRIES):
             'size': 'Size',
         })
         items = []
+        messages = []
         try:
             if Path(settings.HISTORY).is_file():
                 history = shelve.open(settings.HISTORY,writeback=True)
@@ -76,7 +79,7 @@ def query(MAX=settings.ENTRIES):
             raise
         if history:
             for group in groups:
-                ENDPOINT = settings.URL+'/'+group
+                ENDPOINT = settings.URL+group
                 with requests.get(ENDPOINT, auth=authentication) as response:
                     feed = yaml.safe_load(response.content)
                 if len(feed)>0:
@@ -96,6 +99,7 @@ def query(MAX=settings.ENTRIES):
                                             url = 'https://'+domain
                                         else:
                                             url = domain
+                                        url = url.lower()
                                         try:
                                             headers = {
                                                 'Host': domain,
@@ -117,7 +121,9 @@ def query(MAX=settings.ENTRIES):
                                             value = '*Redirects Exceeded*'
                                         except requests.exceptions.Timeout:
                                             value = '*Timeout*'
-                                        except:
+                                        except urllib3.exceptions.MaxRetryError:
+                                            value = '*Redirects Exceeded*'
+                                        except Exception as e:
                                             value = '*Unknown Error*'
                                 if field == 'size':
                                     if len(entry['released']) and not len(entry['size']):
@@ -139,7 +145,6 @@ def query(MAX=settings.ENTRIES):
                         items.append(item)
             if len(items):
                 count = 0
-                messages = []
                 table = '**%s Update**\n\n' % (settings.NAME,)
                 for field in fields:
                     table += '| %s ' % (fields[field])
@@ -161,6 +166,7 @@ def query(MAX=settings.ENTRIES):
                 if count>0:
                     messages.append(table)
     except Exception as e:
+        print(traceback.format_exc())
         message = "An error occurred during the Ransomleaks feed parsing:\n%s" % str(traceback.format_exc())
     finally:
         for message in messages:
