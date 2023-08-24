@@ -50,6 +50,7 @@ def query(MAX=settings.ENTRIES):
         with requests.get(ENDPOINT, auth=authentication) as response:
             soup = BeautifulSoup(response.text,features='lxml')
             groups = [node.get('href') for node in soup.find_all('a') if node.get('href').endswith('.json')]
+            groups = ['Cl0p_1.json']
         fields = collections.OrderedDict({
             'group': 'Group',
             'company': 'Victim',
@@ -81,8 +82,8 @@ def query(MAX=settings.ENTRIES):
             for group in groups:
                 ENDPOINT = settings.URL+group
                 with requests.get(ENDPOINT, auth=authentication) as response:
-                    feed = yaml.safe_load(response.content)
-                if len(feed)>0:
+                    feed = yaml.safe_load(response.content) if response.status_code in (200,301,302,303,307,308) else None
+                if feed:
                     entries = sorted(feed, key=lambda feed: feed['published'], reverse=True)[:MAX]
                     for entry in entries:
                         item = ''
@@ -100,20 +101,24 @@ def query(MAX=settings.ENTRIES):
                                         else:
                                             url = domain
                                         try:
+                                            print(url)
                                             headers = {
-                                                'Host': domain,
-                                                'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:15.0) Gecko/20100101 Firefox/15.0.1',
+                                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/116.0',
+                                                'accept': 'application/json, text/plain, */*',
+                                                'accept-language': 'en-US,en;q=0.9,hi;q=0.8,de;q=0.7,ur;q=0.6,pa;q=0.5,es;q=0.4'
                                             }
                                             session = requests.Session()
                                             session.max_redirects = 3
                                             session.headers = headers
                                             session.verify = False
-                                            with session.get(url,verify=False,allow_redirects=False,timeout=10) as response:
+                                            with session.get(url,allow_redirects=False,timeout=10) as response:
                                                 session.cookies.update(session.cookies)
-                                            with session.get(url,verify=False,allow_redirects=False,timeout=10) as response:
+                                            with session.get(url,allow_redirects=False,timeout=10) as response:
                                                 if response.status_code in (200, 301, 302, 303, 307, 308):
-                                                    html = bs4.BeautifulSoup(session.get(url).content,"lxml")
-                                                    value = regex.sub('-',html.title.text).strip()
+                                                    content = session.get(url).text
+                                                    html = bs4.BeautifulSoup(content,"lxml")
+                                                    value = regex.sub('',html.title.text)
+                                                    value = value.replace('\\n','').replace('\\r','').strip()
                                                 else:
                                                     value = '*Error '+str(response.status_code)+'*'
                                         except requests.exceptions.TooManyRedirects:
