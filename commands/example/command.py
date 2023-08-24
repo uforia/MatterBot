@@ -77,5 +77,5 @@ else:
 
 def process(command, channel, username, params, files, conn):
     return {'messages': [
-        {'text': 'Hello %s!' % (username,)}
+        {'text': 'It is nice to meet you, %s!' % (username,)}
     ]}
