@@ -99,48 +99,11 @@ def query(MAX=settings.ENTRIES):
                                             url = 'https://'+domain
                                         else:
                                             url = domain
-                                        url = url.lower()
                                         try:
                                             headers = {
                                                 'Host': domain,
                                                 'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:15.0) Gecko/20100101 Firefox/15.0.1',
                                             }
-<<<<<<< HEAD
-                                            http = urllib3.PoolManager(
-                                                cert_reqs=ssl.CERT_NONE,
-                                                retries=10,
-                                                assert_hostname=False,
-                                                headers=headers,
-                                                timeout=5,
-                                            )
-                                            urllib3.disable_warnings()
-                                            response = http.request("GET",url)
-                                            if 'Set-Cookie' in response:
-                                                headers['Cookie'] = {}
-                                                for cookie in response.headers['Set-Cookie']:
-                                                    headers['Cookie'][cookie] = response.headers['Set-Cookie'][cookie]
-                                            if 'Cookie' in headers:
-                                                response = http.request("GET",url)
-                                            if response.status in (200,):
-                                                html = bs4.BeautifulSoup(response.data,'lxml')
-                                                value = regex.sub('-',html.title.text).strip()
-                                            else:
-                                                if not 'https://www.' in url:
-                                                    url = url.replace('https://','https://www.')
-                                                    response = http.request("GET",url)
-                                                    if 'Set-Cookie' in response:
-                                                        headers['Cookie'] = {}
-                                                        for cookie in response.headers['Set-Cookie']:
-                                                            headers['Cookie'][cookie] = response.headers['Set-Cookie'][cookie]
-                                                    if 'Cookie' in headers:
-                                                        response = http.request("GET",url)
-                                                    if response.status in (200,):
-                                                        html = bs4.BeautifulSoup(response.data,'lxml')
-                                                        value = regex.sub('-',html.title.text).strip()
-                                        except urllib3.exceptions.NewConnectionError:
-                                            value = '*Connection Error*'
-                                        except urllib3.exceptions.TimeoutError:
-=======
                                             session = requests.Session()
                                             session.max_redirects = 3
                                             session.headers = headers
@@ -148,7 +111,7 @@ def query(MAX=settings.ENTRIES):
                                             with session.get(url,verify=False,allow_redirects=False,timeout=10) as response:
                                                 session.cookies.update(session.cookies)
                                             with session.get(url,verify=False,allow_redirects=False,timeout=10) as response:
-                                                if response.status_code in (200, 301, 302):
+                                                if response.status_code in (200, 301, 302, 303, 307, 308):
                                                     html = bs4.BeautifulSoup(requests.get(url).content,"lxml")
                                                     value = regex.sub('-',html.title.text).strip()
                                                 else:
@@ -156,11 +119,8 @@ def query(MAX=settings.ENTRIES):
                                         except requests.exceptions.TooManyRedirects:
                                             value = '*Redirects Exceeded*'
                                         except requests.exceptions.Timeout:
->>>>>>> parent of 27e1b8c (Handle more redirect codes)
                                             value = '*Timeout*'
-                                        except urllib3.exceptions.MaxRetryError:
-                                            value = '*Redirects Exceeded*'
-                                        except Exception as e:
+                                        except:
                                             value = '*Unknown Error*'
                                 if field == 'size':
                                     if len(entry['released']) and not len(entry['size']):
