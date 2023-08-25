@@ -9,7 +9,7 @@ Code is GPLv3, (c) Arnim Eijkhoudt, 2022/2023.
 
 ## Status
 
-Code probably has bugs, but at least it's in a 'works for me' state ;-)
+Code probably has bugs, but it is in a 'works for me' and recently: 'works for others' state ;-)
 
 ## Contents
 
@@ -99,7 +99,7 @@ New Matterbot modules can be created. A boilerplate example can be found in the 
 ### Mattermost
 
 - A Mattermost instance.
-- A 'bot account' on that Mattermost instance.
+- A 'bot account' on that Mattermost instance. NOTE: Currently the bot requires an admin account (see open issues) on your Mattermost instance!
 - Remember to invite the bot to the correct channels, both for outputting the results from its feed parsing and so it can listen to commands!
 
 ## matterfeed.py
