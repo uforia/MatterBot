@@ -46,7 +46,7 @@ def process(command, channel, username, params, files, conn):
                 results = cyberthreat.wget('addresses/'+params+'?'+filters)
                 print(f"Results: {results}")
                 for address in results:
-                    text=f"IP address {params} is used by the _{address['actor'].capitalize()}_."
+                    text=f"IP address {params} {settings.confidence_tabel[address['credibility']]['level']} used by the actor _{address['actor'].capitalize()}_. "
 
             elif params:
                 print('domain')
@@ -80,7 +80,7 @@ def process(command, channel, username, params, files, conn):
                     There should have been only one domain returned, but for robustness we do a for loop.
                     """
                     for domain in fqdnlist:
-                        text+=f"_{domain}_ {fqdnlist[domain]['actor']} hosted on the {fqdnlist[domain]['type']} network of actor **{fqdnlist[domain]['actor'].capitalize()}**.\n"
+                        text+=f"_{domain}_ {settings.confidence_tabel[fqdnlist[domain]['credibility']]['level']} hosted on the {fqdnlist[domain]['type']} network of actor **{fqdnlist[domain]['actor'].capitalize()}**.\n"
                         if len(fqdnlist[domain]['subdomains']):
                             text+=f"We have found the following subdomains: {', '.join(fqdnlist[domain]['subdomains'])}."
                         
