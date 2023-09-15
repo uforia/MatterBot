@@ -10,5 +10,6 @@ pyOpenSSL
 pypandoc
 PyYAML
 Requests
+tldextract
 urllib3
 weasyprint
