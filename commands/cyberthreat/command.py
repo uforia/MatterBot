@@ -34,8 +34,11 @@ for actor in results['results']:
 def process(command, channel, username, params, files, conn):
     filters = '&'.join(settings.APIURL['cyberthreat']['filters'])
 
+
     if len(params)>0:
         params = params[0].replace('[', '').replace(']', '').replace('hxxp','http').lower()
+        intro = f"cyberthreat *Hosting Intelligence* search for `{params}`:"
+        listitem = '`\n- `'
         try:
 
             if params in actorlist:
@@ -82,7 +85,7 @@ def process(command, channel, username, params, files, conn):
                     for domain in fqdnlist:
                         text+=f"_{domain}_ {settings.confidence_tabel[fqdnlist[domain]['credibility']]['level']} hosted on the {fqdnlist[domain]['type']} network of actor **{fqdnlist[domain]['actor'].capitalize()}**.\n"
                         if len(fqdnlist[domain]['subdomains']):
-                            text+=f"We have found the following subdomains: {', '.join(fqdnlist[domain]['subdomains'])}."
+                            text+=f"We have found the following subdomains: \n- `{listitem.join(fqdnlist[domain]['subdomains'])}`."
                         
                 else:
                     """ In case the params doesnt even look like a valid domain name. """
@@ -91,8 +94,7 @@ def process(command, channel, username, params, files, conn):
 
             if 'text' in locals():
                 return {'messages': [
-                    {'text':'cyberthreat **Hosting Intelligence**'},
-                    {'text': text},
+                    {'text': intro + '\n' + text},
                 ]}
             #else:
             #    return {'messages': [
