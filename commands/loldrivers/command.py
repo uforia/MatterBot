@@ -79,6 +79,7 @@ def process(command, channel, username, params, files, conn):
                                    filename == KnownVulnerableSample['OriginalFilename']:
                                     found = True
                     if found:
+                        uploads = []
                         fields = [
                             'Category',
                             'Commands',
@@ -106,11 +107,14 @@ def process(command, channel, username, params, files, conn):
                                 verified = ':x:'
                         message =  '\n| LOLDrivers | **%s**: `%s` %s |' % (type,query,verified)
                         message += '\n| :- | :- |'
-                        hitcount = 0
                         uploads = []
+                        importFiles = set()
+                        importFunctions = set()
+                        authentihashes = set()
+                        richpeheaderhashes = set()
                         for field in fields:
                             if field == 'Commands':
-                                value = loldriver[field]['Command']
+                                value = loldriver[field]['Command'] if len(loldriver[field]['Command']) else 'N/A'
                                 value += ' (%s)' % loldriver[field]['Usecase']
                                 message += '\n| **%s** | `%s` |' % (field,value)
                             elif field == 'Resources':
@@ -121,31 +125,30 @@ def process(command, channel, username, params, files, conn):
                                 message += '\n| **%s** | %s |' % (field,value)
                             elif field == 'KnownVulnerableSamples':
                                 for KnownVulnerableSample in loldriver[field]:
-                                    hitcount += 1
                                     for kvsfield in kvsfields:
                                         if kvsfield in KnownVulnerableSample:
                                             value = KnownVulnerableSample[kvsfield]
-                                            if kvsfield in ('Authentihash','RichPEHeaderHash'):
-                                                hashes = []
-                                                for hash in KnownVulnerableSample[kvsfield]:
-                                                    hashes.append('**%s**: `%s`' % (hash,KnownVulnerableSample[kvsfield][hash]))
-                                                    value = ', '.join(hashes)
-                                                if len(value):
-                                                    message += '\n| **%s** #%d | %s |' % (kvsfield,hitcount,value)
-                                            if kvsfield in ('Imports','ImportedFunctions'):
-                                                value = '`, `'.join(KnownVulnerableSample[kvsfield])
-                                                if len(value):
-                                                    message += '\n| **%s** #%d | `%s` |' % (kvsfield,hitcount,value)
+                                            if kvsfield == 'Authentihash':
+                                                for authentihash in KnownVulnerableSample[kvsfield]:
+                                                    authentihashes.add(KnownVulnerableSample[kvsfield][authentihash])
+                                            if kvsfield == 'RichPEHeaderHash':
+                                                for richpeheaderhash in KnownVulnerableSample[kvsfield]:
+                                                    richpeheaderhashes.add(KnownVulnerableSample[kvsfield][richpeheaderhash])
+                                            if kvsfield == 'Imports':
+                                                for importFile in KnownVulnerableSample[kvsfield]:
+                                                    importFiles.add(importFile)
+                                            if kvsfield == 'ImportedFunctions':
+                                                for importFunction in KnownVulnerableSample[kvsfield]:
+                                                    importFunctions.add(importFunction)
                             elif field == 'Detection':
                                 if len(loldriver[field]):
                                     filenames = []
-                                    uploads = []
                                     for Detection in loldriver[field]:
                                         type = Detection['type'].replace('_',' ').title()
                                         url = Detection['value']
                                         try:
                                             with requests.get(url) as response:
-                                                uploads.append({'filename': Path(url).name, 'bytes': response.content})
+                                                uploads.append({'filename': Path(url).name, 'bytes': b'xxxx'})
                                                 filenames.append(Path(url).name)
                                         except:
                                             pass
@@ -156,6 +159,14 @@ def process(command, channel, username, params, files, conn):
                                 value = loldriver[field]
                                 if len(value):
                                     message += '\n| **%s** | `%s` |' % (field,value)
+                        if len(authentihash):
+                            message += '\n| **Authentihash** | `%s` |' % ('`, `'.join(authentihashes))
+                        if len(richpeheaderhashes):
+                            message += '\n| **RichPEHeaderHash** | `%s` |' % ('`, `'.join(richpeheaderhashes))
+                        if len(importFiles):
+                            message += '\n| **Imports** | `%s` |' % ('`, `'.join(importFiles))
+                        if len(importFunctions):
+                            message += '\n| **Imported Functions** | `%s` |' % ('`, `'.join(importFunctions))
                         message += '\n\n'
                         if len(uploads):
                             messages.append({'text': message, 'uploads': uploads})
