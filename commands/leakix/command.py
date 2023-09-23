@@ -52,108 +52,16 @@ def process(command, channel, username, params, files, conn):
                     with requests.get(APIENDPOINT,headers=headers) as response:
                         json_response = response.json()
                         querytype = endpoint.strip('/')
-                        if 'subdomains' in APIENDPOINT:
-                            if len(json_response)>0:
-                                count = 0
-                                fieldnames = {
-                                    'subdomain': 'Subdomain',
-                                    'distinct_ips': 'Unique IPs',
-                                    'last_seen': 'Last Seen',
-                                }
-                                title = True
-                                if title:
-                                    message = '| **LeakIX `%s` lookup** |' % (query,)
-                                    for fieldname in fieldnames:
-                                        message += ' **%s** |' % (fieldnames[fieldname])
-                                    message += '\n'
-                                    message += '| -: |'
-                                    message += ':- |'*(len(fieldnames))
-                                    title = False
-                                for subdomain in json_response:
-                                    count += 1
-                                    if count>10:
-                                        message += '\n\nOnly showing first 10 records - check JSON for complete output.'
-                                        messages.append({'text': message, 'uploads': [
-                                            {'filename': 'LeakIX-'+querytype+'-'+datetime.datetime.now().strftime('%Y%m%d')+'.json', 'bytes': response.content}
-                                        ]})
-                                        break
-                                    else:
-                                        message += '\n| **Result** `%s` | ' % (count,)
-                                        for fieldname in fieldnames:
-                                            value = subdomain[fieldname]
-                                            message += '`%s` |' % (value,)
-                            if count>0 and count<=10:
-                                message += '\n\n'
-                                messages.append({'text': message})
-                        if 'Services' in json_response:
-                            if json_response['Services']:
-                                fieldnames = {
-                                    'host': 'Hostname',
-                                    'ip': 'IP',
-                                    'reverse': 'Reverse',
-                                    'protocol': 'Protocol',
-                                    'port': 'Port',
-                                    'leak': 'Vulnerable',
-                                    'summary': 'Content',
-                                }
-                                count = 0
-                                title = True
-                                for service in json_response['Services']:
-                                    if 'leak' in service:
-                                        if len(service['leak']['severity'])>0:
-                                            count += 1
-                                            if title:
-                                                message = '| **LeakIX `%s` lookup** |' % (query,)
-                                                for fieldname in fieldnames:
-                                                    message += ' **%s** |' % (fieldnames[fieldname])
-                                                message += '\n'
-                                                message += '| -: |'
-                                                message += ':- |'*(len(fieldnames))
-                                                title = False
-                                            message += '\n| **Result** `%s` | ' % (count,)
-                                            for fieldname in fieldnames:
-                                                value = service[fieldname]
-                                                if len(service[fieldname])>0:
-                                                    if fieldname == 'leak':
-                                                        value = service['leak']['severity'].title()
-                                                    if fieldname == 'protocol':
-                                                        value = value.upper()
-                                                        if 'ssl' in service:
-                                                            if 'enabled' in service['ssl']:
-                                                                if service['ssl']['enabled']:
-                                                                    value += ' (SSL/TLS)'
-                                                    if fieldname == 'summary':
-                                                        value = regex.sub(' ',value)
-                                                        if len(value)>60:
-                                                            value = value[:60] + ' [...]'
-                                                    if not len(value)>0:
-                                                        value = '-'
-                                                    message += '`%s` |' % (value,)
-                                    message += '\n'
-                                    if count>=10:
-                                        message += '\n\nOnly showing first 10 records - check JSON for complete output.'
-                                        messages.append({'text': message, 'uploads': [
-                                            {'filename': 'LeakIX-'+querytype+'-'+datetime.datetime.now().strftime('%Y%m%d')+'.json', 'bytes': response.content}
-                                        ]})
-                                        break
-                                if count>0 and count<=10:
-                                    message += '\n\n'
-                                    messages.append({'text': message})
-                        if 'Leaks' in json_response:
-                            if json_response['Leaks']:
-                                fieldnames = {
-                                    'host': 'Hostname',
-                                    'ip': 'IP',
-                                    'reverse': 'Reverse',
-                                    'protocol': 'Protocol',
-                                    'port': 'Port',
-                                    'leak': 'Vulnerable',
-                                    'summary': 'Content',
-                                }
-                                count = 0
-                                title = True
-                                for leak in json_response['Leaks']:
-                                    count += 1
+                        if json_response:
+                            if 'subdomains' in APIENDPOINT:
+                                if len(json_response)>0:
+                                    count = 0
+                                    fieldnames = {
+                                        'subdomain': 'Subdomain',
+                                        'distinct_ips': 'Unique IPs',
+                                        'last_seen': 'Last Seen',
+                                    }
+                                    title = True
                                     if title:
                                         message = '| **LeakIX `%s` lookup** |' % (query,)
                                         for fieldname in fieldnames:
@@ -162,39 +70,132 @@ def process(command, channel, username, params, files, conn):
                                         message += '| -: |'
                                         message += ':- |'*(len(fieldnames))
                                         title = False
-                                    for event in leak['events']:
-                                        line = ''
-                                        for fieldname in fieldnames:
-                                            if len(event[fieldname])>0:
-                                                value = event[fieldname]
-                                                if fieldname == 'leak':
-                                                    value = event['leak']['severity'].title()
-                                                    if not len(value):
-                                                        value = '-'
-                                                if fieldname == 'protocol':
-                                                    value = value.upper()
-                                                    if 'ssl' in event:
-                                                        if 'enabled' in event['ssl']:
-                                                            if event['ssl']['enabled']:
-                                                                value += ' (SSL/TLS)'
-                                                if fieldname == 'summary':
-                                                    value = regex.sub(' ',value)
-                                                    if len(value)>60:
-                                                        value = value[:60] + ' [...]'
-                                            else:
-                                                value = '-'
-                                            line += '`%s` |' % (value,)
-                                        if line not in message:
-                                            message += '\n| **Result** `'+str(count)+'` | '+line
-                                    if count>=settings.LEAKLIMIT:
-                                        message += '\n\nOnly showing first '+str(settings.LEAKLIMIT)+' records - check JSON for complete output.'
-                                        messages.append({'text': message, 'uploads': [
-                                            {'filename': 'LeakIX-'+querytype+'-'+datetime.datetime.now().strftime('%Y%m%d')+'.json', 'bytes': response.content}
-                                        ]})
-                                        break
-                                if count>0 and count<settings.LEAKLIMIT:
+                                    for subdomain in json_response:
+                                        count += 1
+                                        if count>10:
+                                            message += '\n\nOnly showing first 10 records - check JSON for complete output.'
+                                            messages.append({'text': message, 'uploads': [
+                                                {'filename': 'LeakIX-'+querytype+'-'+datetime.datetime.now().strftime('%Y%m%d')+'.json', 'bytes': response.content}
+                                            ]})
+                                            break
+                                        else:
+                                            message += '\n| **Result** `%s` | ' % (count,)
+                                            for fieldname in fieldnames:
+                                                value = subdomain[fieldname]
+                                                message += '`%s` |' % (value,)
+                                if count>0 and count<=10:
                                     message += '\n\n'
                                     messages.append({'text': message})
+                            if 'Services' in json_response:
+                                if json_response['Services']:
+                                    fieldnames = {
+                                        'host': 'Hostname',
+                                        'ip': 'IP',
+                                        'reverse': 'Reverse',
+                                        'protocol': 'Protocol',
+                                        'port': 'Port',
+                                        'leak': 'Vulnerable',
+                                        'summary': 'Content',
+                                    }
+                                    count = 0
+                                    title = True
+                                    for service in json_response['Services']:
+                                        if 'leak' in service:
+                                            if len(service['leak']['severity'])>0:
+                                                count += 1
+                                                if title:
+                                                    message = '| **LeakIX `%s` lookup** |' % (query,)
+                                                    for fieldname in fieldnames:
+                                                        message += ' **%s** |' % (fieldnames[fieldname])
+                                                    message += '\n'
+                                                    message += '| -: |'
+                                                    message += ':- |'*(len(fieldnames))
+                                                    title = False
+                                                message += '\n| **Result** `%s` | ' % (count,)
+                                                for fieldname in fieldnames:
+                                                    value = service[fieldname]
+                                                    if len(service[fieldname])>0:
+                                                        if fieldname == 'leak':
+                                                            value = service['leak']['severity'].title()
+                                                        if fieldname == 'protocol':
+                                                            value = value.upper()
+                                                            if 'ssl' in service:
+                                                                if 'enabled' in service['ssl']:
+                                                                    if service['ssl']['enabled']:
+                                                                        value += ' (SSL/TLS)'
+                                                        if fieldname == 'summary':
+                                                            value = regex.sub(' ',value)
+                                                            if len(value)>60:
+                                                                value = value[:60] + ' [...]'
+                                                        if not len(value)>0:
+                                                            value = '-'
+                                                        message += '`%s` |' % (value,)
+                                        message += '\n'
+                                        if count>=10:
+                                            message += '\n\nOnly showing first 10 records - check JSON for complete output.'
+                                            messages.append({'text': message, 'uploads': [
+                                                {'filename': 'LeakIX-'+querytype+'-'+datetime.datetime.now().strftime('%Y%m%d')+'.json', 'bytes': response.content}
+                                            ]})
+                                            break
+                                    if count>0 and count<=10:
+                                        message += '\n\n'
+                                        messages.append({'text': message})
+                            if 'Leaks' in json_response:
+                                if json_response['Leaks']:
+                                    fieldnames = {
+                                        'host': 'Hostname',
+                                        'ip': 'IP',
+                                        'reverse': 'Reverse',
+                                        'protocol': 'Protocol',
+                                        'port': 'Port',
+                                        'leak': 'Vulnerable',
+                                        'summary': 'Content',
+                                    }
+                                    count = 0
+                                    title = True
+                                    for leak in json_response['Leaks']:
+                                        count += 1
+                                        if title:
+                                            message = '| **LeakIX `%s` lookup** |' % (query,)
+                                            for fieldname in fieldnames:
+                                                message += ' **%s** |' % (fieldnames[fieldname])
+                                            message += '\n'
+                                            message += '| -: |'
+                                            message += ':- |'*(len(fieldnames))
+                                            title = False
+                                        for event in leak['events']:
+                                            line = ''
+                                            for fieldname in fieldnames:
+                                                if len(event[fieldname])>0:
+                                                    value = event[fieldname]
+                                                    if fieldname == 'leak':
+                                                        value = event['leak']['severity'].title()
+                                                        if not len(value):
+                                                            value = '-'
+                                                    if fieldname == 'protocol':
+                                                        value = value.upper()
+                                                        if 'ssl' in event:
+                                                            if 'enabled' in event['ssl']:
+                                                                if event['ssl']['enabled']:
+                                                                    value += ' (SSL/TLS)'
+                                                    if fieldname == 'summary':
+                                                        value = regex.sub(' ',value)
+                                                        if len(value)>60:
+                                                            value = value[:60] + ' [...]'
+                                                else:
+                                                    value = '-'
+                                                line += '`%s` |' % (value,)
+                                            if line not in message:
+                                                message += '\n| **Result** `'+str(count)+'` | '+line
+                                        if count>=settings.LEAKLIMIT:
+                                            message += '\n\nOnly showing first '+str(settings.LEAKLIMIT)+' records - check JSON for complete output.'
+                                            messages.append({'text': message, 'uploads': [
+                                                {'filename': 'LeakIX-'+querytype+'-'+datetime.datetime.now().strftime('%Y%m%d')+'.json', 'bytes': response.content}
+                                            ]})
+                                            break
+                                    if count>0 and count<settings.LEAKLIMIT:
+                                        message += '\n\n'
+                                        messages.append({'text': message})
     except Exception as e:
         print(traceback.format_exc())
         messages.append({'text': 'A Python error occurred searching LeakIX:\nError:' + str(e)})
