@@ -7,7 +7,7 @@ import sys
 import traceback
 from pathlib import Path
 try:
-    from commands.unprotectit import defaults as settings
+    from commands.loldrivers import defaults as settings
 except ModuleNotFoundError: # local test run
     import defaults
     import defaults as settings

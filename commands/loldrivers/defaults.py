@@ -11,7 +11,7 @@ HELP = {
     'DEFAULT': {
         'args': None,
         'desc': 'Search loldrivers for information and return any matching entries, such as hashes, filenames, etc. '
-                'On its first run, the module will build a cache of the unprotect.it website, so the very first query will be '
+                'On its first run, the module will build a cache of the LOLDrivers website, so the very first query will be '
                 'slow.',
     },
     'rebuildcache': {
