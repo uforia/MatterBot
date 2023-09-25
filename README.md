@@ -2,14 +2,14 @@
 
 Code is GPLv3, (c) Arnim Eijkhoudt, 2022/2023.
 
-- Official github repository: https://github.com/uforia/matterbot/.
-- Pull/feature requests and comments are welcome: please open/post them on GitHub.
+- Official github repository: https://github.com/uforia/matterbot/
+- Pull/feature requests and comments are welcome: please open/post them on GitHub
 - If you are looking to deploy MatterBot in a commercial setting, please reach out to me
-  via my email address at my current employer.
+  via my email address at my current employer
 
 ## Status
 
-Code probably has bugs, but it is in a 'works for me' and recently: 'works for others' state ;-)
+Code probably has bugs, but it is officially in a 'works for me' and 'works for others' state ;-)
 
 ## Contents
 
@@ -138,3 +138,19 @@ New Matterbot modules can be created. A boilerplate example can be found in the 
 
 - Code cleanups and optimizations
 - Better (generalized) logging and error handling
+
+## Acknowledgements
+
+MatterBot would not be possible without the amazing work and/or generous help of others. If I have erroneously failed to list you here, please let me know! In alphabetical order, the people/organisations/companies I would particularly like to thank are:
+
+- Broadcom Symantec: For providing an API key that let me develop integration with Broadcom Symantec Security Cloud
+- LOLBAS: The LOLBAS project https://lolbas-project.github.io/#
+- LOLDrivers: The LOLDrivers project https://www.loldrivers.io/
+- Malpedia: Being an amazing community and accepting me into it many years ago https://malpedia.caad.fkie.fraunhofer.de/
+- MalwareBazaar: The author(s), for helping me iron out some bugs https://bazaar.abuse.ch
+- MISP: For being an absolutely amazing open-source platform for TI exchange https://misp-project.org
+- ThreatFox: The author(s), for helping me iron out some bugs https://threatfox.abuse.ch
+- Unprotect.it: The author(s), for being receptive, kind and open to me including default (download) support for their project https://unprotect.it
+- URLhaus: The author(s), for helping me iron out some bugs https://urlhaus.abuse.ch
+
+Additional thanks to AlienVault, Censys, Shodan, Tweetfeed, VirusTotal for providing good API documentation, letting me easily write plugins for their services.
