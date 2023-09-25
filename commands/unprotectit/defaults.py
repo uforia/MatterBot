@@ -7,7 +7,7 @@ APIURL = {
     'attackmatrix':  {'url': 'http://149.210.137.179:8008/api/explore'},
 }
 CONTENTTYPE = 'application/json'
-CACHE = 'unprotectit.json'
+CACHE = 'commands/unprotectit/unprotectit.json'
 LANGS = '''Actionscript, as, as3
 AppleScript 	applescript
 Bash 	bash, sh
