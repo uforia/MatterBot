@@ -3,6 +3,7 @@ import re
 import requests
 import tldextract
 from pathlib import Path
+from datetime import datetime
 from . import cyberthreat
 
 try:
@@ -42,23 +43,20 @@ def process(command, channel, username, params, files, conn):
         try:
 
             if params in actorlist:
-                print(f"Found {params} in actorlist")
-                text = f"*{actorlist[params]['name'].capitalize()}*\n{actorlist[params]['description']}"
+                text = f"**{actorlist[params]['name'].capitalize()}**\n{actorlist[params]['description']}"
 
             elif re.search(r"^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(\:[0-65535]*)?$", params):
                 results = cyberthreat.wget('addresses/'+params+'?'+filters)
-                print(f"Results: {results}")
                 for address in results:
-                    text=f"IP address {params} {settings.confidence_tabel[address['credibility']]['level']} used by the actor **{address['actor'].capitalize()}**. "
-
+                    last_seen = datetime.strptime(address['last_seen'], '%Y-%m-%dT%H:%M:%S.%f%z')
+                    text=f"IPv4 address `{params}` {settings.confidence_tabel[address['credibility']]['level']} used by the actor **{address['actor'].capitalize()}**.\n"
+                    text+=f"Last seen: {last_seen.strftime('%Y-%m-%d')}"
             elif params:
-                print('domain')
                 extract = tldextract.extract(params)
                 extracted_domain = extract.registered_domain
                 if extracted_domain:
                     results = cyberthreat.wget('domains?domain='+extracted_domain+'&'+filters)
                     results = results.get('results')
-                    print(f"Results: {results}")
                     fqdnlist = dict()
                     
                     """
@@ -71,25 +69,26 @@ def process(command, channel, username, params, files, conn):
                             fqdnlist[domain]={'subdomains': set()}
                         if not fqdn==domain:
                             fqdnlist[domain]['subdomains'].add(fqdn)
-
+                        last_seen = datetime.strptime(result['last_seen'], '%Y-%m-%dT%H:%M:%S.%f%z')
                         fqdnlist[domain]['credibility']=min(fqdnlist[domain].get('credibility',10), result['credibility'])
+                        fqdnlist[domain]['last_seen']=max(fqdnlist[domain].get('last_seen', last_seen), last_seen)
                         fqdnlist[domain]['actor'] = result.get('actor')
                         fqdnlist[domain]['type']  = result.get('type')
                     
                     if len(fqdnlist):
                         text='The domainname '
 
-                    """
-                    There should have been only one domain returned, but for robustness we do a for loop.
-                    """
-                    for domain in fqdnlist:
-                        text+=f"_{domain}_ {settings.confidence_tabel[fqdnlist[domain]['credibility']]['level']} hosted on the {fqdnlist[domain]['type']} network of actor **{fqdnlist[domain]['actor'].capitalize()}**.\n"
-                        if len(fqdnlist[domain]['subdomains']):
-                            text+=f"We have found the following subdomains: \n- `{listitem.join(fqdnlist[domain]['subdomains'])}`."
+                        """
+                        There should have been only one domain returned, but for robustness we do a for loop.
+                        """
+                        for domain in fqdnlist:
+                            text+=f"`{domain}` {settings.confidence_tabel[fqdnlist[domain]['credibility']]['level']} hosted on the {fqdnlist[domain]['type']} network of actor **{fqdnlist[domain]['actor'].capitalize()}**.\n"
+                            text+=f"Last seen: {fqdnlist[domain]['last_seen'].strftime('%Y-%m-%d')}.\n"
+                            if len(fqdnlist[domain]['subdomains']):
+                                text+=f"We have found the following subdomains: \n- `{listitem.join(fqdnlist[domain]['subdomains'])}`."
                         
                 else:
                     """ In case the params doesnt even look like a valid domain name. """
-                    print('nothing to check')
                     return
 
             if 'text' in locals():
