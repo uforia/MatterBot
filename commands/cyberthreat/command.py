@@ -37,7 +37,7 @@ def process(command, channel, username, params, files, conn):
 
     if len(params)>0:
         params = params[0].replace('[', '').replace(']', '').replace('hxxp','http').lower()
-        intro = f"cyberthreat *Hosting Intelligence* search for `{params}`:"
+        intro = f"cyberthreat.nl *Hosting Intelligence* API search for `{params}`:"
         listitem = '`\n- `'
         try:
 
@@ -49,7 +49,7 @@ def process(command, channel, username, params, files, conn):
                 results = cyberthreat.wget('addresses/'+params+'?'+filters)
                 print(f"Results: {results}")
                 for address in results:
-                    text=f"IP address {params} {settings.confidence_tabel[address['credibility']]['level']} used by the actor _{address['actor'].capitalize()}_. "
+                    text=f"IP address {params} {settings.confidence_tabel[address['credibility']]['level']} used by the actor **{address['actor'].capitalize()}**. "
 
             elif params:
                 print('domain')
