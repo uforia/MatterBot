@@ -11,7 +11,7 @@ CONTENTTYPE = 'application/json'
 LEAKLIMIT = 10
 HELP = {
     'DEFAULT': {
-        'args': '<domain|hostname|subdomains',
+        'args': '<domain|hostname|subdomains>',
         'desc': 'Query the LeakIX API for various types of information.',
     },
 }
