@@ -46,6 +46,8 @@ def process(command, channel, username, params, files, conn):
         }
         if len(settings.APIURL['shodan']['key']):
             apikey = random.choice(settings.APIURL['shodan']['key'])
+        else:
+            apikey = None
         try:
             messages = []
             if querytype == 'ip':
