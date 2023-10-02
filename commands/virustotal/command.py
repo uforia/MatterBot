@@ -5,6 +5,7 @@ import json
 import random
 import re
 import requests
+import traceback
 from pathlib import Path
 try:
     from commands.virustotal import defaults as settings
@@ -174,9 +175,9 @@ def process(command, channel, username, params, files, conn):
                                     else:
                                         signature_algorithm = 'N/A'
                                     issuers = set()
-                                    issuers.add(last_https_certificate['issuer']['O'])
-                                    issuers.add(last_https_certificate['issuer']['CN'])
-                                    issuers.add(last_https_certificate['issuer']['C'])
+                                    for issuerpart in ('O', 'OU', 'CN', 'C'):
+                                        if issuerpart in last_https_certificate['issuer']:
+                                            issuers.add(last_https_certificate['issuer'][issuerpart])
                                     issuer = ', '.join(issuers)
                                     text += '\n - Domain Name(s): `' + '`, `'.join(domains) + '`'
                                     text += '\n - Key: `' + algorithm + '-' + str(key_size) + '`, Sig: `' + signature_algorithm + '`, Issuer: `' + issuer + '`'
@@ -280,9 +281,9 @@ def process(command, channel, username, params, files, conn):
                                     else:
                                         signature_algorithm = 'N/A'
                                     issuers = set()
-                                    issuers.add(last_https_certificate['issuer']['O'])
-                                    issuers.add(last_https_certificate['issuer']['CN'])
-                                    issuers.add(last_https_certificate['issuer']['C'])
+                                    for issuerpart in ('O', 'OU', 'CN', 'C'):
+                                        if issuerpart in last_https_certificate['issuer']:
+                                            issuers.add(last_https_certificate['issuer'][issuerpart])
                                     issuer = ', '.join(issuers)
                                     text += '\n - Domain Name(s): `' + '`, `'.join(domains) + '`'
                                     text += '\n - Key: `' + algorithm + '-' + str(key_size) + '`, Sig: `' + signature_algorithm + '`, Issuer: `' + issuer + '`'
@@ -330,5 +331,5 @@ def process(command, channel, username, params, files, conn):
                             ]}
         except Exception as e:
             return {'messages': [
-                {'text': 'An error occurred searching VirusTotal for `%s`:\nError: `%s`' % (params, e)},
+                {'text': 'An error occurred searching VirusTotal\nError: `%s`' % (traceback.format_exc(),)},
             ]}
