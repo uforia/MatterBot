@@ -5,6 +5,7 @@ import math
 import random
 import re
 import requests
+import traceback
 import urllib
 from pathlib import Path
 try:
@@ -43,14 +44,17 @@ def process(command, channel, username, params, files, conn):
         headers = {
             'Content-Type': settings.CONTENTTYPE,
         }
-        apikey = random.choice(settings.APIURL['shodan']['key'])
+        if len(settings.APIURL['shodan']['key']):
+            apikey = random.choice(settings.APIURL['shodan']['key'])
         try:
             messages = []
             if querytype == 'ip':
                 ip = params[0].split(':')[0].replace('[', '').replace(']', '')
                 text = 'Shodan `%s` search for `%s`: ' % (querytype, ip)
                 if re.search(r"^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(\:[0-65535]*)?$", ip):
-                    APIENDPOINT = settings.APIURL['shodan']['url'] + '/shodan/host/%s?key=%s' % (ip, apikey)
+                    APIENDPOINT = settings.APIURL['shodan']['url'] + '/shodan/host/%s' % (ip,)
+                    if apikey:
+                        APIENDPOINT += '?key=%s' % (apikey,)
                     with requests.get(APIENDPOINT, headers=headers) as response:
                         json_response = response.json()
                         if 'error' in json_response:
@@ -113,7 +117,9 @@ def process(command, channel, username, params, files, conn):
                 host = params[0].split(':')[0].replace('[', '').replace(']', '')
                 text = 'Shodan `%s` search for `%s`:' % (querytype, host)
                 if re.search(r"^(((?!\-))(xn\-\-)?[a-z0-9\-_]{0,61}[a-z0-9]{1,1}\.)*(xn\-\-)?([a-z0-9\-]{1,61}|[a-z0-9\-]{1,30})\.[a-z]{2,}$", host):
-                    APIENDPOINT = settings.APIURL['shodan']['url'] + '/shodan/host/search?key=%s&query=%s' % (apikey, host)
+                    APIENDPOINT = settings.APIURL['shodan']['url'] + '/shodan/host/search?query=%s' % (host,)
+                    if apikey:
+                        APIENDPOINT += '?key=%s' % (apikey,)
                     with requests.get(APIENDPOINT, headers=headers) as response:
                         json_response = response.json()
                         if 'total' in json_response:
@@ -176,7 +182,9 @@ def process(command, channel, username, params, files, conn):
                     text += ' invalid hostname!'
                     messages.append({'text': text})
             if querytype == 'count':
-                APIENDPOINT = settings.APIURL['shodan']['url'] + '/shodan/host/count?key=%s' % (apikey,)
+                APIENDPOINT = settings.APIURL['shodan']['url'] + '/shodan/host/count'
+                if apikey:
+                    APIENDPOINT += '?key=%s' % (apikey,)
                 if not len(params):
                     return {'messages': [{'text': 'Please specify what to search for.'}]}
                 query = set()
@@ -265,7 +273,9 @@ def process(command, channel, username, params, files, conn):
                                         {'filename': 'shodan-'+querytype+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content}
                                     ]})
             if querytype == 'search':
-                APIENDPOINT = settings.APIURL['shodan']['url'] + '/shodan/host/search?key=%s' % (apikey,)
+                APIENDPOINT = settings.APIURL['shodan']['url'] + '/shodan/host/search'
+                if apikey:
+                    APIENDPOINT += '?key=%s' % (apikey,)
                 if not len(params):
                     return {'messages': [{'text': 'Please specify what to search for.'}]}
                 query = set()
@@ -377,7 +387,9 @@ def process(command, channel, username, params, files, conn):
                             messages.append({'text': '\nNo matches.'})
             if querytype == 'credits' or querytype == 'account':
                 text = 'Shodan API account credits (remaining/total):'
-                APIENDPOINT = settings.APIURL['shodan']['url'] + '/api-info?key=%s' % (apikey,)
+                APIENDPOINT = settings.APIURL['shodan']['url'] + '/api-info'
+                if apikey:
+                    APIENDPOINT += '?key=%s' % (apikey,)
                 with requests.get(APIENDPOINT, headers=headers) as response:
                     json_response = response.json()
                     if 'error' in json_response:
@@ -400,7 +412,6 @@ def process(command, channel, username, params, files, conn):
                     messages.append({'text': text})
             return {'messages': messages}
         except Exception as e:
-            raise
             return {'messages': [
-                {'text': 'A Python error occurred searching Shodan:\nError:' + e}
+                {'text': 'A Python error occurred searching Shodan:\nError: `%s`' % (traceback.format_exc(),)}
             ]}

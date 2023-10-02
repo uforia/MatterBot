@@ -4,7 +4,7 @@ BINDS = ['@shodan']
 CHANS = ['debug']
 APIURL = {
     'shodan':   {'url': 'https://api.shodan.io',
-                 'key': ['<your-api-key-here>','<another-api-key>','<yet-another-...>']},
+                 'key': ['<your-api-key-here>','<another-api-key>','<yet-another-...>']}, # Set to None if no key available
 }
 CONTENTTYPE = 'application/json'
 HELP = {
