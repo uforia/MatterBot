@@ -62,15 +62,12 @@ def process(command, channel, username, params, files, conn):
                         if 'error' in json_response:
                             error = json_response['error']
                             if 'No information available' in error:
-                                #text += 'no results found.'
-                                #return {'messages': [{'text': text}]}
                                 return
                             else:
                                 return {'messages': [{'text': 'An error occurred searching Shodan: ' + error}]}
-                        if 'total' in json_response:
-                            total = json_response['total']
+                        if 'matches' in json_response:
+                            total = len(json_response['matches'])
                             if total==0:
-                                #return {'messages': [{'text': 'No results found.'}]}
                                 return
                         text += '\n\n'
                         text += '| Hostname(s) | Service | Port | Proto | Vulns | SSL/TLS | Product | Banner |\n'
@@ -124,8 +121,8 @@ def process(command, channel, username, params, files, conn):
                         APIENDPOINT += '?key=%s' % (apikey,)
                     with requests.get(APIENDPOINT, headers=headers) as response:
                         json_response = response.json()
-                        if 'total' in json_response:
-                            total = json_response['total']
+                        if 'matches' in json_response:
+                            total = len(json_response['matches'])
                             if total==0:
                                 #return {'messages': [{'text': 'No results found.'}]}
                                 return
@@ -221,10 +218,10 @@ def process(command, channel, username, params, files, conn):
                     if 'error' in json_response:
                         error = json_response['error']
                         return {'messages': [{'text': 'An error occurred, wrong/missing API key? Error: ' + error}]}
-                    if 'total' in json_response:
-                        total = json_response['total']
+                    if 'matches' in json_response:
+                        total = len(json_response['matches'])
                         if total>0:
-                            text += ', results: `' + str(total) + '`:\n'
+                            text += ', result(s): `' + str(total) + '`:\n'
                     if 'facets' in json_response:
                         facets = json_response['facets']
                         for facet in facets:
@@ -341,8 +338,8 @@ def process(command, channel, username, params, files, conn):
                         if 'matches' in json_response:
                             matches = json_response['matches']
                             if len(matches) and page==1 and not table_header_displayed:
-                                total = json_response['total']
-                                text += '\nReturning up to 10 matches from the first page only; download the JSON file(s) for all ' + str(total) + ' results:'
+                                total = len(json_response['matches'])
+                                text += '\nReturning up to 10 matches from the first page only; download the JSON file(s) for all ' + str(total) + ' result(s):'
                                 text += '\n\n'
                                 text += '| IP Address | Hostname(s) | Service | Port | Proto | Vulns | SSL/TLS | Product | Banner |\n'
                                 text += '| ---------: | :---------- | ------: | ---: | ----: | ----: | ------: | :------ | :---- -|\n'
