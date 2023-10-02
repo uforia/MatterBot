@@ -43,7 +43,6 @@ def process(command, channel, username, params, files, conn):
                         if 'next' in json_response:
                             nextpage = json_response['next']
                             while nextpage:
-                                print(nextpage)
                                 with requests.get(nextpage, headers=headers) as response:
                                     json_response = response.json()
                                     if 'count' in json_response:
