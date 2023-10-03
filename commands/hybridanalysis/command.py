@@ -32,30 +32,36 @@ def process(command, channel, username, params, files, conn):
                 endpoints = {
                     'host': 'search/terms',
                 }
+                querytype = 'host'
             elif re.search(r"^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))", query):
                 endpoints = {
                     'host': 'search/terms',
                 }
+                querytype = 'host'
             elif re.search(r"^(((?!\-))(xn\-\-)?[a-z0-9\-_]{0,61}[a-z0-9]{1,1}\.)*(xn\-\-)?([a-z0-9\-]{1,61}|[a-z0-9\-]{1,30})\.[a-z]{2,}$", query):
                 endpoints = {
                     'domain': 'search/terms',
                 }
+                querytype = 'domain'
             elif 'http' in query:
                 endpoints = {
                     'url': 'search/terms',
                 }
+                querytype = 'http'
             elif re.search(r"^[A-Fa-f0-9]{32}$", query):
                 endpoints = {
                     'hash': 'search/hash',
                     'similar_to': 'search/terms',
                     'context': 'search/terms',
                 }
+                querytype = 'hash'
             elif re.search(r"^[A-Fa-f0-9]{40}$", query):
                 endpoints = {
                     'hash': 'search/hash',
                     'similar_to': 'search/terms',
                     'context': 'search/terms',
                 }
+                querytype = 'hash'
             elif re.search(r"^[A-Fa-f0-9]{64}$", query):
                 endpoints = {
                     'hash': 'search/hash',
@@ -64,14 +70,17 @@ def process(command, channel, username, params, files, conn):
                     'imphash': 'search/terms',
                     'authentihash': 'search/terms',
                 }
+                querytype = 'hash'
             elif re.search(r"((\d*):(\w*):(\w*)|(\d*):(\w*)\+(\w*):(\w*))", query):
                 endpoints = {
                     'ssdeep': 'search/terms',
                 }
+                querytype = 'ssdeep'
             else:
                 endpoints = {
                     'vx_family': 'search/terms',
                 }
+                querytype = 'family'
             if endpoints:
                 headers = {
                     'User-Agent': 'VxApi CLI Connector',
