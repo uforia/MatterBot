@@ -27,18 +27,18 @@ def process(command, channel, username, params, files, conn):
                 if re.search(r"^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(\:[0-9]*)?$", param):
                     ipaddress = param.split(':')[0]
                     port = int(param.split(':')[1]) if ':' in param else 443
-                message = '**TLSGrab** Canonical names for `'+ipaddress+'`:`'+str(port)+'`: '
-                try:
-                    cert = ssl.get_server_certificate((ipaddress, port))
-                    x509 = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, cert)
-                    for component in x509.get_subject().get_components():
-                        if component[0] == b'CN':
-                            CNs.append(component[1].decode('utf-8').replace('.','[.]'))
-                    if len(CNs)>0:
-                        message += '`'+'`, `'.join(CNs)+'`'
-                except:
-                    message += 'could not be retrieved.'
-                messages.append({'text': message})
+                    message = '**TLSGrab** Canonical names for `'+ipaddress+'`:`'+str(port)+'`: '
+                    try:
+                        cert = ssl.get_server_certificate((ipaddress, port))
+                        x509 = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, cert)
+                        for component in x509.get_subject().get_components():
+                            if component[0] == b'CN':
+                                CNs.append(component[1].decode('utf-8').replace('.','[.]'))
+                        if len(CNs)>0:
+                            message += '`'+'`, `'.join(CNs)+'`'
+                    except:
+                        message += 'could not be retrieved.'
+                    messages.append({'text': message})
             return {'messages': messages}
         except Exception as e:
             return {'messages': [
