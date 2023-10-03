@@ -219,7 +219,7 @@ def process(command, channel, username, params, files, conn):
                         error = json_response['error']
                         return {'messages': [{'text': 'An error occurred, wrong/missing API key? Error: ' + error}]}
                     if 'total' in json_response:
-                        total = len(json_response['total'])
+                        total = json_response['total']
                         if total>0:
                             text += ', result(s): `' + str(total) + '`:\n'
                     if 'facets' in json_response:
@@ -338,7 +338,7 @@ def process(command, channel, username, params, files, conn):
                         if 'matches' in json_response:
                             matches = json_response['matches']
                             if len(matches) and page==1 and not table_header_displayed:
-                                total = len(json_response['total'])
+                                total = json_response['total']
                                 text += '\nReturning up to 10 matches from the first page only; download the JSON file(s) for all ' + str(total) + ' result(s):'
                                 text += '\n\n'
                                 text += '| IP Address | Hostname(s) | Service | Port | Proto | Vulns | SSL/TLS | Product | Banner |\n'
