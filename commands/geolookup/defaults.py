@@ -8,7 +8,7 @@ APIURL = {
 CONTENTTYPE = 'application/json'
 HELP = {
     'DEFAULT': {
-        'args': '<La> <long>',
+        'args': '<latitude> <longitude>',
         'desc': 'Returns the geolocation, if available.',
     },
 }
