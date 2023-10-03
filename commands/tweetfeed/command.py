@@ -64,8 +64,9 @@ def process(command, channel, username, params, files, conn):
                             else:
                                 message += '| `N/A` '
                             message += '|\n'
-                    message += '\n\n'
-                    messages.append({'text': message})
+                    if count>0:
+                        message += '\n\n'
+                        messages.append({'text': message})
                 if count>settings.LIMIT:
                     messages = [{'text': 'Tweetfeed search results exceeded the limit ('+str(count)+'/'+str(settings.LIMIT)+'). Raw JSON output:', 'uploads': [
                         {'filename': 'tweetfeed-'+params+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content}
