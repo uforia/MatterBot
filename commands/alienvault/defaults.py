@@ -9,7 +9,7 @@ APIURL = {
 CONTENTTYPE = 'application/json'
 HELP = {
     'DEFAULT': {
-        'args': '<IPv4|IPv6|domain|hostname|md5|sha1|sha256|url',
-        'desc': 'Query the AlienVault OTX API for various types of information.',
+        'args': '<IPv4|IPv6|domain|hostname|md5|sha1|sha256|url>',
+        'desc': 'Query the AlienVault OTX API for various types of information, e.g.: `@alienvault example.com`.',
     },
 }
