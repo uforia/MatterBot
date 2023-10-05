@@ -116,20 +116,19 @@ def process(command, channel, username, params, files, conn):
                 host = params[0].split(':')[0].replace('[', '').replace(']', '')
                 text = 'Shodan `%s` search for `%s`:' % (querytype, host)
                 if re.search(r"^(((?!\-))(xn\-\-)?[a-z0-9\-_]{0,61}[a-z0-9]{1,1}\.)*(xn\-\-)?([a-z0-9\-]{1,61}|[a-z0-9\-]{1,30})\.[a-z]{2,}$", host):
-                    APIENDPOINT = settings.APIURL['shodan']['url'] + '/shodan/host/search?query=%s' % (host,)
+                    APIENDPOINT = settings.APIURL['shodan']['url'] + '/shodan/host/search?'
                     if apikey:
-                        APIENDPOINT += '?key=%s' % (apikey,)
+                        APIENDPOINT += 'key=%s' % (apikey,)
+                    APIENDPOINT += '&query=%s' % (host,)
                     with requests.get(APIENDPOINT, headers=headers) as response:
                         json_response = response.json()
                         if 'matches' in json_response:
                             total = len(json_response['matches'])
                             if total==0:
-                                #return {'messages': [{'text': 'No results found.'}]}
                                 return
                         if 'error' in json_response:
                             error = json_response['error']
                             if 'No information available' in error:
-                                #return {'messages': [{'text': 'No results found.'}]}
                                 return
                             else:
                                 return {'messages': [{'text': 'An error occurred searching Shodan: ' + error}]}
