@@ -7,17 +7,17 @@ import sys
 import traceback
 from pathlib import Path
 try:
-    from commands.loldrivers import defaults as settings
+    from commands.bootloaders import defaults as settings
 except ModuleNotFoundError: # local test run
     import defaults
     import defaults as settings
     if Path('settings.py').is_file():
         import settings
 else:
-    from commands.loldrivers import defaults
-    if Path('commands/loldrivers/settings.py').is_file():
+    from commands.bootloaders import defaults
+    if Path('commands/bootloaders/settings.py').is_file():
         try:
-            from commands.loldrivers import settings
+            from commands.bootloaders import settings
         except ModuleNotFoundError: # local test run
             import defaults
             import settings
@@ -33,17 +33,17 @@ def process(command, channel, username, params, files, conn):
             }
             query = params[0]
             if query == 'rebuildcache' or not Path(settings.CACHE).is_file():
-                with requests.get(settings.APIURL['loldrivers']['url'], headers=headers) as response:
+                with requests.get(settings.APIURL['bootloaders']['url'], headers=headers) as response:
                     json_response = response.json()
                     if len(json_response):
                         with open(settings.CACHE, mode='w') as f:
                             cache = json.dumps(json_response)
                             f.write(cache)
-                            message = "LOLDrivers cache rebuilt."
+                            message = "Bootloaders cache rebuilt."
                             messages.append({'text': message})
             if Path(settings.CACHE).is_file():
                 with open(settings.CACHE,'r') as f:
-                    loldrivers = json.load(f)
+                    bootloaders = json.load(f)
                 if re.search(r"^[A-Fa-f0-9]{32}$", query):
                     type = 'MD5'
                 elif re.search(r"^[A-Fa-f0-9]{40}$", query):
@@ -52,7 +52,7 @@ def process(command, channel, username, params, files, conn):
                     type = 'SHA256'
                 else:
                     type = 'File'
-                for loldriver in loldrivers:
+                for loldriver in bootloaders:
                     found = False
                     if type in ('MD5','SHA1','SHA256'):
                         if 'KnownVulnerableSamples' in loldriver:
@@ -105,7 +105,7 @@ def process(command, channel, username, params, files, conn):
                                 verified = ':white_check_mark:'
                             else:
                                 verified = ':x:'
-                        message =  '\n| LOLDrivers | **%s**: `%s` %s |' % (type,query,verified)
+                        message =  '\n| Bootloaders | **%s**: `%s` %s |' % (type,query,verified)
                         message += '\n| :- | :- |'
                         uploads = []
                         importFiles = set()
@@ -114,8 +114,8 @@ def process(command, channel, username, params, files, conn):
                         richpeheaderhashes = set()
                         for field in fields:
                             if field == 'Commands':
-                                value = loldriver[field]['Command'] if len(loldriver[field]['Command']) else 'N/A'
-                                value += ' (%s)' % loldriver[field]['Usecase']
+                                value = loldriver[field]['Command'].replace('|','¦').replace('\n','; ').strip('; ') if len(loldriver[field]['Command']) else 'N/A'
+                                value += ' (%s)' % loldriver[field]['Usecase'].replace('|','¦').replace('\n','; ').strip('; ')
                                 message += '\n| **%s** | `%s` |' % (field,value)
                             elif field == 'Resources':
                                 urls = []
@@ -130,16 +130,20 @@ def process(command, channel, username, params, files, conn):
                                             value = KnownVulnerableSample[kvsfield]
                                             if kvsfield == 'Authentihash':
                                                 for authentihash in KnownVulnerableSample[kvsfield]:
-                                                    authentihashes.add(KnownVulnerableSample[kvsfield][authentihash])
+                                                    if len(KnownVulnerableSample[kvsfield][authentihash]):
+                                                        authentihashes.add(KnownVulnerableSample[kvsfield][authentihash])
                                             if kvsfield == 'RichPEHeaderHash':
                                                 for richpeheaderhash in KnownVulnerableSample[kvsfield]:
-                                                    richpeheaderhashes.add(KnownVulnerableSample[kvsfield][richpeheaderhash])
+                                                    if len(KnownVulnerableSample[kvsfield][richpeheaderhash]):
+                                                        richpeheaderhashes.add(KnownVulnerableSample[kvsfield][richpeheaderhash])
                                             if kvsfield == 'Imports':
                                                 for importFile in KnownVulnerableSample[kvsfield]:
-                                                    importFiles.add(importFile)
+                                                    if len(importFile):
+                                                        importFiles.add(importFile)
                                             if kvsfield == 'ImportedFunctions':
                                                 for importFunction in KnownVulnerableSample[kvsfield]:
-                                                    importFunctions.add(importFunction)
+                                                    if len(importFunction):
+                                                        importFunctions.add(importFunction)
                             elif field == 'Detection':
                                 if len(loldriver[field]):
                                     filenames = []
@@ -173,6 +177,6 @@ def process(command, channel, username, params, files, conn):
                         else:
                             messages.append({'text': message})
     except Exception as e:
-        messages.append({'text': 'An error occurred in LOLDrivers:\nError: ' + (str(e),traceback.format_exc())})
+        messages.append({'text': 'An error occurred in Bootloaders:\nError: ' + (str(e),traceback.format_exc())})
     finally:
         return {'messages': messages}

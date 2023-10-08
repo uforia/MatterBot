@@ -11,12 +11,15 @@ HELP = {
     'DEFAULT': {
         'args': None,
         'desc': 'Query the GreyNoise API for various types of information. This module '
-                'will include a valid JSON response from GreyNoise as a file upload, so '
-                'you can reuse the information and do not need to repeat queries.',
+                'may include a valid JSON response from GreyNoise as a file upload, so '
+                'you can reuse the information and do not need to repeat queries. Available '
+                'query types are: `<community|ipcontext|ipquick|riot|gnql|gqnlstats|timeline'
+                '|similarity|ping>`. Not all query types may be available for your account '
+                'type, and most will consume API key credits.',
     },
-    'ip': {
+    'community': {
         'args': '<ip address>',
-        'desc': 'Do a GreyNoise IP lookup.',
+        'desc': 'Do a GreyNoise Community IP lookup. This is the default behaviour.',
     },
 }
 
