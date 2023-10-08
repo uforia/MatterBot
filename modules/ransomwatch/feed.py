@@ -58,7 +58,7 @@ def query(MAX=settings.ENTRIES):
                 victim = entry['post_title'].replace('&amp;','&').replace('&amp;','&').strip('\r\n')
                 group = entry['group_name'].replace('&amp;','&').replace('&amp;','&').strip('\r\n').title()
                 date = entry['discovered'].split('.')[0].strip(' \r\n')
-                if re.search(r"^(((?!\-))(xn\-\-)?[a-z0-9\-_]{0,61}[a-z0-9]{1,1}\.)*(xn\-\-)?([a-z0-9\-]{1,61}|[a-z0-9\-]{1,30})\.[a-z]{2,}$", victim) or 'http' in victim:
+                if re.search(r"^(((?!\-))(xn\-\-)?[a-z0-9\-_]{0,61}[a-z0-9]{1,1}\.)*(xn\-\-)?([a-z0-9\-]{1,61}|[a-z0-9\-]{1,30})\.[a-z]{2,}$", victim.lower()) or 'http' in victim:
                     victim = '[%s](%s)' % (victim, victim)
                 else:
                     victim = victim.title()
