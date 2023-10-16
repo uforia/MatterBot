@@ -89,7 +89,8 @@ def process(command, channel, username, params, files, conn):
                                         result[field] = ' - '
                                 result['name'] = service['_shodan']['module']
                                 if 'ssl' in service:
-                                    result['ssl'] = service['ssl']['cipher']['version']
+                                    if 'match' in service['ssl']:
+                                        result['ssl'] = service['ssl']['cipher']['version']
                                 else:
                                     result['ssl'] = ' No '
                                 if 'vulns' in service['opts']:
@@ -362,7 +363,8 @@ def process(command, channel, username, params, files, conn):
                                         result[field] = ' - '
                                 result['name'] = match['_shodan']['module']
                                 if 'ssl' in match:
-                                    result['ssl'] = match['ssl']['cipher']['version']
+                                    if 'cipher' in match['ssl']:
+                                        result['ssl'] = match['ssl']['cipher']['version']
                                 else:
                                     result['ssl'] = ' No '
                                 if 'vulns' in match:
