@@ -382,10 +382,12 @@ def process(command, channel, username, params, files, conn):
                                         text += '| ' + str(result[field]) + ' '
                                 text += ' |\n'
                             uploads.append({'filename': 'shodan-'+querytype+'-page-'+str(page)+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content})
-                            messages.append({'text': text})
-                            messages.append({'text': 'Shodan JSON output:', 'uploads': uploads})
                         elif page==1:
                             messages.append({'text': '\nNo matches.'})
+                if table_header_displayed:
+                    messages.append({'text': text})
+                    if len(uploads):
+                        messages.append({'text': 'Shodan JSON output:', 'uploads': uploads})
             if querytype == 'credits' or querytype == 'account':
                 text = 'Shodan API account credits (remaining/total):'
                 APIENDPOINT = settings.APIURL['shodan']['url'] + '/api-info'
