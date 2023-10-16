@@ -378,7 +378,8 @@ def process(command, channel, username, params, files, conn):
                                             result[field] = result[field][:60] + ' [...]'
                                 fields = ('ip_str', 'hostnames', 'name', 'port', 'transport', 'vulns', 'ssl', 'product', 'data')
                                 for field in fields:
-                                    text += '| ' + str(result[field]) + ' '
+                                    if field in result:
+                                        text += '| ' + str(result[field]) + ' '
                                 text += ' |\n'
                             uploads.append({'filename': 'shodan-'+querytype+'-page-'+str(page)+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content})
                             messages.append({'text': text})
