@@ -104,7 +104,10 @@ def process(command, channel, username, params, files, conn):
                                             result[field] = result[field][:60] + ' [...]'
                                 fields = ('hostnames', 'name', 'port', 'transport', 'vulns', 'ssl', 'product', 'data')
                                 for field in fields:
-                                    text += '| ' + result[field] + ' '
+                                    if field in result:
+                                        text += '| ' + result[field] + ' '
+                                    else:
+                                        text += '| - '
                                 text += ' |\n'
                         messages.append({'text': text})
                         messages.append({'text': 'Shodan JSON output:', 'uploads': [
