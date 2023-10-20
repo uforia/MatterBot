@@ -20,20 +20,23 @@ else:
 def process(command, channel, username, params, files, conn):
     if len(params)>0:
         try:
-            lat = params[0]
-            long = params[1]
-            if re.search(r"^[\-\.0-9]+$", lat) and re.search(r"^[\-\.0-9]+$", long):
-                # Close enough
-                with requests.get(settings.APIURL['osmdata']['url']+'lat='+lat+'&lon='+long+'&format=json') as response:
-                    json_response = response.json()
-                    message = 'Geographical address lookup for latitude `%s`, longitude `%s`: ' % (lat, long)
-                    if 'display_name' in json_response:
-                        address = json_response['display_name']
-                    else:
-                        address = 'unknown'
-                    message += '`'+address+'`'
+            if len(params)<2:
+                message = 'Geolookup: specify a valid latitude/longitude!'
             else:
-                message = 'Geolookup: not a valid latitude/longitude!'
+                lat = params[0]
+                long = params[1]
+                if re.search(r"^[\-\.0-9]+$", lat) and re.search(r"^[\-\.0-9]+$", long):
+                    # Close enough
+                    with requests.get(settings.APIURL['osmdata']['url']+'lat='+lat+'&lon='+long+'&format=json') as response:
+                        json_response = response.json()
+                        message = 'Geographical address lookup for latitude `%s`, longitude `%s`: ' % (lat, long)
+                        if 'display_name' in json_response:
+                            address = json_response['display_name']
+                        else:
+                            address = 'unknown'
+                        message += '`'+address+'`'
+                else:
+                    message = 'Geolookup: not a valid latitude/longitude!'
             return {'messages': [
                 {'text': message.strip()},
             ]}
