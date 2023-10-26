@@ -75,13 +75,15 @@ def process(command, channel, username, params, files, conn):
                                     data += '\n| '+outputFields[outputField]+' | `'+str(json_response[outputField]['level'])+'` |'
                                 elif outputField == 'targetOrgs':
                                     if 'topCountries' in json_response['targetOrgs']:
-                                        topCountries = '`, `'.join(json_response['targetOrgs']['topCountries'])
-                                        if len(topCountries):
-                                            data += '\n| Top Targeted Countries | `'+topCountries+'` |'
+                                        if len(json_response['targetOrgs']['topCountries']):
+                                            topCountries = [_ for _ in json_response['targetOrgs']['topCountries'] if _]
+                                            if len(topCountries):
+                                                data += '\n| Top Targeted Countries | `'+'`, `'.join(topCountries)+'` |'
                                     if 'topIndustries' in json_response['targetOrgs']:
-                                        topIndustries = '`, `'.join(json_response['targetOrgs']['topIndustries'])
-                                        if len(topIndustries):
-                                            data += '\n| Top Targeted Industries | `'+topIndustries+'` |'
+                                        if len(json_response['targetOrgs']['topIndustries']):
+                                            topIndustries = [_ for _ in json_response['targetOrgs']['topIndustries'] if _]
+                                            if len(topIndustries):
+                                                data += '\n| Top Targeted Industries | `'+'`, `'.join(topIndustries)+'` |'
                                 elif outputField == 'categorization':
                                     data += '\n| Categories | '
                                     for category in json_response['categorization']['categories']:
