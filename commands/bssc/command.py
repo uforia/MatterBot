@@ -78,7 +78,10 @@ def process(command, channel, username, params, files, conn):
                                         if len(json_response['targetOrgs']['topCountries']):
                                             topCountries = [_ for _ in json_response['targetOrgs']['topCountries'] if _]
                                             if len(topCountries):
-                                                data += '\n| Top Targeted Countries | `'+'`, `'.join(topCountries)+'` |'
+                                                data += '\n| Top Targeted Countries |'
+                                                for topCountry in topCountries:
+                                                    data += ' :flag-%s:' % (topCountry,)
+                                                data += ' |'
                                     if 'topIndustries' in json_response['targetOrgs']:
                                         if len(json_response['targetOrgs']['topIndustries']):
                                             topIndustries = [_ for _ in json_response['targetOrgs']['topIndustries'] if _]
