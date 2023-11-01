@@ -105,7 +105,7 @@ def process(command, channel, username, params, files, conn):
                                 fields = ('hostnames', 'name', 'port', 'transport', 'vulns', 'ssl', 'product', 'data')
                                 for field in fields:
                                     if field in result:
-                                        text += '| ' + result[field] + ' '
+                                        text += '| ' + result[field].encode('ascii','ignore').decode() + ' '
                                     else:
                                         text += '| - '
                                 text += ' |\n'
@@ -172,7 +172,7 @@ def process(command, channel, username, params, files, conn):
                                                 result[field] = result[field][:60] + ' [...]'
                                     fields = ('hostnames', 'name', 'port', 'transport', 'vulns', 'ssl', 'product', 'data')
                                     for field in fields:
-                                        text += '| ' + result[field] + ' '
+                                        text += '| ' + result[field].encode('ascii','ignore').decode() + ' '
                                     text += ' |\n'
                             else:
                                 text += '\nNo matches.'
@@ -249,7 +249,7 @@ def process(command, channel, username, params, files, conn):
                                 if 'hostnames' in match:
                                     hostnames = match['hostnames']
                                 if 'data' in match:
-                                    banner = regex.sub('|', match['data'][:60])
+                                    banner = regex.sub('|', match['data'][:60]).encode('ascii','ignore').decode()
                                     if len(match['data'])>60:
                                         banner += ' [...]'
                                 if 'product' in match:
@@ -359,7 +359,10 @@ def process(command, channel, username, params, files, conn):
                                             else:
                                                 result[field] = ' - '
                                         else:
-                                            result[field] = str(match[field])
+                                            if field == 'data':
+                                                result[field] = "".join(c for c in str(match[field]) if c.isalnum() or c.isspace())
+                                            else:
+                                                result[field] = str(match[field])
                                         if not len(str(match[field])):
                                             result = ' - '
                                     else:
@@ -382,7 +385,7 @@ def process(command, channel, username, params, files, conn):
                                 fields = ('ip_str', 'hostnames', 'name', 'port', 'transport', 'vulns', 'ssl', 'product', 'data')
                                 for field in fields:
                                     if field in result:
-                                        text += '| ' + str(result[field]) + ' '
+                                        text += '| ' + result[field] + ' '
                                 text += ' |\n'
                             uploads.append({'filename': 'shodan-'+querytype+'-page-'+str(page)+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content})
                         elif page==1:
@@ -416,6 +419,7 @@ def process(command, channel, username, params, files, conn):
                     monitored_ips_limit = str(usage_limits['monitored_ips'])
                     text += '\n**Monitor**: ' + monitored_ips_remaining + '/' + monitored_ips_limit
                     messages.append({'text': text})
+            print(messages)
             return {'messages': messages}
         except Exception as e:
             return {'messages': [
