@@ -101,6 +101,8 @@ def process(command, channel, username, params, files, conn):
                                     if field in result:
                                         result[field] = regex.sub(' ', result[field])
                                         if len(result[field])>60:
+                                            if field == 'data':
+                                                result[field] = "".join(c for c in result[field] if c.isalnum() or c.isspace() or c in ['.',';'])
                                             result[field] = result[field][:60] + ' [...]'
                                 fields = ('hostnames', 'name', 'port', 'transport', 'vulns', 'ssl', 'product', 'data')
                                 for field in fields:
@@ -169,6 +171,8 @@ def process(command, channel, username, params, files, conn):
                                         if field in result:
                                             result[field] = regex.sub(' ', result[field])
                                             if len(result[field])>60:
+                                                if field == 'data':
+                                                    result[field] = "".join(c for c in result[field] if c.isalnum() or c.isspace() or c in ['.',';'])
                                                 result[field] = result[field][:60] + ' [...]'
                                     fields = ('hostnames', 'name', 'port', 'transport', 'vulns', 'ssl', 'product', 'data')
                                     for field in fields:
@@ -250,6 +254,7 @@ def process(command, channel, username, params, files, conn):
                                     hostnames = match['hostnames']
                                 if 'data' in match:
                                     banner = regex.sub('|', match['data'][:60]).encode('ascii','ignore').decode()
+                                    banner = "".join(c for c in banner if c.isalnum() or c.isspace() or c in ['.',';'])
                                     if len(match['data'])>60:
                                         banner += ' [...]'
                                 if 'product' in match:
@@ -360,7 +365,7 @@ def process(command, channel, username, params, files, conn):
                                                 result[field] = ' - '
                                         else:
                                             if field == 'data':
-                                                result[field] = "".join(c for c in str(match[field]) if c.isalnum() or c.isspace())
+                                                result[field] = "".join(c for c in str(match[field]) if c.isalnum() or c.isspace() or c in ['.',';'])
                                             else:
                                                 result[field] = str(match[field])
                                         if not len(str(match[field])):
