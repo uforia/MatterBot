@@ -424,7 +424,6 @@ def process(command, channel, username, params, files, conn):
                     monitored_ips_limit = str(usage_limits['monitored_ips'])
                     text += '\n**Monitor**: ' + monitored_ips_remaining + '/' + monitored_ips_limit
                     messages.append({'text': text})
-            print(messages)
             return {'messages': messages}
         except Exception as e:
             return {'messages': [
