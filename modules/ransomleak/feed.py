@@ -80,8 +80,11 @@ def query(MAX=settings.ENTRIES):
         if history:
             for group in groups:
                 ENDPOINT = settings.URL+group
-                with requests.get(ENDPOINT, auth=authentication) as response:
-                    feed = yaml.safe_load(response.content) if response.status_code in (200,301,302,303,307,308) else None
+                try:
+                    with requests.get(ENDPOINT, auth=authentication) as response:
+                        feed = yaml.safe_load(response.content) if response.status_code in (200,301,302,303,307,308) else None
+                except yaml.scanner.ScannerError:
+                    pass
                 if feed:
                     entries = sorted(feed, key=lambda feed: feed['published'], reverse=True)[:MAX]
                     for entry in entries:
