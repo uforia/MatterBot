@@ -82,7 +82,7 @@ def query(MAX=settings.ENTRIES):
             sftp.close()
             if len(sus_files):
                 for host in sus_files:
-                    content = '> **THOR APT Scanner Results** - **Hostname**: `%s` - **Timestamp**: `%s` - **Threshold**:  %s`\n' % (host,sus_files[host]['date'],settings.THOR['subscore_threshold'])
+                    content = '> **THOR APT Scanner Results** - **Hostname**: `%s` - **Timestamp**: `%s` - **Threshold**: `%s`\n' % (host,sus_files[host]['date'],settings.THOR['subscore_threshold'])
                     for channel in settings.CHANNELS:
                         items.append([channel,content])
                     content = '| **MD5** | **Path** | **Subscore** | **Severity** |'
@@ -100,7 +100,7 @@ def query(MAX=settings.ENTRIES):
                         else:
                             severity = 'Info'
                         content += '\n| `%s` | `%s` | `%s` | `%s` |' % (md5,path,subscore,severity)
-                    content += '\n\n*Number of \'low scoring\' (subscore below: *`%s`*) files: *`%s`' % (settings.THOR['subscore_low'],sus_files[host]['info_files'])
+                    content += '\n\nNumber of \'low scoring\' (subscore below: **`%s`**) files: **`%s`**' % (settings.THOR['subscore_low'],sus_files[host]['info_files'])
                     for channel in settings.CHANNELS:
                         items.append([channel,content])
     except Exception as e:
