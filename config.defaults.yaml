@@ -6,6 +6,7 @@ Matterbot:
   password: "<mattermost bot password>"
   teamname: "<mattermost team identifier>"
   logfile: "matterfeed.log"
+  msglength: 16383 # For old Mattermost versions (<=5.x), use msglength: 4000!
 
 Modules:
   moduledir: "modules"

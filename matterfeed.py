@@ -45,14 +45,14 @@ class MattermostManager(object):
 
     def createPost(self, channel, text):
         try:
-            if len(text) > 4000: # Mattermost message limit
+            if len(text) > options.Matterbot['length']: # Mattermost message limit
                 blocks = []
                 lines = text.split('\n')
                 blocksize = 0
                 block = ''
                 for line in lines:
                     lensize = len(line)
-                    if (blocksize + lensize) < 4000:
+                    if (blocksize + lensize) < options.Matterbot['length']:
                         blocksize += lensize
                         block += line + '\n'
                     else:
