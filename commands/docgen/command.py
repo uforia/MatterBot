@@ -7,6 +7,7 @@ import pypandoc
 import re
 import requests
 import sys
+import textwrap
 import traceback
 import weasyprint
 from io import StringIO
@@ -134,7 +135,10 @@ def process(command, channel, username, params, files, conn):
                             html = html.replace('%coverpage%',coverpage)
                             for template_variable in template_cases:
                                 source = '%'+template_variable+'%'
-                                target = template_cases[template_variable]
+                                if template_variable == 'reporttypename':
+                                    target = '<br /><br />'.join(textwrap.wrap(template_cases[template_variable],24))
+                                else:
+                                    target = template_cases[template_variable]
                                 html = html.replace(source,target)
                         for field in customerdata:
                             html = html.replace('%'+field+'%',customerdata[field])
