@@ -10,9 +10,9 @@ import logging
 import os
 import sys
 import tempfile
-
 import configargparse
 from mattermostdriver import Driver
+from pathlib import Path
 
 
 class TokenAuth():
@@ -46,15 +46,19 @@ class MattermostManager(object):
         sys.path.append(modulepath)
         for root, dirs, files in os.walk(modulepath):
             for module in fnmatch.filter(files, "command.py"):
-                module_name = root.split('/')[-1].lower()
-                module = importlib.import_module(module_name + '.' + 'command')
-                defaults = importlib.import_module(module_name + '.' + 'defaults')
-                overridesettings = importlib.import_module(module_name + '.' + 'settings')
-                if hasattr(defaults, 'HELP'):
-                    HELP = defaults.HELP
-                if hasattr(overridesettings, 'HELP'):
-                    HELP = overridesettings.HELP
-                self.commands[module_name] = {'binds': module.settings.BINDS, 'chans': module.settings.CHANS, 'help': HELP, 'process': getattr(module, 'process')}
+                if 'defaults.py' in files:
+                    module_name = root.split('/')[-1].lower()
+                    module = importlib.import_module(module_name + '.' + 'command')
+                    defaults = importlib.import_module(module_name + '.' + 'defaults')
+                    if hasattr(defaults, 'HELP'):
+                        HELP = defaults.HELP
+                    else:
+                        HELP = 'No help available'
+                    if 'settings.py' in files:
+                        overridesettings = importlib.import_module(module_name + '.' + 'settings')    
+                        if hasattr(overridesettings, 'HELP'):
+                            HELP = overridesettings.HELP
+                    self.commands[module_name] = {'binds': module.settings.BINDS, 'chans': module.settings.CHANS, 'help': HELP, 'process': getattr(module, 'process')}
         # Start the websocket
         self.mmDriver.init_websocket(self.handle_raw_message)
 
@@ -138,7 +142,7 @@ class MattermostManager(object):
             else:
                 # User is asking for specific module help
                 for module in self.commands:
-                    if channelname in self.commands[module]['chans'] or (((my_id and userid) in channelname) and channelname in userchannels):
+                    if channelname in self.commands[module]['chans'] or (((my_id and userid) in channelname) and channelname in userchannels or self.commands[module]['chans'] == 'any'):
                         if command == '!help' and params and params[0] in self.commands[module]['binds']:
                             try:
                                 text = ''
@@ -200,6 +204,7 @@ class MattermostManager(object):
                                     await self.send_message(channelid, text, postid)
                         for _ in concurrent.futures.as_completed(results):
                             result = _.result()
+                            
                             if result and 'messages' in result:
                                 for message in result['messages']:
                                     if 'text' in message:
@@ -228,6 +233,9 @@ class MattermostManager(object):
                     except Exception as e:
                         text = 'A Python error occurred: '+str(type(e))+': '+str(e)
                         await self.send_message(channelid, text)
+                        raise
+
+
 
 if __name__ == '__main__' :
     '''
