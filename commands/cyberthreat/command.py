@@ -53,24 +53,6 @@ The text can have multiple paragraph with a short introduction
 
 """
 
-def formatdata(data):
-    logging.debug(f"working with {data}")
-    text = f"### {data['source']}\n"
-    if 'intro' in data:
-         text += f"{data['intro']}\n"
-    for response in data['responses']:
-        text += f"#### {response['paragraph']}\n"
-        if 'preamble' in response:
-            text += response['preamble']
-            text +="\n\n"
-        if 'data' in response:
-            text += "|Category | Datapoint | Value|\n| :- | -: | :- |\n"
-            logging.warning(f"{response['data']}")
-            for line in response['data']:
-                text += f"|{line['category']}|{line['datapoint']}|{line['value']}\n"
-    logging.debug(f"Text to return: {text}")
-    return text
-
 
 
 
@@ -156,18 +138,7 @@ def process(command, channel, username, params, files, conn):
                             data['responses'][0]['data'].append({"category":"Hosting", "datapoint":"last seen", "stixtype":"", "value":fqdnlist[domain]['last_seen'].strftime('%Y-%m-%d')})
                             for item in fqdnlist[domain]['subdomains']:
                                 data['responses'][0]['data'].append({"category":"Domain", "datapoint":"fqdn", "stixtype":"", "value":item})
-
-
-                else:
-                    """ In case the params doesnt even look like a valid domain name. """
-                    return
-
-            if len(data['responses']):
-                text = formatdata(data)
-                logging.warning(f"Returned text: {text}")
-                return  {'messages': [
-                            {'text': text} 
-                    ]   }
+                return data
             
             else:
                return {'messages': [

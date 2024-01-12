@@ -204,7 +204,25 @@ class MattermostManager(object):
                                     await self.send_message(channelid, text, postid)
                         for _ in concurrent.futures.as_completed(results):
                             result = _.result()
-                            
+                            if result and 'responses' in result:
+                                data=result
+                                logging.debug(f"working with {data}")
+                                text = f"### {data['source']}\n"
+                                if 'intro' in data:
+                                    text += f"{data['intro']}\n"
+                                for response in data['responses']:
+                                    text += f"#### {response['paragraph']}\n"
+                                    if 'preamble' in response:
+                                        text += response['preamble']
+                                        text +="\n\n"
+                                    if 'data' in response:
+                                        text += "|Category | Datapoint | Value|\n| :- | -: | :- |\n"
+                                        logging.warning(f"{response['data']}")
+                                        for line in response['data']:
+                                            text += f"|{line['category']}|{line['datapoint']}|{line['value']}\n"
+                                logging.debug(f"Text to return: {text}")
+                                await self.send_message(channelid, text, postid)
+
                             if result and 'messages' in result:
                                 for message in result['messages']:
                                     if 'text' in message:
