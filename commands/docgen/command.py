@@ -177,14 +177,14 @@ def process(command, channel, username, params, files, conn):
                                         {'filename': filename, 'bytes': filecontent}
                                     ]
                                 })
-                            with open(mdfile, 'rb') as f:
-                                filecontent = f.read()
-                                filename = mdfile.replace(MODULEDIR,'')
+                            #with open(mdfile, 'rb') as f:
+                            filecontent = skeletondocument
+                            filename = mdfile.replace(MODULEDIR,'')
                             if len(filecontent):
                                 messages.append({
                                     'text': '**MarkDown Source Before Rendering**: `%s`' % (filename,),
                                     'uploads': [
-                                        {'filename': filename, 'bytes': filecontent}
+                                        {'filename': filename, 'bytes': skeletondocument}
                                     ]
                                 })
                             os.unlink(mdfile)
