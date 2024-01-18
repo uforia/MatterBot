@@ -179,7 +179,7 @@ def process(command, channel, username, params, files, conn):
                                 })
                             with open(mdfile, 'rb') as f:
                                 filecontent = f.read()
-                                filename = pdffile.replace(MODULEDIR,'')
+                                filename = mdfile.replace(MODULEDIR,'')
                             if len(filecontent):
                                 messages.append({
                                     'text': '**MarkDown Source Before Rendering**: `%s`' % (filename,),
