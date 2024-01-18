@@ -177,13 +177,23 @@ def process(command, channel, username, params, files, conn):
                                         {'filename': filename, 'bytes': filecontent}
                                     ]
                                 })
+                            with open(mdfile, 'rb') as f:
+                                filecontent = f.read()
+                                filename = pdffile.replace(MODULEDIR,'')
+                            if len(filecontent):
+                                messages.append({
+                                    'text': '**MarkDown Source Before Rendering**: `%s`' % (filename,),
+                                    'uploads': [
+                                        {'filename': filename, 'bytes': filecontent}
+                                    ]
+                                })
                             os.unlink(mdfile)
                             os.unlink(htmlfile)
                             os.unlink(pdffile)
                         except:
                             raise
                 else:
-                    messages.append({'text': 'Case type `%s` does not yet exist.' % (template_cases['type'],)})
+                    messages.append({'text': 'Case `%s` does not yet exist.' % (casenumber,)})
     except Exception as e:
         messages.append({'text': 'A Python error occurred during document generation:\nError:' + str(traceback.format_exc())})
     finally:
