@@ -13,7 +13,6 @@
 # <content>: the content of the message, MD format possible
 
 import bs4
-import feedparser
 import re
 import requests
 from pathlib import Path
@@ -27,7 +26,7 @@ except ModuleNotFoundError: # local test run
 else:
     if Path('modules/phishingcatcher/settings.py').is_file():
         try:
-            from modules.thorparser import settings
+            from modules.phishingcatcher import settings
         except ModuleNotFoundError: # local test run
             import settings
 
@@ -86,12 +85,15 @@ def query(MAX=settings.ENTRIES):
             content += "\n| -: | :- |"
             while count < MAX and count < len(suspicious_domains):
                 domain, score = suspicious_domains[count]
-                if int(score) > int(settings.THRESHOLD):
-                    content += '\n| `%s` | `%s` |' % (score, domain)
-                    count += 1
+                if not domain in history['phishingcatcher']:
+                    if int(score) > int(settings.THRESHOLD):
+                        history['phishingcatcher'].append(domain)
+                        content += '\n| `%s` | `%s` |' % (score, domain)
+                        count += 1
             content += '\n\n'
-            for channel in settings.CHANNELS:
-                items.append([channel, content])
+            if count > 0:
+                for channel in settings.CHANNELS:
+                    items.append([channel, content])
     return items
 
 if __name__ == "__main__":
