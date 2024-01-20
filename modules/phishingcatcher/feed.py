@@ -15,6 +15,8 @@
 import bs4
 import re
 import requests
+import shelve
+import traceback
 from pathlib import Path
 
 try:
@@ -48,7 +50,7 @@ def query(MAX=settings.ENTRIES):
             authentication = ()
         with requests.get(settings.SUSLOG, auth=authentication) as response:
             if response.status_code in (200,301,302,303,307,308):
-                data = response.content
+                data = response.content.decode('utf-8').split('\n')
             else:
                 data = None
     else:
@@ -76,24 +78,29 @@ def query(MAX=settings.ENTRIES):
             raise
         suspicious_domains = []
         for line in data:
+            print(line)
             if any(domain in line.strip() for domain in settings.DOMAINS):
                 domain, score = regex.sub('',line).strip().replace('.','[.]',1).split(' ')
                 suspicious_domains.append((domain,score.split('=')[1]))
         if len(suspicious_domains):
-            content =  "\n**PhishingCatcher** found `%d` new potential phishing domains:\n" % (len(suspicious_domains),)
-            content += "\n| **Score** | **Domain** |"
-            content += "\n| -: | :- |"
-            while count < MAX and count < len(suspicious_domains):
+            entries = 0
+            while count < MAX and count < len(suspicious_domains) and count < len(data):
                 domain, score = suspicious_domains[count]
                 if not domain in history['phishingcatcher']:
+                    history['phishingcatcher'].append(domain)
                     if int(score) > int(settings.THRESHOLD):
-                        history['phishingcatcher'].append(domain)
+                        if count == 0:
+                            content = "\n| **Score** | **Domain** |"
+                            content += "\n| -: | :- |"
                         content += '\n| `%s` | `%s` |' % (score, domain)
-                        count += 1
-            content += '\n\n'
-            if count > 0:
+                        entries += 1
+                count += 1        
+            if entries > 0:
+                message = "\n**PhishingCatcher** found `%d` new potential phishing domains:\n" % (entries,)
+                message += content
+                message += '\n\n'
                 for channel in settings.CHANNELS:
-                    items.append([channel, content])
+                    items.append([channel, message])
     return items
 
 if __name__ == "__main__":
