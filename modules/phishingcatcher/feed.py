@@ -78,7 +78,6 @@ def query(MAX=settings.ENTRIES):
             raise
         suspicious_domains = []
         for line in data:
-            print(line)
             if any(domain in line.strip() for domain in settings.DOMAINS):
                 domain, score = regex.sub('',line).strip().replace('.','[.]',1).split(' ')
                 suspicious_domains.append((domain,score.split('=')[1]))
