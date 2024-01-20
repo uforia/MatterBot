@@ -89,14 +89,13 @@ def query(MAX=settings.ENTRIES):
                 if not domain in history['phishingcatcher']:
                     history['phishingcatcher'].append(domain)
                     if int(score) > int(settings.THRESHOLD):
-                        if count == 0:
-                            content = "\n| **Score** | **Domain** |"
-                            content += "\n| -: | :- |"
                         content += '\n| `%s` | `%s` |' % (score, domain)
                         entries += 1
                 count += 1        
             if entries > 0:
                 message = "\n**PhishingCatcher** found `%d` new potential phishing domains:\n" % (entries,)
+                message += "\n| **Score** | **Domain** |"
+                message += "\n| -: | :- |"
                 message += content
                 message += '\n\n'
                 for channel in settings.CHANNELS:
