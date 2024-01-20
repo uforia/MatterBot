@@ -94,7 +94,7 @@ def query(MAX=settings.ENTRIES):
                         entries += 1
                 count += 1        
             if entries > 0:
-                message = "\n**PhishingCatcher** found `%d` new potential phishing domains:\n" % (entries,)
+                message = "\n**PhishingCatcher** found `%d` new potential phishing domain(s):\n" % (entries,)
                 message += "\n| **Score** | **Domain** |"
                 message += "\n| -: | :- |"
                 message += content
