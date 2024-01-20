@@ -83,8 +83,9 @@ def query(MAX=settings.ENTRIES):
                 suspicious_domains.append((domain,score.split('=')[1]))
         if len(suspicious_domains):
             entries = 0
+            count = 0
             content = ""
-            while count < MAX and count < len(suspicious_domains) and count < len(data):
+            while count < len(suspicious_domains):
                 domain, score = suspicious_domains[count]
                 if not domain in history['phishingcatcher']:
                     history['phishingcatcher'].append(domain)
