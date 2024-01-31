@@ -74,7 +74,7 @@ class MattermostManager(object):
         except json.JSONDecodeError as e:
             print(('ERROR'), e)
 
-    async def send_message(self, channel, text):
+    async def send_message(self, channel, text, postid=None):
         try:
             channelname = channel.lower()
             log.info('Channel:' + channelname + ' <- Message: (' + str(len(text)) + ' chars)')
@@ -98,6 +98,7 @@ class MattermostManager(object):
             for block in blocks:
                 self.mmDriver.posts.create_post(options={'channel_id': channel,
                                                          'message': block,
+                                                         'root_id': postid
                                                          })
         except:
             raise
@@ -111,6 +112,7 @@ class MattermostManager(object):
             return
         post = json.loads(data['post'])
         userid = post['user_id']
+        postid = post['id']
         channelinfo = self.mmDriver.channels.get_channel(post['channel_id'])
         userchannels = [i['name'] for i in self.mmDriver.channels.get_channels_for_user(userid, self.my_team_id)]
         channelname = channelinfo['name']
@@ -170,7 +172,7 @@ class MattermostManager(object):
                                         if args:
                                             text += '\n**Arguments**: `' + args + '`'
                                 if len(text)>0:
-                                    await self.send_message(channelid, text)
+                                    await self.send_message(channelid, text, postid)
                             except NameError:
                                 await self.send_message(channelid, 'No additional help available for the `' + module + '` module.')
             # Normal command
@@ -195,7 +197,7 @@ class MattermostManager(object):
                                     results.append(executor.submit(self.commands[task]['process'], command, channelname, username, params, files, self.mmDriver))
                                 except Exception as e:
                                     text = 'An error occurred within module: '+task+': '+str(type(e))+': '+e
-                                    await self.send_message(channelid, text)
+                                    await self.send_message(channelid, text, postid)
                         for _ in concurrent.futures.as_completed(results):
                             result = _.result()
                             if result and 'messages' in result:
@@ -220,9 +222,9 @@ class MattermostManager(object):
                                                                                      'file_ids': file_ids,
                                                                                      })
                                         else:
-                                            await self.send_message(channelid, text)
+                                            await self.send_message(channelid, text, postid)
                                     else:
-                                        await self.send_message(channelid, text)
+                                        await self.send_message(channelid, text, postid)
                     except Exception as e:
                         text = 'A Python error occurred: '+str(type(e))+': '+str(e)
                         await self.send_message(channelid, text)
