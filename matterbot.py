@@ -49,11 +49,12 @@ class MattermostManager(object):
                 if 'defaults.py' in files:
                     module_name = root.split('/')[-1].lower()
                     module = importlib.import_module(module_name + '.' + 'command')
-                    defaults = importlib.import_module(module_name + '.' + 'defaults')
-                    if hasattr(defaults, 'HELP'):
-                        HELP = defaults.HELP
-                    else:
-                        HELP = 'No help available'
+                    HELP = 'No help available'
+                    if 'defaults.py' in files:
+                        defaults = importlib.import_module(module_name + '.' + 'defaults')
+                        if hasattr(defaults, 'HELP'):
+                            HELP = defaults.HELP
+
                     if 'settings.py' in files:
                         overridesettings = importlib.import_module(module_name + '.' + 'settings')    
                         if hasattr(overridesettings, 'HELP'):
