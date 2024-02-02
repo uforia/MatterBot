@@ -38,7 +38,7 @@ def query(MAX=settings.ENTRIES):
     while count < MAX:
         try:
             title = feed.entries[count].title
-            link = feed.entries[count].href
+            link = feed.entries[count].link
             content = settings.NAME + ': [' + title + '](' + link + ')'
             if len(feed.entries[count].description):
                 description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
