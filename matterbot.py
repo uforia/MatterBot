@@ -92,7 +92,6 @@ class MattermostManager(object):
                     HELP = overridesettings.HELP
                 self.commands[module_name]['process'] = getattr(module, 'process')
                 self.commands[module_name]['help'] = HELP
-        print(self.binds)
         # Start the websocket
         self.mmDriver.init_websocket(self.handle_raw_message)
 
