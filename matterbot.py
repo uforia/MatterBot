@@ -111,7 +111,7 @@ class MattermostManager(object):
         except json.JSONDecodeError as e:
             print(('ERROR'), e)
 
-    async def send_message(self, channel, text):
+    async def send_message(self, channel, text, postid=None):
         try:
             channame = channel.lower()
             logging.info('Channel:' + channame + ' <- Message: (' + str(len(text)) + ' chars)')
@@ -135,6 +135,7 @@ class MattermostManager(object):
             for block in blocks:
                 self.mmDriver.posts.create_post(options={'channel_id': channel,
                                                          'message': block,
+                                                         'root_id': postid,
                                                          })
         except:
             raise
@@ -183,7 +184,7 @@ class MattermostManager(object):
             logging.info(f"User {user} is not allowed to use {module} in {chaninfo['name']}.")
             return False
 
-    async def help_message(self, userid, post, params, chaninfo):
+    async def help_message(self, userid, post, params, chaninfo, rootid):
         chanid = post['channel_id']
         commands = set()
         if not params:
@@ -192,7 +193,7 @@ class MattermostManager(object):
                     for bind in self.commands[module]['binds']:
                         commands.add('`' + bind + '`')
             text = " I know about: `!help`, " + ', '.join(sorted(commands)) + " here. Remember that not every command works everywhere: this depends on the configuration. Modules may offer additional help via `!help <command>`."
-            await self.send_message(chanid, text) # rootid)        
+            await self.send_message(chanid, text, rootid)        
         else:
             # User is asking for specific module help
             for module in self.commands:
@@ -230,9 +231,9 @@ class MattermostManager(object):
                                     if args:
                                         text += '\n**Arguments**: `' + args + '`'
                             if len(text)>0:
-                                 await self.send_message(chanid, text) # rootid)
+                                 await self.send_message(chanid, text, rootid)
                         except NameError:
-                            await self.send_message(chanid, text) # rootid) 'No additional help available for the `' + module + '` module.'            
+                            await self.send_message(chanid, text, rootid)
 
     async def handle_post(self, data: dict):
         my_id = self.me['id']
@@ -266,7 +267,7 @@ class MattermostManager(object):
                 command = messagedict['command']
                 params = messagedict['parameters']
                 if command in options.Matterbot['helpcmds']:
-                    await self.help_message(userid,post,params,chaninfo)
+                    await self.help_message(userid,post,params,chaninfo,rootid)
                 elif command in options.Matterbot['mapcmds']:
                     if len(self.commands):
                         if (my_id and userid) in channame:
@@ -285,7 +286,7 @@ class MattermostManager(object):
                     else:
                         text = username + ", I don't know about any commands here."
                     text += "*Remember that not every command works everywhere: this depends on the configuration. Modules may display some additional help/instructions by using `!help <bind>`.*"
-                    await self.send_message(chanid, text)
+                    await self.send_message(chanid, text, rootid)
                 else:
                     tasks = []
                     for module in self.commands:
@@ -307,7 +308,7 @@ class MattermostManager(object):
                                         results.append(executor.submit(self.commands[task]['process'], command, channame, username, params, files, self.mmDriver))
                                     except Exception as e:
                                         text = 'An error occurred within module: '+task+': '+str(type(e))+': '+e
-                                        await self.send_message(chanid, text)
+                                        await self.send_message(chanid, text, rootid)
                             for _ in concurrent.futures.as_completed(results):
                                 result = _.result()
                                 if result and 'messages' in result:
@@ -332,12 +333,12 @@ class MattermostManager(object):
                                                                                         'file_ids': file_ids,
                                                                                         })
                                             else:
-                                                await self.send_message(chanid, text)
+                                                await self.send_message(chanid, text, rootid)
                                         else:
-                                            await self.send_message(chanid, text)
+                                            await self.send_message(chanid, text, rootid)
                         except Exception as e:
                             text = 'A Python error occurred: '+str(type(e))+': '+str(e)
-                            await self.send_message(chanid, text)
+                            await self.send_message(chanid, text, rootid)
 
 if __name__ == '__main__' :
     '''
