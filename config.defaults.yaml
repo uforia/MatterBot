@@ -2,10 +2,22 @@ Matterbot:
   host: "<your-mattermost-host>"
   port: 443
   scheme: "https"
+  basepath: "/api/v4"
   username: "<mattermost bot account name>"
   password: "<mattermost bot password>"
   teamname: "<mattermost team identifier>"
   logfile: "matterfeed.log"
+  bindmap: "bindmap.json"
+  helpcmds: 
+    - "!help"
+    - "@help"
+  mapcmds: 
+    - "!bind"
+    - "@bind"
+    - "!unbind"
+    - "@unbind"
+    - "!map"
+    - "@map"  recursion: True # Is the bot allowed to respond to its own messages?
   msglength: 16383 # For old Mattermost versions (<=5.x), use msglength: 4000!
 
 Modules:

@@ -11,6 +11,7 @@ __pycache__/
 build/
 config.yaml
 # Do not upload configurations
+bindmap.json
 commands/*/settings.py
 commands/csirt*/*
 modules/*/*.cache
