@@ -63,7 +63,8 @@ class MattermostManager(object):
                     module.settings.BINDS = None
                     module.settings.CHANS = None
                     defaults = importlib.import_module(module_name + '.' + 'defaults')
-                    overridesettings = importlib.import_module(module_name + '.' + 'settings')
+                    if 'settings.py' in files:
+                        overridesettings = importlib.import_module(module_name + '.' + 'settings')
                     if hasattr(defaults, 'BINDS'):
                         module.settings.BINDS = defaults.BINDS
                     if hasattr(overridesettings, 'BINDS'):
@@ -85,11 +86,12 @@ class MattermostManager(object):
                 module_name = root.split('/')[-1].lower()
                 module = importlib.import_module(module_name + '.' + 'command')
                 defaults = importlib.import_module(module_name + '.' + 'defaults')
-                overridesettings = importlib.import_module(module_name + '.' + 'settings')
                 if hasattr(defaults, 'HELP'):
                     HELP = defaults.HELP
-                if hasattr(overridesettings, 'HELP'):
-                    HELP = overridesettings.HELP
+                if 'settings.py' in files:
+                    overridesettings = importlib.import_module(module_name + '.' + 'settings')    
+                    if hasattr(overridesettings, 'HELP'):
+                        HELP = overridesettings.HELP
                 self.commands[module_name]['process'] = getattr(module, 'process')
                 self.commands[module_name]['help'] = HELP
         # Start the websocket
