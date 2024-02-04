@@ -134,7 +134,7 @@ class MattermostManager(object):
     async def send_message(self, channel, text, postid=None):
         try:
             channame = channel.lower()
-            logging.info('Channel:' + channame + ' <- Message: (' + str(len(text)) + ' chars)')
+            logging.info('Channel: %s (%s) <- Message: (%d chars)' % (self.channame_to_chandisplayname(channame),channame,str(len(text))))
             if len(text) > options.Matterbot['msglength']: # Mattermost message limit
                 blocks = []
                 lines = text.split('\n')
@@ -232,7 +232,7 @@ class MattermostManager(object):
                     if (self.my_id and userid) in channame:
                         text =  "**List of modules in direct message:**\n"
                     else:
-                        text =  "**List of modules for channel: `%s`**\n" % (channame,)
+                        text =  "**List of modules for channel: `%s`**\n" % (self.channame_to_chandisplayname(channame,))
                     text += "\n"
                     text += "\n| **Module Name** | **Available** | **Binds** | **Description** |"
                     text += "\n| :- |  :- | :- |"
