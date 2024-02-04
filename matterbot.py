@@ -224,6 +224,7 @@ class MattermostManager(object):
         chanid = post['channel_id']
         channame = self.chanid_to_channame(chanid)
         username = self.userid_to_username(userid)
+        messages = []
         if not params:
             if command in ('!map', '@map'):
                 if len(self.commands):
@@ -246,6 +247,7 @@ class MattermostManager(object):
                 if not len(chans):
                     text = '@' + username + ", I don't know about any commands here.\n"
                 text += "*Remember that not every command works everywhere: this depends on the configuration. Modules may offer additional help if you add the subcommand.*"
+                messages.append(text)
         else:
             if not userid in options.Matterbot['botadmins']:
                 logging.warn("User %s attempted to use a bind command without proper authorization.") % (userid,)
@@ -256,24 +258,26 @@ class MattermostManager(object):
                 if not channame in my_channels:
                     text = "@" + username + ", you cannot bind commands to direct message windows."
                 else:
-                    modulename = params[0]
-                    if not modulename in self.commands:
-                        text = "@" + username + ", there is no `%s` module loaded. Use one of the help commands for more information." % (modulename,)
-                    elif command in ('!bind', '@bind'):
-                        if channame in self.commands[modulename]['chans']:
-                            text = "The `%s` module is already available in the `%s` channel." % (modulename,self.channame_to_chandisplayname(channame))
-                        else:
-                            self.commands[modulename]['chans'].append(channame)
-                            text = "The `%s` module is now available in the `%s` channel." % (modulename,self.channame_to_chandisplayname(channame))
-                            await self.update_bindmap()
-                    elif command in ('!unbind', '@unbind'):
-                        if not channame in self.commands[modulename]['chans']:
-                            text = "The `%s` module is not loaded in the `%s` channel." % (modulename,self.channame_to_chandisplayname(channame))
-                        else:
-                            self.commands[modulename]['chans'].remove(channame)
-                            text = "The `%s` module has been removed from the `%s` channel." % (modulename,self.channame_to_chandisplayname(channame))
-                            await self.update_bindmap()
-        await self.send_message(chanid, text, rootid)
+                    for modulename in params:
+                        if not modulename in self.commands:
+                            text = "@" + username + ", there is no `%s` module loaded. Use one of the help commands (`%s`) to see a list of available modules." % (modulename,"`, `".join(options.Matterbot['helpcmds']))
+                        elif command in ('!bind', '@bind'):
+                            if channame in self.commands[modulename]['chans']:
+                                text = "The `%s` module is already available in the `%s` channel." % (modulename,self.channame_to_chandisplayname(channame))
+                            else:
+                                self.commands[modulename]['chans'].append(channame)
+                                text = "The `%s` module is now available in the `%s` channel." % (modulename,self.channame_to_chandisplayname(channame))
+                        elif command in ('!unbind', '@unbind'):
+                            if not channame in self.commands[modulename]['chans']:
+                                text = "The `%s` module is not loaded in the `%s` channel." % (modulename,self.channame_to_chandisplayname(channame))
+                            else:
+                                self.commands[modulename]['chans'].remove(channame)
+                                text = "The `%s` module has been removed from the `%s` channel." % (modulename,self.channame_to_chandisplayname(channame))
+                        messages.append(text)
+                await self.update_bindmap()
+        if len(messages):
+            for message in messages:
+                await self.send_message(chanid, message, rootid)
 
 
     async def help_message(self, userid, post, params, chaninfo, rootid):
