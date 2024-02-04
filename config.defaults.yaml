@@ -6,12 +6,14 @@ Matterbot:
   username: "<mattermost bot account name>"
   password: "<mattermost bot password>"
   teamname: "<mattermost team identifier>"
+  botadmins:
+    - "<your-mattermost-id-here>"
   logfile: "matterfeed.log"
   bindmap: "bindmap.json"
-  helpcmds: 
+  helpcmds: # Do not change these, or things might break
     - "!help"
     - "@help"
-  mapcmds: 
+  mapcmds: # Do not change these, or things might break
     - "!bind"
     - "@bind"
     - "!unbind"
@@ -19,7 +21,7 @@ Matterbot:
     - "!map"
     - "@map"
   recursion: True # Is the bot allowed to respond to its own messages?
-  msglength: 16383 # For old Mattermost versions (<=5.x), use msglength: 4000!
+  msglength: 16383 # Change to '4000' if you are using Mattermost <=5.x (seriously, you should upgrade!)
 
 Modules:
   moduledir: "modules"
