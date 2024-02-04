@@ -134,7 +134,7 @@ class MattermostManager(object):
     async def send_message(self, channel, text, postid=None):
         try:
             channame = channel.lower()
-            logging.info('Channel: %s (%s) <- Message: (%d chars)' % (self.channame_to_chandisplayname(channame),channame,str(len(text))))
+            logging.info('Channel: %s (%s) <- Message: (%d chars)' % (self.channame_to_chandisplayname(channame),channame,len(text)))
             if len(text) > options.Matterbot['msglength']: # Mattermost message limit
                 blocks = []
                 lines = text.split('\n')
