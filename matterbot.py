@@ -131,10 +131,9 @@ class MattermostManager(object):
         except json.JSONDecodeError as e:
             logging.error(e)
 
-    async def send_message(self, channel, text, postid=None):
+    async def send_message(self, chanid, text, postid=None):
         try:
-            channame = channel.lower()
-            logging.info('Channel: %s (%s) <- Message: (%d chars)' % (self.channame_to_chandisplayname(channame),channame,len(text)))
+            logging.info('Channel: %s (%s) <- Message: (%d chars)' % (self.chanid_to_chandisplayname(chanid),chanid,len(text)))
             if len(text) > options.Matterbot['msglength']: # Mattermost message limit
                 blocks = []
                 lines = text.split('\n')
@@ -153,7 +152,7 @@ class MattermostManager(object):
             else:
                 blocks = [text]
             for block in blocks:
-                self.mmDriver.posts.create_post(options={'channel_id': channel,
+                self.mmDriver.posts.create_post(options={'channel_id': chanid,
                                                          'message': block,
                                                          'root_id': postid,
                                                          })
