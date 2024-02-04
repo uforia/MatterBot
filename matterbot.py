@@ -258,6 +258,8 @@ class MattermostManager(object):
                 if not channame in my_channels:
                     text = "@" + username + ", you cannot bind commands to direct message windows."
                 else:
+                    if params[0] == '*':
+                        params = self.commands.keys() # Attempt to enable/disable all modules
                     for modulename in params:
                         if not modulename in self.commands:
                             text = "@" + username + ", there is no `%s` module loaded. Use one of the help commands (`%s`) to see a list of available modules." % (modulename,"`, `".join(options.Matterbot['helpcmds']))
