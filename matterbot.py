@@ -346,13 +346,13 @@ class MattermostManager(object):
         channame = chaninfo['name']
         chanid = post['channel_id']
         rootid = post['root_id'] if len(post['root_id']) else post['id']
-        messagelines = post['message'].lower().splitlines()
+        messagelines = post['message'].splitlines()
         # Check if the bot is allowed to respond to its own messages (see config file)
         if options.Matterbot['recursion'] or userid != self.my_id:
             messages = list()
             for mline in messagelines:
                 addparams = False
-                message = mline.lower().split()
+                message = mline.split()
                 for idx,word in enumerate(message):
                     if (word in self.binds and not message in options.Matterbot['helpcmds'] and not message in options.Matterbot['mapcmds']) or \
                         word in options.Matterbot['helpcmds'] or \
