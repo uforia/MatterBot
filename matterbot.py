@@ -40,7 +40,7 @@ class MattermostManager(object):
         try:
             self.mmDriver.login()
         except:
-            logging.error("Mattermost server is unreachable. Perhaps it is down, or you might have misconfigured one or more setting(s). Shutting down!")
+            log.error("Mattermost server is unreachable. Perhaps it is down, or you might have misconfigured one or more setting(s). Shutting down!")
             return False
         self.me = self.mmDriver.users.get_user(user_id='me')
         self.my_id = self.me['id']
@@ -151,7 +151,7 @@ class MattermostManager(object):
                 json.dump(self.bindmap,f)
         except:
             raise
-            logging.error("An error occurred updating the `%s` bindmap file; config changes were not successfully saved!" % (options.Matterbot['bindmap'],))
+            log.error("An error occurred updating the `%s` bindmap file; config changes were not successfully saved!" % (options.Matterbot['bindmap'],))
 
     async def handle_raw_message(self, raw_json: str):
         try:
@@ -242,7 +242,7 @@ class MattermostManager(object):
         """
         channame = chaninfo['name']
         if chaninfo['type'] in ('O', 'P'):
-            logging.debug(f"Channel name: {chaninfo['name']}")
+            log.debug(f"Channel name: {chaninfo['name']}")
             if (channame or 'any') in self.commands[module]['chans']:
                 return True
         elif chaninfo['type'] in ('D', 'G'):
@@ -257,8 +257,8 @@ class MattermostManager(object):
                         return True
                 except:
                     # Apparently the channel does not exist; perhaps it is spelled incorrectly or otherwise a misconfiguration?
-                    logging.error("There is a non-existent channel set up in the bot bindings or configuration: %s" % (channame,))
-        logging.info(f"User {user} is not allowed to use {module} in {channame}.")
+                    log.error("There is a non-existent channel set up in the bot bindings or configuration: %s" % (channame,))
+        log.info(f"User {user} is not allowed to use {module} in {channame}.")
         return False
 
     async def bind_message(self, userid, post, params, chaninfo, rootid):
@@ -292,7 +292,7 @@ class MattermostManager(object):
                 messages.append(text)
         else:
             if not userid in options.Matterbot['botadmins']:
-                logging.warn("User %s attempted to use a bind command without proper authorization.") % (userid,)
+                log.warning(f"User {userid} attempted to use a bind command without proper authorization.")
                 text = "@" + username + ", you do not have permission to bind commands."
             else:
                 all_channel_types = [self.chanid_to_channame(_['id']) for _ in self.mmDriver.channels.get_channels_for_user(self.my_id,self.my_team_id)]
