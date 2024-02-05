@@ -333,7 +333,7 @@ class MattermostManager(object):
                         commands.add('`' + bind + '`')
             text =  "I know about: `"+'`, `'.join(sorted(options.Matterbot['helpcmds']))+"`, " + ', '.join(sorted(commands)) + " here.\n"
             text += "*Remember that not every command works everywhere: this depends on the configuration. Modules may offer additional help if you add the subcommand.*"
-            await self.send_message(chanid, text, rootid)        
+            await self.send_message(channelid, text, rootid)        
         else:
             # User is asking for specific module help
             for module in self.commands:
