@@ -324,7 +324,7 @@ class MattermostManager(object):
                 await self.send_message(chanid, message, rootid)
 
     async def help_message(self, userid, params, chaninfo, rootid):
-        channelid=chaninfo['id']
+        chanid=chaninfo['id']
         commands = set()
         if not params:
             for module in self.commands:
