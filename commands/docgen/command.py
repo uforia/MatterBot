@@ -141,7 +141,10 @@ def process(command, channel, username, params, files, conn):
                                     target = template_cases[template_variable]
                                 html = html.replace(source,target)
                         for field in customerdata:
-                            html = html.replace('%'+field+'%',customerdata[field])
+                            try:
+                                html = html.replace('%'+field+'%',customerdata[field])
+                            except:
+                                messages.append({'text': "Warning: the `%s` field could not be templatized during document generation!" % (field,)})
                         if '%TOCMARKER%' in html:
                             toc = ''
                             sections = re.findall(r'<section id=[^>]+>',html,re.DOTALL)
