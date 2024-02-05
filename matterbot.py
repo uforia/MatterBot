@@ -171,7 +171,7 @@ class MattermostManager(object):
 
     async def send_message(self, chanid, text, postid=None):
         try:
-            channame = channel.lower()
+            channame = self.chanid_to_channame(chanid)
             log.info('Channel:' + channame + ' <- Message: (' + str(len(text)) + ' chars)')
 
             if len(text) > options.Matterbot['msglength']: # Mattermost message limit
