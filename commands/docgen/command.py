@@ -38,7 +38,7 @@ def process(command, channel, username, params, files, conn):
             }
             language = params[0]
             casenumber = params[1]
-            if not language in settings.LANGMAP:
+            if not language in [_.lower() for _ in settings.LANGMAP]:
                 messages.append({'text': 'Language `%s` not recognized' % (language,)})
             else:
                 query = '{"query":"query { pages { list (orderBy: PATH) { id path title }}}"}'
