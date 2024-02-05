@@ -45,13 +45,15 @@ class MattermostManager(object):
         sys.path.append(modulepath)
         self.commands = collections.OrderedDict()
         self.binds = []
+        self.channelmapping = { 'idtoname': {}, 'nametoid': {}}
+        
         try:
             bindmap = pathlib.Path(options.Matterbot['bindmap'])
             if bindmap.is_file():
                 with open(options.Matterbot['bindmap']) as f:
                     self.commands = collections.OrderedDict(json.load(f))
                     self.binds = [_.extend(_['binds']) for _ in self.commands]
-            logging.info("Loaded existing bindmap file %s: %s" % (options.Matterbot['bindmap'],self.commands))
+            log.info("Loaded existing bindmap file %s: %s" % (options.Matterbot['bindmap'],self.commands))
         except: # There is no existing command map, or it failed loading; create an empty map instead.
             pass
         # Load any new modules
@@ -63,23 +65,23 @@ class MattermostManager(object):
                     module.settings.BINDS = None
                     module.settings.CHANS = None
                     defaults = importlib.import_module(module_name + '.' + 'defaults')
-                    if 'settings.py' in files:
-                        overridesettings = importlib.import_module(module_name + '.' + 'settings')
                     if hasattr(defaults, 'BINDS'):
                         module.settings.BINDS = defaults.BINDS
-                    if hasattr(overridesettings, 'BINDS'):
-                        module.settings.BINDS = overridesettings.BINDS
                     if hasattr(defaults, 'CHANS'):
                         module.settings.CHANS = defaults.CHANS
-                    if hasattr(overridesettings, 'CHANS'):
-                        module.settings.CHANS = overridesettings.CHANS
+                    if 'settings.py' in files:
+                        overridesettings = importlib.import_module(module_name + '.' + 'settings')    
+                        if hasattr(overridesettings, 'BINDS'):
+                            module.settings.BINDS = overridesettings.BINDS
+                        if hasattr(overridesettings, 'CHANS'):
+                            module.settings.CHANS = overridesettings.CHANS
                     self.commands[module_name] = {'binds': module.settings.BINDS, 'chans': module.settings.CHANS}
                 self.binds.extend(module.settings.BINDS)
         try:
             with open(options.Matterbot['bindmap'],'w') as f:
                 json.dump(self.commands,f)
         except:
-            print("An error occurred writing the bindmap file: %s" % (options.Matterbot['bindmap'],))
+            log.error("An error occurred writing the bindmap file: %s" % (options.Matterbot['bindmap'],))
         # Resolve function calls and update the module help
         for root, dirs, files in os.walk(modulepath):
             for module in fnmatch.filter(files, "command.py"):
@@ -94,8 +96,41 @@ class MattermostManager(object):
                         HELP = overridesettings.HELP
                 self.commands[module_name]['process'] = getattr(module, 'process')
                 self.commands[module_name]['help'] = HELP
+
         # Start the websocket
         self.mmDriver.init_websocket(self.handle_raw_message)
+
+    """
+    Convert a channel name to an ID if this is done already. Lookups are saved in a two way dict
+    self.channelmapping
+    """
+    def channame_to_chaninfo(self, channame):
+        if channame in self.channelmapping['nametoid']:
+            return self.channelmapping['nametoid'][channame]
+        else:
+            try:
+                chaninfo = self.mmDriver.channels.get_channel_by_name(self.my_team_id, channame)
+            except Exception as e:
+                log.error(f"Could not map {channame}: {e}")
+                return None
+            else:
+                self.channelmapping['nametoid'][chaninfo['name']] = chaninfo
+                self.channelmapping['idtoname'][chaninfo['id']]   = chaninfo
+                return chaninfo
+            
+    def channelid_to_chaninfo(self, channelid):
+        if channelid in self.channelmapping['idtoname']:
+            return self.channelmapping['idtoname'][channelid]
+        else:
+            try:
+                chaninfo = self.mmDriver.channels.get_channel(channelid)
+            except Exception as e:
+                log.error(f"Could not map {channelid}: {e}")
+                return None
+            else:
+                self.channelmapping['nametoid'][chaninfo['name']] = chaninfo
+                self.channelmapping['idtoname'][chaninfo['id']]   = chaninfo
+                return chaninfo
 
     async def handle_raw_message(self, raw_json: str):
         try:
@@ -111,12 +146,12 @@ class MattermostManager(object):
                 if 'post' in post_data:
                     await self.handle_post(post_data)
         except json.JSONDecodeError as e:
-            print(('ERROR'), e)
+            log.error(('ERROR'), e)
 
     async def send_message(self, channel, text, postid=None):
         try:
             channame = channel.lower()
-            logging.info('Channel:' + channame + ' <- Message: (' + str(len(text)) + ' chars)')
+            log.info('Channel:' + channame + ' <- Message: (' + str(len(text)) + ' chars)')
             if len(text) > options.Matterbot['msglength']: # Mattermost message limit
                 blocks = []
                 lines = text.split('\n')
@@ -142,26 +177,6 @@ class MattermostManager(object):
         except:
             raise
 
-    def channame_to_chanid(self, channame, teamid=None):
-        try:
-            if not teamid:
-                teamid = self.my_team_id
-            return self.mmDriver.channels.get_channel_by_name(teamid,channame)['id']
-        except:
-            return None
-
-    def chanid_to_channame(self, chanid):
-        try:
-            return self.mmDriver.channels.get_channel(chanid)['name']
-        except:
-            return None
-
-    def chanid_to_chandisplayname(self, chanid):
-        try:
-            return self.mmDriver.channels.get_channel(chanid)['display_name']
-        except:
-            return None
-
     def isallowed_module(self, user, module, chaninfo):
             """
             Check if we are in a channel or in a private chat
@@ -180,14 +195,14 @@ class MattermostManager(object):
                 """
                 memberlist = []
                 for channame in self.commands[module]['chans']:
-                    memberlist.extend([_['user_id'] for _ in self.mmDriver.channels.get_channel_members(self.channame_to_chanid(channame))])
+                    memberlist.extend([_['user_id'] for _ in self.mmDriver.channels.get_channel_members(self.channame_to_chaninfo(channame)['id'])])
                     if user in memberlist:
                         return True
-            logging.info(f"User {user} is not allowed to use {module} in {chaninfo['name']}.")
+            log.info(f"User {user} is not allowed to use {module} in {chaninfo['name']}.")
             return False
 
-    async def help_message(self, userid, post, params, chaninfo, rootid):
-        chanid = post['channel_id']
+    async def help_message(self, userid, params, chaninfo, rootid):
+        channelid=chaninfo['id']
         commands = set()
         if not params:
             for module in self.commands:
@@ -195,7 +210,7 @@ class MattermostManager(object):
                     for bind in self.commands[module]['binds']:
                         commands.add('`' + bind + '`')
             text = " I know about: `!help`, " + ', '.join(sorted(commands)) + " here. Remember that not every command works everywhere: this depends on the configuration. Modules may offer additional help via `!help <command>`."
-            await self.send_message(chanid, text, rootid)        
+            await self.send_message(channelid, text, rootid)        
         else:
             # User is asking for specific module help
             for module in self.commands:
@@ -233,9 +248,9 @@ class MattermostManager(object):
                                     if args:
                                         text += '\n**Arguments**: `' + args + '`'
                             if len(text)>0:
-                                 await self.send_message(chanid, text, rootid)
+                                 await self.send_message(channelid, text, rootid)
                         except NameError:
-                            await self.send_message(chanid, text, rootid)
+                            await self.send_message(channelid, text, rootid)
 
     async def handle_post(self, data: dict):
         my_id = self.me['id']
@@ -246,9 +261,9 @@ class MattermostManager(object):
             return
         post = json.loads(data['post'])
         userid = post['user_id']
-        chaninfo = self.mmDriver.channels.get_channel(post['channel_id'])
+        channelid = post['channel_id']
+        chaninfo = self.channelid_to_chaninfo(channelid)
         channame = chaninfo['name']
-        chanid = post['channel_id']
         rootid = post['root_id'] if len(post['root_id']) else post['id']
         messagelines = post['message'].lower().splitlines()
         # Check if the bot is allowed to respond to its own messages (see config file)
@@ -269,7 +284,7 @@ class MattermostManager(object):
                 command = messagedict['command']
                 params = messagedict['parameters']
                 if command in options.Matterbot['helpcmds']:
-                    await self.help_message(userid,post,params,chaninfo,rootid)
+                    await self.help_message(userid,params,chaninfo,rootid)
                 elif command in options.Matterbot['mapcmds']:
                     if len(self.commands):
                         if (my_id and userid) in channame:
@@ -288,7 +303,7 @@ class MattermostManager(object):
                     else:
                         text = username + ", I don't know about any commands here."
                     text += "*Remember that not every command works everywhere: this depends on the configuration. Modules may display some additional help/instructions by using `!help <bind>`.*"
-                    await self.send_message(chanid, text, rootid)
+                    await self.send_message(channelid, text, rootid)
                 else:
                     tasks = []
                     for module in self.commands:
@@ -310,7 +325,7 @@ class MattermostManager(object):
                                         results.append(executor.submit(self.commands[task]['process'], command, channame, username, params, files, self.mmDriver))
                                     except Exception as e:
                                         text = 'An error occurred within module: '+task+': '+str(type(e))+': '+e
-                                        await self.send_message(chanid, text, rootid)
+                                        await self.send_message(channelid, text, rootid)
                             for _ in concurrent.futures.as_completed(results):
                                 result = _.result()
                                 if result and 'messages' in result:
@@ -326,21 +341,21 @@ class MattermostManager(object):
                                                     if not isinstance(payload, (bytes, bytearray)):
                                                         payload = payload.encode()
                                                     file_id = self.mmDriver.files.upload_file(
-                                                        channel_id=chanid,
+                                                        channel_id=channelid,
                                                         files={'files': (filename, payload)}
                                                     )['file_infos'][0]['id']
                                                     file_ids.append(file_id)
-                                                self.mmDriver.posts.create_post(options={'channel_id': chanid,
+                                                self.mmDriver.posts.create_post(options={'channel_id': channelid,
                                                                                         'message': text,
                                                                                         'file_ids': file_ids,
                                                                                         })
                                             else:
-                                                await self.send_message(chanid, text, rootid)
+                                                await self.send_message(channelid, text, rootid)
                                         else:
-                                            await self.send_message(chanid, text, rootid)
+                                            await self.send_message(channelid, text, rootid)
                         except Exception as e:
                             text = 'A Python error occurred: '+str(type(e))+': '+str(e)
-                            await self.send_message(chanid, text, rootid)
+                            await self.send_message(channelid, text, rootid)
 
 if __name__ == '__main__' :
     '''
@@ -361,6 +376,6 @@ if __name__ == '__main__' :
         logging.basicConfig(filename=options.Matterbot['logfile'], format='%(levelname)s - %(name)s - %(asctime)s - %(message)s')
     else:
         logging.basicConfig(level=0,format='%(levelname)s - %(name)s - %(asctime)s - %(message)s')
-    logger = logging.getLogger('MatterAPI')
-    logger.info('Starting MatterBot')
+    log = logging.getLogger('MatterAPI')
+    log.info('Starting MatterBot')
     mm = MattermostManager()
