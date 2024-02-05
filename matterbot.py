@@ -395,11 +395,8 @@ class MattermostManager(object):
                 addparams = False
                 message = mline.split()
                 for idx,word in enumerate(message):
-                        word in options.Matterbot['helpcmds'] or \
-                        word in options.Matterbot['mapcmds']) )
                     if (word in self.binds or word in options.Matterbot['helpcmds'] or word in options.Matterbot['mapcmds']) and \
-                       (message[idx-1] not in options.Matterbot['helpcmds'] and
-                        message[idx-1] not in options.Matterbot['mapcmds']):
+                       (message[idx-1] not in options.Matterbot['helpcmds'] and message[idx-1] not in options.Matterbot['mapcmds']):
                         messages.append({'command':word,'parameters':[]})
                         addparams = True
                     elif addparams:
