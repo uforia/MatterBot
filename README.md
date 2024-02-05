@@ -43,6 +43,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | SebDraven                                                                                        | RSS            | No               | No                |
 | SecureList News                                                                                  | RSS            | No               | No                |
 | SecurityAffairs News                                                                             | RSS            | No               | No                |
+| Spiceworks Tech News                                                                             | RSS            | No               | No                |
 | TheHackerNews News                                                                               | RSS            | No               | No                |
 | Threatpost News                                                                                  | RSS            | No               | No                |
 | TrendMicro Research                                                                              | RSS            | No               | No                |
