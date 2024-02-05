@@ -127,14 +127,14 @@ class MattermostManager(object):
                 self.channelmapping['idtoname'][chaninfo['id']]   = chaninfo
                 return chaninfo
             
-    def channelid_to_chaninfo(self, channelid):
-        if channelid in self.channelmapping['idtoname']:
-            return self.channelmapping['idtoname'][channelid]
+    def chanid_to_chaninfo(self, chanid):
+        if chanid in self.channelmapping['idtoname']:
+            return self.channelmapping['idtoname'][chanid]
         else:
             try:
-                chaninfo = self.mmDriver.channels.get_channel(channelid)
+                chaninfo = self.mmDriver.channels.get_channel(chanid)
             except Exception as e:
-                log.error(f"Could not map {channelid}: {e}")
+                log.error(f"Could not map {chanid}: {e}")
                 return None
             else:
                 self.channelmapping['nametoid'][chaninfo['name']] = chaninfo
@@ -371,9 +371,9 @@ class MattermostManager(object):
                                     if args:
                                         text += '\n**Arguments**: `' + args + '`'
                             if len(text)>0:
-                                 await self.send_message(channelid, text, rootid)
+                                 await self.send_message(chanid, text, rootid)
                         except NameError:
-                            await self.send_message(channelid, text, rootid)
+                            await self.send_message(chanid, text, rootid)
 
     async def handle_post(self, data: dict):
         if 'sender_name' in data:
@@ -383,8 +383,8 @@ class MattermostManager(object):
             return
         post = json.loads(data['post'])
         userid = post['user_id']
-        channelid = post['channel_id']
-        chaninfo = self.channelid_to_chaninfo(channelid)
+        chanid = post['channel_id']
+        chaninfo = self.chanid_to_chaninfo(chanid)
         channame = chaninfo['name']
         rootid = post['root_id'] if len(post['root_id']) else post['id']
         messagelines = post['message'].splitlines()
@@ -430,7 +430,7 @@ class MattermostManager(object):
                                         results.append(executor.submit(self.commands[task]['process'], command, channame, username, params, files, self.mmDriver))
                                     except Exception as e:
                                         text = 'An error occurred within module: '+task+': '+str(type(e))+': '+e
-                                        await self.send_message(channelid, text, rootid)
+                                        await self.send_message(chanid, text, rootid)
                             for _ in concurrent.futures.as_completed(results):
                                 result = _.result()
                                 if result and 'messages' in result:
@@ -446,21 +446,21 @@ class MattermostManager(object):
                                                     if not isinstance(payload, (bytes, bytearray)):
                                                         payload = payload.encode()
                                                     file_id = self.mmDriver.files.upload_file(
-                                                        channel_id=channelid,
+                                                        channel_id=chanid,
                                                         files={'files': (filename, payload)}
                                                     )['file_infos'][0]['id']
                                                     file_ids.append(file_id)
-                                                self.mmDriver.posts.create_post(options={'channel_id': channelid,
+                                                self.mmDriver.posts.create_post(options={'channel_id': chanid,
                                                                                         'message': text,
                                                                                         'file_ids': file_ids,
                                                                                         })
                                             else:
-                                                await self.send_message(channelid, text, rootid)
+                                                await self.send_message(chanid, text, rootid)
                                         else:
-                                            await self.send_message(channelid, text, rootid)
+                                            await self.send_message(chanid, text, rootid)
                         except Exception as e:
                             text = 'A Python error occurred: '+str(type(e))+': '+str(e)
-                            await self.send_message(channelid, text, rootid)
+                            await self.send_message(chanid, text, rootid)
 
 if __name__ == '__main__' :
     '''
