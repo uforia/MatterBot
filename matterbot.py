@@ -120,15 +120,14 @@ class MattermostManager(object):
             with open(options.Matterbot['bindmap'],'w') as f:
                 json.dump(self.bindmap,f)
         except:
-            raise
-            log.error("An error occurred updating the `%s` bindmap file; config changes were not successfully saved!" % (options.Matterbot['bindmap'],))
+            log.error(f"An error occurred updating the `%s` bindmap file; config changes were not successfully saved!" % (options.Matterbot['bindmap'],))
 
     async def handle_raw_message(self, raw_json: str):
         try:
             data = json.loads(raw_json)
             asyncio.create_task(self.handle_message(data))
         except json.JSONDecodeError as e:
-            return
+            log.error(f"Could not handle raw JSON {raw_json}: {e}")
 
     async def handle_message(self, message: dict):
         try:
