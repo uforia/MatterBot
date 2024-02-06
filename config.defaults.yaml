@@ -6,8 +6,9 @@ Matterbot:
   username: "<mattermost bot account name>"
   password: "<mattermost bot password>"
   teamname: "<mattermost team identifier>"
-  botadmins:
+  botadmins: # Can be either a Mattermost userid or role name (e.g. 'system_admin')
     - "<your-mattermost-id-here>"
+    - "system_admin"
   logfile: "matterfeed.log"
   bindmap: "bindmap.json"
   helpcmds: # Do not change these, or things might break

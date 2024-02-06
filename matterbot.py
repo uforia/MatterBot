@@ -43,6 +43,7 @@ class MattermostManager(object):
             log.error("Mattermost server is unreachable. Perhaps it is down, or you might have misconfigured one or more setting(s). Shutting down!")
             return False
         self.me = self.mmDriver.users.get_user(user_id='me')
+        log.info("Who am I: %s" % (self.me,))
         self.my_id = self.me['id']
         self.my_team_name = options.Matterbot['teamname']
         self.my_team_id = self.mmDriver.teams.get_team_by_name(self.my_team_name)['id']
@@ -109,37 +110,6 @@ class MattermostManager(object):
         # Start the websocket
         self.mmDriver.init_websocket(self.handle_raw_message)
 
-    """
-    Convert a channel name to an ID if this is done already. Lookups are saved in a two way dict
-    self.channelmapping
-    """
-    def channame_to_chaninfo(self, channame):
-        if channame in self.channelmapping['nametoid']:
-            return self.channelmapping['nametoid'][channame]
-        else:
-            try:
-                chaninfo = self.mmDriver.channels.get_channel_by_name(self.my_team_id, channame)
-            except Exception as e:
-                log.error(f"Could not map {channame}: {e}")
-                return None
-            else:
-                self.channelmapping['nametoid'][chaninfo['name']] = chaninfo
-                self.channelmapping['idtoname'][chaninfo['id']]   = chaninfo
-                return chaninfo
-            
-    def chanid_to_chaninfo(self, chanid):
-        if chanid in self.channelmapping['idtoname']:
-            return self.channelmapping['idtoname'][chanid]
-        else:
-            try:
-                chaninfo = self.mmDriver.channels.get_channel(chanid)
-            except Exception as e:
-                log.error(f"Could not map {chanid}: {e}")
-                return None
-            else:
-                self.channelmapping['nametoid'][chaninfo['name']] = chaninfo
-                self.channelmapping['idtoname'][chaninfo['id']]   = chaninfo
-                return chaninfo
 
     async def update_bindmap(self):
         try:
@@ -199,7 +169,6 @@ class MattermostManager(object):
         except:
             raise
 
-
     def channame_to_chanid(self, channame, teamid=None):
         try:
             if not teamid:
@@ -226,12 +195,48 @@ class MattermostManager(object):
         except:
             return None
 
+    def channame_to_chaninfo(self, channame):
+        if channame in self.channelmapping['nametoid']:
+            return self.channelmapping['nametoid'][channame]
+        else:
+            try:
+                chaninfo = self.mmDriver.channels.get_channel_by_name(self.my_team_id, channame)
+            except Exception as e:
+                log.error(f"Could not map {channame}: {e}")
+                return None
+            else:
+                self.channelmapping['nametoid'][chaninfo['name']] = chaninfo
+                self.channelmapping['idtoname'][chaninfo['id']]   = chaninfo
+                return chaninfo
+
+    def chanid_to_chaninfo(self, chanid):
+        if chanid in self.channelmapping['idtoname']:
+            return self.channelmapping['idtoname'][chanid]
+        else:
+            try:
+                chaninfo = self.mmDriver.channels.get_channel(chanid)
+            except Exception as e:
+                log.error(f"Could not map {chanid}: {e}")
+                return None
+            else:
+                self.channelmapping['nametoid'][chaninfo['name']] = chaninfo
+                self.channelmapping['idtoname'][chaninfo['id']]   = chaninfo
+                return chaninfo
+
     def userid_to_username(self,userid):
         try:
             return self.mmDriver.users.get_user(userid)['username']
         except:
             return None
 
+    def isadmin(self,userid):
+        try:
+            userinfo = self.mmDrivers.users.get_user(userid)
+            roles = [_.lower() for _ in userinfo['roles'].split()]
+            if any(options.Matterbot['botadmins']) in roles or userid in options.Matterbot['botadmins']:
+                return True
+        except:
+            return None
 
     def isallowed_module(self, user, module, chaninfo):
         """
@@ -282,7 +287,7 @@ class MattermostManager(object):
                         if self.isallowed_module(userid,module,chaninfo):
                             chans.add(module)
                             text += "\n| %s | **YES** | `%s` | %s |" % (module,'`, `'.join(sorted(self.commands[module]['binds'])),self.commands[module]['help']['DEFAULT']['desc'].replace('|','/'))
-                        elif userid in options.Matterbot['botadmins']:
+                        elif self.isadmin(userid):
                             chans.add(module)
                             text += "\n| %s | **NO** | `%s` | %s |" % (module,'`, `'.join(sorted(self.commands[module]['binds'])),self.commands[module]['help']['DEFAULT']['desc'].replace('|','/'))
                     text += "\n\n"
@@ -291,8 +296,8 @@ class MattermostManager(object):
                 text += "*Remember that not every command works everywhere: this depends on the configuration. Modules may offer additional help if you add the subcommand.*"
                 messages.append(text)
         else:
-            if not userid in options.Matterbot['botadmins']:
-                log.warning(f"User {userid} attempted to use a bind command without proper authorization.")
+            if not self.isadmin(userid):
+                logging.warn("User %s attempted to use a bind command without proper authorization.") % (userid,)
                 text = "@" + username + ", you do not have permission to bind commands."
             else:
                 all_channel_types = [self.chanid_to_channame(_['id']) for _ in self.mmDriver.channels.get_channels_for_user(self.my_id,self.my_team_id)]
