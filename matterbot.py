@@ -235,14 +235,14 @@ class MattermostManager(object):
 
     def isadmin(self, userid):
         try:
-            userinfo = self.mmDrivers.users.get_user(userid)
+            userinfo = self.mmDriver.users.get_user(userid)
             roles = [_.lower() for _ in userinfo['roles'].split()]
             if any(options.Matterbot['botadmins']) in roles or userid in options.Matterbot['botadmins']:
                 return True
         except:
             return None
 
-    def isallowed_module(self, user, module, chaninfo):
+    def isallowed_module(self, userid, module, chaninfo):
         """
         Check if we are in a channel or in a private chat
         > There are four types of channels: public channels, private channels, direct messages, and group messages.
@@ -250,6 +250,7 @@ class MattermostManager(object):
         'O' for a public channel, 'P' for a private channel, "D": Direct message channel (1:1), "G": Group message channel (group direct message)
         """
         channame = chaninfo['name']
+        username = self.userid_to_username(userid)
         if chaninfo['type'] in ('O', 'P'):
             log.debug(f"Channel name: {chaninfo['name']}")
             if (channame or 'any') in self.commands[module]['chans']:
@@ -262,12 +263,12 @@ class MattermostManager(object):
             for channame in self.commands[module]['chans']:
                 try:
                     memberlist.extend([_['user_id'] for _ in self.mmDriver.channels.get_channel_members(self.channame_to_chanid(channame))])
-                    if user in memberlist:
+                    if userid in memberlist:
                         return True
                 except:
                     # Apparently the channel does not exist; perhaps it is spelled incorrectly or otherwise a misconfiguration?
                     log.error("There is a non-existent channel set up in the bot bindings or configuration: %s" % (channame,))
-        log.info(f"User {user} is not allowed to use {module} in {channame}.")
+        log.info(f"User {userid} is not allowed to use {module} in {channame}.")
         return False
 
     async def bind_message(self, userid, post, params, chaninfo, rootid):
