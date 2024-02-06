@@ -137,7 +137,7 @@ class MattermostManager(object):
                 if 'post' in post_data:
                     await self.handle_post(post_data)
         except json.JSONDecodeError as e:
-            log.error(e)
+            log.error(f"Could not handle message {message}: {e}")
 
     async def send_message(self, chanid, text, postid=None):
         try:
@@ -227,14 +227,14 @@ class MattermostManager(object):
                 self.channelmapping['idtoname'][chaninfo['id']]   = chaninfo
                 return chaninfo
 
-    def userid_to_username(self,userid):
+    def userid_to_username(self, userid):
         try:
             return self.mmDriver.users.get_user(userid)['username']
         except Exception as e:
             log.error(f"Could not map {userid} to username: {e}")
             return None
 
-    def isadmin(self,userid):
+    def isadmin(self, userid):
         try:
             userinfo = self.mmDrivers.users.get_user(userid)
             roles = [_.lower() for _ in userinfo['roles'].split()]
