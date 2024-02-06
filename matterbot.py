@@ -174,25 +174,29 @@ class MattermostManager(object):
             if not teamid:
                 teamid = self.my_team_id
             return self.mmDriver.channels.get_channel_by_name(teamid,channame)['id']
-        except:
+        except Exception as e:
+            log.error(f"Could not map {channame} to chanid: {e}")
             return None
 
     def chanid_to_channame(self, chanid):
         try:
             return self.mmDriver.channels.get_channel(chanid)['name']
-        except:
+        except Exception as e:
+            log.error(f"Could not map {chanid} to channame: {e}")
             return None
 
     def chanid_to_chandisplayname(self, chanid):
         try:
             return self.mmDriver.channels.get_channel(chanid)['display_name']
-        except:
+        except Exception as e:
+            log.error(f"Could not map {chanid} to chandisplayname: {e}")
             return None
 
     def channame_to_chandisplayname(self, channame):
         try:
             return self.chanid_to_chandisplayname(self.channame_to_chanid(channame))
-        except:
+        except Exception as e:
+            log.error(f"Could not map {channame} to chandisplayname: {e}")
             return None
 
     def channame_to_chaninfo(self, channame):
@@ -202,7 +206,7 @@ class MattermostManager(object):
             try:
                 chaninfo = self.mmDriver.channels.get_channel_by_name(self.my_team_id, channame)
             except Exception as e:
-                log.error(f"Could not map {channame}: {e}")
+                log.error(f"Could not map {channame} to chaninfo: {e}")
                 return None
             else:
                 self.channelmapping['nametoid'][chaninfo['name']] = chaninfo
@@ -216,7 +220,7 @@ class MattermostManager(object):
             try:
                 chaninfo = self.mmDriver.channels.get_channel(chanid)
             except Exception as e:
-                log.error(f"Could not map {chanid}: {e}")
+                log.error(f"Could not map {chanid} to chaninfo: {e}")
                 return None
             else:
                 self.channelmapping['nametoid'][chaninfo['name']] = chaninfo
@@ -226,7 +230,8 @@ class MattermostManager(object):
     def userid_to_username(self,userid):
         try:
             return self.mmDriver.users.get_user(userid)['username']
-        except:
+        except Exception as e:
+            log.error(f"Could not map {userid} to username: {e}")
             return None
 
     def isadmin(self,userid):
