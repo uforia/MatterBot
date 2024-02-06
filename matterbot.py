@@ -40,7 +40,7 @@ class MattermostManager(object):
         try:
             self.mmDriver.login()
         except:
-            logging.error("Mattermost server is unreachable. Perhaps it is down, or you might have misconfigured one or more setting(s). Shutting down!")
+            log.error("Mattermost server is unreachable. Perhaps it is down, or you might have misconfigured one or more setting(s). Shutting down!")
             return False
         self.me = self.mmDriver.users.get_user(user_id='me')
         log.info("Who am I: %s" % (self.me,))
@@ -121,7 +121,7 @@ class MattermostManager(object):
                 json.dump(self.bindmap,f)
         except:
             raise
-            logging.error("An error occurred updating the `%s` bindmap file; config changes were not successfully saved!" % (options.Matterbot['bindmap'],))
+            log.error("An error occurred updating the `%s` bindmap file; config changes were not successfully saved!" % (options.Matterbot['bindmap'],))
 
     async def handle_raw_message(self, raw_json: str):
         try:
@@ -141,7 +141,7 @@ class MattermostManager(object):
 
     async def send_message(self, chanid, text, postid=None):
         try:
-            channame = self.chanid_to_channame(chanid)
+            channame = self.chanid_to_chaninfo(chanid)['name']
             log.info('Channel:' + channame + ' <- Message: (' + str(len(text)) + ' chars)')
 
             if len(text) > options.Matterbot['msglength']: # Mattermost message limit
@@ -247,7 +247,7 @@ class MattermostManager(object):
         """
         channame = chaninfo['name']
         if chaninfo['type'] in ('O', 'P'):
-            logging.debug(f"Channel name: {chaninfo['name']}")
+            log.debug(f"Channel name: {chaninfo['name']}")
             if (channame or 'any') in self.commands[module]['chans']:
                 return True
         elif chaninfo['type'] in ('D', 'G'):
@@ -262,14 +262,14 @@ class MattermostManager(object):
                         return True
                 except:
                     # Apparently the channel does not exist; perhaps it is spelled incorrectly or otherwise a misconfiguration?
-                    logging.error("There is a non-existent channel set up in the bot bindings or configuration: %s" % (channame,))
-        logging.info(f"User {user} is not allowed to use {module} in {channame}.")
+                    log.error("There is a non-existent channel set up in the bot bindings or configuration: %s" % (channame,))
+        log.info(f"User {user} is not allowed to use {module} in {channame}.")
         return False
 
     async def bind_message(self, userid, post, params, chaninfo, rootid):
         command = post['message'].split()[0]
         chanid = post['channel_id']
-        channame = self.chanid_to_channame(chanid)
+        channame = chaninfo['name']
         username = self.userid_to_username(userid)
         messages = []
         if not params:
@@ -400,13 +400,16 @@ class MattermostManager(object):
                 addparams = False
                 message = mline.split()
                 for idx,word in enumerate(message):
-                    if (word in self.binds and not message in options.Matterbot['helpcmds'] and not message in options.Matterbot['mapcmds']) or \
-                        word in options.Matterbot['helpcmds'] or \
-                        word in options.Matterbot['mapcmds']:
+                    log.debug(f"(({word in self.binds}) and ({message[idx-1] not in options.Matterbot['helpcmds']} and {message[idx-1] not in options.Matterbot['mapcmds']} ) # In this case hand over the word to elif \
+                     or ({word in options.Matterbot['helpcmds']}) or (({word in options.Matterbot['mapcmds']}) and ({message[idx-1] not in options.Matterbot['helpcmds'] }))  )")
+                    if ((word in self.binds) and (message[idx-1] not in options.Matterbot['helpcmds'] and message[idx-1] not in options.Matterbot['mapcmds'] ) # In this case hand over the word to elif \
+                         or (word in options.Matterbot['helpcmds']) or ((word in options.Matterbot['mapcmds']) and (message[idx-1] not in options.Matterbot['helpcmds'] ))  ): # word is a helpcmd or bind command
                         messages.append({'command':word,'parameters':[]})
                         addparams = True
                     elif addparams:
                         messages[-1]['parameters'].append(word)
+            log.debug(f"Messages: {messages}")
+
             for messagedict in messages:
                 command = messagedict['command']
                 params = messagedict['parameters']
