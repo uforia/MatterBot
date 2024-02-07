@@ -2,11 +2,27 @@ Matterbot:
   host: "<your-mattermost-host>"
   port: 443
   scheme: "https"
+  basepath: "/api/v4"
   username: "<mattermost bot account name>"
   password: "<mattermost bot password>"
   teamname: "<mattermost team identifier>"
+  botadmins: # Can be either a Mattermost userid or role name (e.g. 'system_admin')
+    - "<your-mattermost-id-here>"
+    - "system_admin"
   logfile: "matterfeed.log"
-  msglength: 16383 # For old Mattermost versions (<=5.x), use msglength: 4000!
+  bindmap: "bindmap.json"
+  helpcmds: # Do not change these, or things might break
+    - "!help"
+    - "@help"
+  mapcmds: # Do not change these, or things might break
+    - "!bind"
+    - "@bind"
+    - "!unbind"
+    - "@unbind"
+    - "!map"
+    - "@map"
+  recursion: True # Is the bot allowed to respond to its own messages?
+  msglength: 16383 # Change to '4000' if you are using Mattermost <=5.x (seriously, you should upgrade!)
 
 Modules:
   moduledir: "modules"

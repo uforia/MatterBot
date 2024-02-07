@@ -2,17 +2,18 @@
 
 import ast
 import asyncio
+import collections
 import concurrent.futures
+import copy
 import fnmatch
 import importlib.util
 import json
 import logging
 import os
+import pathlib
 import sys
-import tempfile
 import configargparse
 from mattermostdriver import Driver
-from pathlib import Path
 
 
 class TokenAuth():
@@ -28,40 +29,99 @@ class MattermostManager(object):
             'port'      : options.Matterbot['port'],
             'login_id'  : options.Matterbot['username'],
             'token'     : options.Matterbot['password'],
+            'basepath'  : options.Matterbot['basepath'],
+            'scheme'    : options.Matterbot['scheme'],
             'auth'      : TokenAuth,
             #'debug'     : options.debug,
-            'basepath'  : '/api/v4',
             'keepalive' : True,
             'keepalive_delay': 30,
-            'scheme'    : options.Matterbot['scheme'],
             'websocket_kw_args': {'ping_interval': 5},
         })
-        self.mmDriver.login()
-        self.me = self.mmDriver.users.get_user( user_id='me' )
-        self.my_team_id = self.mmDriver.teams.get_team_by_name(options.Matterbot['teamname'])['id']
-
-        # Map all the commands to their modules
-        self.commands = {}
+        try:
+            self.mmDriver.login()
+        except:
+            log.error("Mattermost server is unreachable. Perhaps it is down, or you might have misconfigured one or more setting(s). Shutting down!")
+            return False
+        self.me = self.mmDriver.users.get_user(user_id='me')
+        log.info("Who am I: %s" % (self.me,))
+        self.my_id = self.me['id']
+        self.my_team_name = options.Matterbot['teamname']
+        self.my_team_id = self.mmDriver.teams.get_team_by_name(self.my_team_name)['id']
+        # Load an existing module channel binding map if present
         modulepath = options.Modules['commanddir'].strip('/')
         sys.path.append(modulepath)
+        self.commands = {}
+        self.binds = []
+        self.channelmapping = { 'idtoname': {}, 'nametoid': {}}
+        
+        try:
+            bindmap = pathlib.Path(options.Matterbot['bindmap'])
+            if bindmap.is_file():
+                with open(options.Matterbot['bindmap']) as f:
+                    self.commands = json.load(f)
+                    for module in self.commands:
+                        self.binds.extend(self.commands[module]['binds'])
+            log.info("Loaded existing bindmap file %s: %s" % (options.Matterbot['bindmap'],self.commands))
+        except: # There is no existing command map, or it failed loading; create an empty map instead.
+            pass
+        # Load any new modules
         for root, dirs, files in os.walk(modulepath):
             for module in fnmatch.filter(files, "command.py"):
-                if 'defaults.py' in files:
-                    module_name = root.split('/')[-1].lower()
-                    module = importlib.import_module(module_name + '.' + 'command')
-                    HELP = 'No help available'
-                    if 'defaults.py' in files:
-                        defaults = importlib.import_module(module_name + '.' + 'defaults')
-                        if hasattr(defaults, 'HELP'):
-                            HELP = defaults.HELP
-
+                module_name = root.split('/')[-1].lower()
+                module = importlib.import_module(module_name + '.' + 'command')
+                if not module_name in self.commands:
+                    module.settings.BINDS = None
+                    module.settings.CHANS = None
+                    defaults = importlib.import_module(module_name + '.' + 'defaults')
+                    if hasattr(defaults, 'BINDS'):
+                        module.settings.BINDS = defaults.BINDS
+                    if hasattr(defaults, 'CHANS'):
+                        module.settings.CHANS = defaults.CHANS
                     if 'settings.py' in files:
                         overridesettings = importlib.import_module(module_name + '.' + 'settings')    
-                        if hasattr(overridesettings, 'HELP'):
-                            HELP = overridesettings.HELP
-                    self.commands[module_name] = {'binds': module.settings.BINDS, 'chans': module.settings.CHANS, 'help': HELP, 'process': getattr(module, 'process')}
+                        if hasattr(overridesettings, 'BINDS'):
+                            module.settings.BINDS = overridesettings.BINDS
+                        if hasattr(overridesettings, 'CHANS'):
+                            module.settings.CHANS = overridesettings.CHANS
+                    self.commands[module_name] = {'binds': module.settings.BINDS, 'chans': module.settings.CHANS}
+                    self.binds.extend(module.settings.BINDS)
+        try:
+            with open(options.Matterbot['bindmap'],'w') as f:
+                json.dump(self.commands,f)
+        except:
+            log.error("An error occurred writing the bindmap file: %s" % (options.Matterbot['bindmap'],))
+        # Resolve function calls and update the module help
+        for root, dirs, files in os.walk(modulepath):
+            for module in fnmatch.filter(files, "command.py"):
+                module_name = root.split('/')[-1].lower()
+                module = importlib.import_module(module_name + '.' + 'command')
+                defaults = importlib.import_module(module_name + '.' + 'defaults')
+                if hasattr(defaults, 'HELP'):
+                    HELP = defaults.HELP
+                if 'settings.py' in files:
+                    overridesettings = importlib.import_module(module_name + '.' + 'settings')    
+                    if hasattr(overridesettings, 'HELP'):
+                        HELP = overridesettings.HELP
+                self.commands[module_name]['process'] = getattr(module, 'process')
+                self.commands[module_name]['help'] = HELP
+
+                
+        self.binds = sorted(list(set(self.binds)))
         # Start the websocket
         self.mmDriver.init_websocket(self.handle_raw_message)
+
+
+    async def update_bindmap(self):
+        try:
+            self.bindmap = copy.deepcopy(self.commands)
+            for module in self.bindmap:
+                del self.bindmap[module]['help']
+                del self.bindmap[module]['process']
+            with open(options.Matterbot['bindmap'],'w') as f:
+                json.dump(self.bindmap,f)
+        except:
+            raise
+            log.error("An error occurred updating the `%s` bindmap file; config changes were not successfully saved!" % (options.Matterbot['bindmap'],))
 
     async def handle_raw_message(self, raw_json: str):
         try:
@@ -77,12 +137,13 @@ class MattermostManager(object):
                 if 'post' in post_data:
                     await self.handle_post(post_data)
         except json.JSONDecodeError as e:
-            print(('ERROR'), e)
+            log.error(e)
 
-    async def send_message(self, channel, text, postid=None):
+    async def send_message(self, chanid, text, postid=None):
         try:
-            channelname = channel.lower()
-            log.info('Channel:' + channelname + ' <- Message: (' + str(len(text)) + ' chars)')
+            channame = self.chanid_to_chaninfo(chanid)['name']
+            log.info('Channel:' + channame + ' <- Message: (' + str(len(text)) + ' chars)')
+
             if len(text) > options.Matterbot['msglength']: # Mattermost message limit
                 blocks = []
                 lines = text.split('\n')
@@ -101,15 +162,225 @@ class MattermostManager(object):
             else:
                 blocks = [text]
             for block in blocks:
-                self.mmDriver.posts.create_post(options={'channel_id': channel,
+                self.mmDriver.posts.create_post(options={'channel_id': chanid,
                                                          'message': block,
-                                                         'root_id': postid
+                                                         'root_id': postid,
                                                          })
         except:
             raise
 
+    def channame_to_chanid(self, channame, teamid=None):
+        try:
+            if not teamid:
+                teamid = self.my_team_id
+            return self.mmDriver.channels.get_channel_by_name(teamid,channame)['id']
+        except:
+            return None
+
+    def chanid_to_channame(self, chanid):
+        try:
+            return self.mmDriver.channels.get_channel(chanid)['name']
+        except:
+            return None
+
+    def chanid_to_chandisplayname(self, chanid):
+        try:
+            return self.mmDriver.channels.get_channel(chanid)['display_name']
+        except:
+            return None
+
+    def channame_to_chandisplayname(self, channame):
+        try:
+            return self.chanid_to_chandisplayname(self.channame_to_chanid(channame))
+        except:
+            return None
+
+    def channame_to_chaninfo(self, channame):
+        if channame in self.channelmapping['nametoid']:
+            return self.channelmapping['nametoid'][channame]
+        else:
+            try:
+                chaninfo = self.mmDriver.channels.get_channel_by_name(self.my_team_id, channame)
+            except Exception as e:
+                log.error(f"Could not map {channame}: {e}")
+                return None
+            else:
+                self.channelmapping['nametoid'][chaninfo['name']] = chaninfo
+                self.channelmapping['idtoname'][chaninfo['id']]   = chaninfo
+                return chaninfo
+
+    def chanid_to_chaninfo(self, chanid):
+        if chanid in self.channelmapping['idtoname']:
+            return self.channelmapping['idtoname'][chanid]
+        else:
+            try:
+                chaninfo = self.mmDriver.channels.get_channel(chanid)
+            except Exception as e:
+                log.error(f"Could not map {chanid}: {e}")
+                return None
+            else:
+                self.channelmapping['nametoid'][chaninfo['name']] = chaninfo
+                self.channelmapping['idtoname'][chaninfo['id']]   = chaninfo
+                return chaninfo
+
+    def userid_to_username(self,userid):
+        try:
+            return self.mmDriver.users.get_user(userid)['username']
+        except:
+            return None
+
+    def isadmin(self,userid):
+        try:
+            userinfo = self.mmDrivers.users.get_user(userid)
+            roles = [_.lower() for _ in userinfo['roles'].split()]
+            if any(options.Matterbot['botadmins']) in roles or userid in options.Matterbot['botadmins']:
+                return True
+        except:
+            return None
+
+    def isallowed_module(self, user, module, chaninfo):
+        """
+        Check if we are in a channel or in a private chat
+        > There are four types of channels: public channels, private channels, direct messages, and group messages.
+        source: https://docs.mattermost.com/collaborate/channel-types.html
+        'O' for a public channel, 'P' for a private channel, "D": Direct message channel (1:1), "G": Group message channel (group direct message)
+        """
+        channame = chaninfo['name']
+        if chaninfo['type'] in ('O', 'P'):
+            log.debug(f"Channel name: {chaninfo['name']}")
+            if (channame or 'any') in self.commands[module]['chans']:
+                return True
+        elif chaninfo['type'] in ('D', 'G'):
+            """
+            Check if a user is in one of the channels that are configured in the modules 'chans'
+            """
+            memberlist = []
+            for channame in self.commands[module]['chans']:
+                try:
+                    memberlist.extend([_['user_id'] for _ in self.mmDriver.channels.get_channel_members(self.channame_to_chanid(channame))])
+                    if user in memberlist:
+                        return True
+                except:
+                    # Apparently the channel does not exist; perhaps it is spelled incorrectly or otherwise a misconfiguration?
+                    log.error("There is a non-existent channel set up in the bot bindings or configuration: %s" % (channame,))
+        log.info(f"User {user} is not allowed to use {module} in {channame}.")
+        return False
+
+    async def bind_message(self, userid, post, params, chaninfo, rootid):
+        command = post['message'].split()[0]
+        chanid = post['channel_id']
+        channame = chaninfo['name']
+        username = self.userid_to_username(userid)
+        messages = []
+        if not params:
+            if command in ('!map', '@map'):
+                if len(self.commands):
+                    chans = set()
+                    if (self.my_id and userid) in channame:
+                        text =  "**List of modules in direct message:**\n"
+                    else:
+                        text =  "**List of modules for channel: `%s`**\n" % (self.channame_to_chandisplayname(channame,))
+                    text += "\n"
+                    text += "\n| **Module Name** | **Available** | **Binds** | **Description** |"
+                    text += "\n| :- |  :- | :- |"
+                    for module in sorted(self.commands):
+                        if self.isallowed_module(userid,module,chaninfo):
+                            chans.add(module)
+                            text += "\n| %s | **YES** | `%s` | %s |" % (module,'`, `'.join(sorted(self.commands[module]['binds'])),self.commands[module]['help']['DEFAULT']['desc'].replace('|','/'))
+                        elif self.isadmin(userid):
+                            chans.add(module)
+                            text += "\n| %s | **NO** | `%s` | %s |" % (module,'`, `'.join(sorted(self.commands[module]['binds'])),self.commands[module]['help']['DEFAULT']['desc'].replace('|','/'))
+                    text += "\n\n"
+                if not len(chans):
+                    text = '@' + username + ", I don't know about any commands here.\n"
+                text += "*Remember that not every command works everywhere: this depends on the configuration. Modules may offer additional help if you add the subcommand.*"
+                messages.append(text)
+        else:
+            if not self.isadmin(userid):
+                logging.warn("User %s attempted to use a bind command without proper authorization.") % (userid,)
+                text = "@" + username + ", you do not have permission to bind commands."
+            else:
+                all_channel_types = [self.chanid_to_channame(_['id']) for _ in self.mmDriver.channels.get_channels_for_user(self.my_id,self.my_team_id)]
+                my_channels = [_ for _ in all_channel_types if not self.my_id in _]
+                if not channame in my_channels:
+                    text = "@" + username + ", you cannot bind commands to direct message windows."
+                else:
+                    if params[0] == '*':
+                        params = self.commands.keys() # Attempt to enable/disable all modules
+                    for modulename in params:
+                        if not modulename in self.commands:
+                            text = "@" + username + ", there is no `%s` module loaded. Use one of the help commands (`%s`) to see a list of available modules." % (modulename,"`, `".join(options.Matterbot['helpcmds']))
+                        elif command in ('!bind', '@bind'):
+                            if channame in self.commands[modulename]['chans']:
+                                text = "The `%s` module is already available in the `%s` channel." % (modulename,self.channame_to_chandisplayname(channame))
+                            else:
+                                self.commands[modulename]['chans'].append(channame)
+                                text = "The `%s` module is now available in the `%s` channel." % (modulename,self.channame_to_chandisplayname(channame))
+                        elif command in ('!unbind', '@unbind'):
+                            if not channame in self.commands[modulename]['chans']:
+                                text = "The `%s` module is not loaded in the `%s` channel." % (modulename,self.channame_to_chandisplayname(channame))
+                            else:
+                                self.commands[modulename]['chans'].remove(channame)
+                                text = "The `%s` module has been removed from the `%s` channel." % (modulename,self.channame_to_chandisplayname(channame))
+                        messages.append(text)
+                await self.update_bindmap()
+        if len(messages):
+            for message in messages:
+                await self.send_message(chanid, message, rootid)
+
+    async def help_message(self, userid, params, chaninfo, rootid):
+        chanid=chaninfo['id']
+        commands = set()
+        if not params:
+            for module in self.commands:
+                if self.isallowed_module(userid, module, chaninfo):
+                    for bind in self.commands[module]['binds']:
+                        commands.add('`' + bind + '`')
+            text =  "I know about: `"+'`, `'.join(sorted(options.Matterbot['helpcmds']))+"`, " + ', '.join(sorted(commands)) + " here.\n"
+            text += "*Remember that not every command works everywhere: this depends on the configuration. Modules may offer additional help if you add the subcommand.*"
+            await self.send_message(chanid, text, rootid)        
+        else:
+            # User is asking for specific module help
+            for module in self.commands:
+                if self.isallowed_module(userid, module, chaninfo):
+                    if set(params) & set(self.commands[module]['binds']): # for future use
+                        try:
+                            text = ''
+                            HELP = self.commands[module]['help']
+                            paramsubcommands = set(params) & set(HELP)
+                            if len(paramsubcommands) == 0:
+                                if 'DEFAULT' in HELP:
+                                    # Trigger the default help message
+                                    args = HELP['DEFAULT']['args'] if HELP['DEFAULT']['args'] else None
+                                    desc = HELP['DEFAULT']['desc']
+                                    text += '**Module**: `' + module + '`'
+                                    text += '\n**Description**: '
+                                    text += desc
+                                    if args:
+                                        text += '\n**Arguments**: `' + args + '`'
+                                    subcommands = set()
+                                    if len(HELP)>1:
+                                        text += '\n**Subcommmands**: '
+                                    for subcommand in HELP:
+                                        if subcommand != 'DEFAULT':
+                                            subcommands.add(subcommand)
+                                    if len(subcommands)>0:
+                                        text += '`' + '`, `'.join(subcommands) + '`'
+                            else: # paramsubcommands >= 1
+                                for subcommand in paramsubcommands:
+                                    args = HELP[subcommand]['args'] if HELP[subcommand]['args'] else None
+                                    desc = HELP[subcommand]['desc']
+                                    text += '**Module**: `' + module + '`/`' + subcommand + '`'
+                                    text += '\n**Description**: '
+                                    text += desc
+                                    if args:
+                                        text += '\n**Arguments**: `' + args + '`'
+                            if len(text)>0:
+                                 await self.send_message(chanid, text, rootid)
+                        except NameError:
+                            await self.send_message(chanid, text, rootid)
+
     async def handle_post(self, data: dict):
-        my_id = self.me['id']
         if 'sender_name' in data:
             username = data['sender_name']
         else:
@@ -117,144 +388,87 @@ class MattermostManager(object):
             return
         post = json.loads(data['post'])
         userid = post['user_id']
-        postid = post['id']
-        channelinfo = self.mmDriver.channels.get_channel(post['channel_id'])
-        userchannels = [i['name'] for i in self.mmDriver.channels.get_channels_for_user(userid, self.my_team_id)]
-        channelname = channelinfo['name']
-        channelid = channelinfo['id']
-        message = post['message'].split(' ')
-        commands = set()
-        if True:
-        #if userid != my_id: <-- start working on self-calling bot mechanisms
-            command = message[0].lower().strip()
-            try:
-                params = message[1:]
-            except IndexError:
-                params = None
-            # Generic !help function
-            if command == '!help' and not params:
-                for module in self.commands:
-                    for chan in self.commands[module]['chans']:
-                        for bind in self.commands[module]['binds']:
-                            if channelname == chan or (((my_id and userid) in channelname) and chan in userchannels):
-                                commands.add('`' + bind + '`')
-                text = username + " I know about: `!help`, " + ', '.join(sorted(commands)) + " here. Remember that not every command works everywhere: this depends on the configuration. Modules may offer additional help via `!help <command>`."
-                await self.send_message(channelid, text)
-            else:
-                # User is asking for specific module help
-                for module in self.commands:
-                    if channelname in self.commands[module]['chans'] or (((my_id and userid) in channelname) and channelname in userchannels or self.commands[module]['chans'] == 'any'):
-                        if command == '!help' and params and params[0] in self.commands[module]['binds']:
-                            try:
-                                text = ''
-                                HELP = self.commands[module]['help']
-                                if len(params)==1:
-                                    if 'DEFAULT' in HELP:
-                                        # Trigger the default help message
-                                        args = HELP['DEFAULT']['args'] if HELP['DEFAULT']['args'] else None
-                                        desc = HELP['DEFAULT']['desc']
-                                        text += '**Module**: `' + module + '`'
-                                        text += '\n**Description**: '
-                                        text += desc
-                                        if args:
-                                            text += '\n**Arguments**: `' + args + '`'
-                                        subcommands = set()
-                                        if len(HELP)>1:
-                                            text += '\n**Subcommmands**: '
-                                        for subcommand in HELP:
-                                            if subcommand != 'DEFAULT':
-                                                subcommands.add(subcommand)
-                                        if len(subcommands)>0:
-                                            text += '`' + '`, `'.join(subcommands) + '`'
-                                else:
-                                    subcommand = params[1]
-                                    if subcommand in HELP:
-                                        args = HELP[subcommand]['args'] if HELP[subcommand]['args'] else None
-                                        desc = HELP[subcommand]['desc']
-                                        text += '**Module**: `' + module + '`/`' + subcommand + '`'
-                                        text += '\n**Description**: '
-                                        text += desc
-                                        if args:
-                                            text += '\n**Arguments**: `' + args + '`'
-                                if len(text)>0:
-                                    await self.send_message(channelid, text, postid)
-                            except NameError:
-                                await self.send_message(channelid, 'No additional help available for the `' + module + '` module.')
-            # Normal command
-            if command != '!help':
-                tasks = []
-                for module in self.commands:
-                    if command in self.commands[module]['binds']:
-                        if channelname in self.commands[module]['chans'] or (((my_id and userid) in channelname) and channelname in userchannels):
-                            if not module in tasks:
-                                tasks.append(module)
-                if len(tasks):
-                    try:
-                        results = []
-                        files = []
-                        if 'metadata' in post:
-                            if 'files' in post['metadata']:
-                                if len(post['metadata']['files']):
-                                    files = post['metadata']['files']
-                        with concurrent.futures.ThreadPoolExecutor(max_workers=None) as executor:
-                            for task in tasks:
-                                try:
-                                    results.append(executor.submit(self.commands[task]['process'], command, channelname, username, params, files, self.mmDriver))
-                                except Exception as e:
-                                    text = 'An error occurred within module: '+task+': '+str(type(e))+': '+e
-                                    await self.send_message(channelid, text, postid)
-                        for _ in concurrent.futures.as_completed(results):
-                            result = _.result()
-                            if result and 'responses' in result:
-                                data=result
-                                logging.debug(f"working with {data}")
-                                text = f"### {data['source']}\n"
-                                if 'intro' in data:
-                                    text += f"{data['intro']}\n"
-                                for response in data['responses']:
-                                    text += f"#### {response['paragraph']}\n"
-                                    if 'preamble' in response:
-                                        text += response['preamble']
-                                        text +="\n\n"
-                                    if 'data' in response:
-                                        text += "|Category | Datapoint | Value|\n| :- | -: | :- |\n"
-                                        logging.warning(f"{response['data']}")
-                                        for line in response['data']:
-                                            text += f"|{line['category']}|{line['datapoint']}|{line['value']}\n"
-                                logging.debug(f"Text to return: {text}")
-                                await self.send_message(channelid, text, postid)
+        chanid = post['channel_id']
+        chaninfo = self.chanid_to_chaninfo(chanid)
+        channame = chaninfo['name']
+        rootid = post['root_id'] if len(post['root_id']) else post['id']
+        messagelines = post['message'].splitlines()
+        # Check if the bot is allowed to respond to its own messages (see config file)
+        if options.Matterbot['recursion'] or userid != self.my_id:
+            messages = list()
+            for mline in messagelines:
+                addparams = False
+                message = mline.split()
+                for idx,word in enumerate(message):
+                    log.debug(f"(({word in self.binds}) and ({message[idx-1] not in options.Matterbot['helpcmds']} and {message[idx-1] not in options.Matterbot['mapcmds']} ) # In this case hand over the word to elif \
+                     or ({word in options.Matterbot['helpcmds']}) or (({word in options.Matterbot['mapcmds']}) and ({message[idx-1] not in options.Matterbot['helpcmds'] }))  )")
+                    if ((word in self.binds) and (message[idx-1] not in options.Matterbot['helpcmds'] and message[idx-1] not in options.Matterbot['mapcmds'] ) # In this case hand over the word to elif \
+                         or (word in options.Matterbot['helpcmds']) or ((word in options.Matterbot['mapcmds']) and (message[idx-1] not in options.Matterbot['helpcmds'] ))  ): # word is a helpcmd or bind command
+                        messages.append({'command':word,'parameters':[]})
+                        addparams = True
+                    elif addparams:
+                        messages[-1]['parameters'].append(word)
+            log.debug(f"Messages: {messages}")
 
-                            if result and 'messages' in result:
-                                for message in result['messages']:
-                                    if 'text' in message:
-                                        text = message['text']
-                                    if 'uploads' in message:
-                                        if message['uploads'] != None:
-                                            file_ids = []
-                                            for upload in message['uploads']:
-                                                filename = upload['filename']
-                                                payload = upload['bytes']
-                                                if not isinstance(payload, (bytes, bytearray)):
-                                                    payload = payload.encode()
-                                                file_id = self.mmDriver.files.upload_file(
-                                                    channel_id=channelid,
-                                                    files={'files': (filename, payload)}
-                                                )['file_infos'][0]['id']
-                                                file_ids.append(file_id)
-                                            self.mmDriver.posts.create_post(options={'channel_id': channelid,
-                                                                                     'message': text,
-                                                                                     'file_ids': file_ids,
-                                                                                     })
+            for messagedict in messages:
+                command = messagedict['command']
+                params = messagedict['parameters']
+                if command in options.Matterbot['helpcmds']:
+                    await self.help_message(userid,params,chaninfo,rootid)
+                elif command in options.Matterbot['mapcmds']:
+                    await self.bind_message(userid,post,params,chaninfo,rootid)
+                else:
+                    tasks = []
+                    for module in self.commands:
+                        if command in self.commands[module]['binds']:
+                            if self.isallowed_module(userid, module, chaninfo):
+                                if not module in tasks:
+                                    tasks.append(module)
+                    if len(tasks):
+                        try:
+                            results = []
+                            files = []
+                            if 'metadata' in post:
+                                if 'files' in post['metadata']:
+                                    if len(post['metadata']['files']):
+                                        files = post['metadata']['files']
+                            with concurrent.futures.ThreadPoolExecutor(max_workers=None) as executor:
+                                for task in tasks:
+                                    try:
+                                        results.append(executor.submit(self.commands[task]['process'], command, channame, username, params, files, self.mmDriver))
+                                    except Exception as e:
+                                        text = 'An error occurred within module: '+task+': '+str(type(e))+': '+e
+                                        await self.send_message(chanid, text, rootid)
+                            for _ in concurrent.futures.as_completed(results):
+                                result = _.result()
+                                if result and 'messages' in result:
+                                    for message in result['messages']:
+                                        if 'text' in message:
+                                            text = message['text']
+                                        if 'uploads' in message:
+                                            if message['uploads'] != None:
+                                                file_ids = []
+                                                for upload in message['uploads']:
+                                                    filename = upload['filename']
+                                                    payload = upload['bytes']
+                                                    if not isinstance(payload, (bytes, bytearray)):
+                                                        payload = payload.encode()
+                                                    file_id = self.mmDriver.files.upload_file(
+                                                        channel_id=chanid,
+                                                        files={'files': (filename, payload)}
+                                                    )['file_infos'][0]['id']
+                                                    file_ids.append(file_id)
+                                                self.mmDriver.posts.create_post(options={'channel_id': chanid,
+                                                                                        'message': text,
+                                                                                        'file_ids': file_ids,
+                                                                                        })
+                                            else:
+                                                await self.send_message(chanid, text, rootid)
                                         else:
-                                            await self.send_message(channelid, text, postid)
-                                    else:
-                                        await self.send_message(channelid, text, postid)
-                    except Exception as e:
-                        text = 'A Python error occurred: '+str(type(e))+': '+str(e)
-                        await self.send_message(channelid, text)
-                        raise
-
-
+                                            await self.send_message(chanid, text, rootid)
+                        except Exception as e:
+                            text = 'A Python error occurred: '+str(type(e))+': '+str(e)
+                            await self.send_message(chanid, text, rootid)
 
 if __name__ == '__main__' :
     '''
@@ -274,7 +488,7 @@ if __name__ == '__main__' :
     if not options.debug:
         logging.basicConfig(filename=options.Matterbot['logfile'], format='%(levelname)s - %(name)s - %(asctime)s - %(message)s')
     else:
-        logging.basicConfig(format='%(levelname)s - %(name)s - %(asctime)s - %(message)s')
-    log = logging.getLogger( 'MatterAPI' )
+        logging.basicConfig(level=0,format='%(levelname)s - %(name)s - %(asctime)s - %(message)s')
+    log = logging.getLogger('MatterAPI')
     log.info('Starting MatterBot')
     mm = MattermostManager()

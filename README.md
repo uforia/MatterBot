@@ -1,11 +1,11 @@
 # MatterBot
 
-Code is GPLv3, (c) Arnim Eijkhoudt, 2022/2023.
+Code is GPLv3, (c) Arnim Eijkhoudt, 2022-2024.
 
-- Official github repository: https://github.com/uforia/matterbot/
+- Official github repository: https://github.com/uforia/MatterBot/
 - Pull/feature requests and comments are welcome: please open/post them on GitHub
-- If you are looking to deploy MatterBot in a commercial setting, please reach out to me
-  via my email address at my current employer
+- If you are looking to deploy MatterBot for commercial purposes, please reach out to me
+  via the uforia[@]dhcp[.]net email adress
 
 ## Status
 
@@ -43,6 +43,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | SebDraven                                                                                        | RSS            | No               | No                |
 | SecureList News                                                                                  | RSS            | No               | No                |
 | SecurityAffairs News                                                                             | RSS            | No               | No                |
+| Spiceworks Tech News                                                                             | RSS            | No               | No                |
 | TheHackerNews News                                                                               | RSS            | No               | No                |
 | Threatpost News                                                                                  | RSS            | No               | No                |
 | TrendMicro Research                                                                              | RSS            | No               | No                |
