@@ -156,6 +156,7 @@ MatterBot would not be possible without the amazing work and/or generous help of
 - MalwareBazaar: The author(s), for helping me iron out some bugs https://bazaar.abuse.ch
 - MISP: For being an absolutely amazing open-source platform for TI exchange https://misp-project.org
 - ThreatFox: The author(s), for helping me iron out some bugs https://threatfox.abuse.ch
+- Tycho van Marle: for his countless suggestions and contributions to the project
 - Unprotect.it: The author(s), for being receptive, kind and open to me including default (download) support for their project https://unprotect.it
 - URLhaus: The author(s), for helping me iron out some bugs https://urlhaus.abuse.ch
 
