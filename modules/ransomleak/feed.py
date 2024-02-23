@@ -128,6 +128,8 @@ def query(MAX=settings.ENTRIES):
                                             value = '*Timeout*'
                                         except:
                                             value = '*Unknown Error*'
+                                    else:
+                                        value = '`'+value+'`'
                                 if field == 'size':
                                     if len(entry['released']) and not len(entry['size']):
                                         value = '*Unclear*'
