@@ -16,10 +16,10 @@ import traceback
 from mattermostdriver import Driver
 
 
-class TokenAuth(requests.auth.AuthBase):
+class TokenAuth():
     def __call__(self, r):
         r.headers['Authorization'] = "Bearer %s" % options.Matterbot['password']
-        r.headers['X-Requested-With'] = "XMLHttpRequest"
+        r.headers['X-Requested-With'] = 'XMLHttpRequest'
         return r
 
 
@@ -28,11 +28,16 @@ class MattermostManager(object):
         logQueue.put(('INFO', "Going to set up driver for connection to %s " % (options.Matterbot['host'],) ))
         self.mmDriver = Driver(options={
             'url'       : options.Matterbot['host'],
-            'scheme'    : 'https',
             'port'      : options.Matterbot['port'],
+            'login_id'  : options.Matterbot['username'],
+            'token'     : options.Matterbot['password'],
+            'basepath'  : options.Matterbot['basepath'],
+            'scheme'    : options.Matterbot['scheme'],
             'auth'      : TokenAuth,
-            'basepath'  : '/api/v4',
-            'debug'     : options.debug,
+            #'debug'     : options.debug,
+            'keepalive' : True,
+            'keepalive_delay': 30,
+            'websocket_kw_args': {'ping_interval': 5},
         })
         self.me = self.mmDriver.users.get_user( user_id='me' )
         self.my_team_id = self.mmDriver.teams.get_team_by_name(options.Matterbot['teamname'])['id']
