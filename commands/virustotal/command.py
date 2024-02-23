@@ -157,7 +157,8 @@ def process(command, channel, username, params, files, conn):
                                 if 'last_https_certificate' in attributes:
                                     last_https_certificate = attributes['last_https_certificate']
                                     domains = set()
-                                    domains.add(last_https_certificate['subject']['CN'])
+                                    if 'CN' in last_https_certificate['subject']:
+                                        domains.add(last_https_certificate['subject']['CN'])
                                     if 'subject_alternative_name' in last_https_certificate['extensions']:
                                         for domain in last_https_certificate['extensions']['subject_alternative_name']:
                                             domains.add(domain)
