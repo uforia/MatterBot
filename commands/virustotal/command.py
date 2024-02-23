@@ -180,7 +180,8 @@ def process(command, channel, username, params, files, conn):
                                         if issuerpart in last_https_certificate['issuer']:
                                             issuers.add(last_https_certificate['issuer'][issuerpart])
                                     issuer = ', '.join(issuers)
-                                    text += '\n - Domain Name(s): `' + '`, `'.join(domains) + '`'
+                                    if len(domains):
+                                        text += '\n - Domain Name(s): `' + '`, `'.join(domains) + '`'
                                     text += '\n - Key: `' + algorithm + '-' + str(key_size) + '`, Sig: `' + signature_algorithm + '`, Issuer: `' + issuer + '`'
                                 if 'last_analysis_stats' in attributes:
                                     last_analysis_stats = attributes['last_analysis_stats']
