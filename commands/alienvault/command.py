@@ -72,7 +72,10 @@ def process(command, channel, username, params, files, conn):
                     APIENDPOINT = settings.APIURL['alienvault']['url']+endpoint+'?limit=10'
                     with requests.get(APIENDPOINT, headers=headers) as response:
                         message = ''
-                        json_response = response.json()
+                        try:
+                            json_response = response.json()
+                        except:
+                            continue
                         geofields = {
                             'asn': 'ASN',
                             'city': 'City',
