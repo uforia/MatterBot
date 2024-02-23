@@ -129,7 +129,7 @@ def query(MAX=settings.ENTRIES):
                                         except:
                                             value = '*Unknown Error*'
                                     else:
-                                        value = '`'+value+'`'
+                                        value = value.replace('*','x')
                                 if field == 'size':
                                     if len(entry['released']) and not len(entry['size']):
                                         value = '*Unclear*'
