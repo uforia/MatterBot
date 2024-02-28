@@ -52,7 +52,8 @@ class MattermostManager(object):
         sys.path.append(modulepath)
         self.commands = {}
         self.binds = []
-        self.channelmapping = { 'idtoname': {}, 'nametoid': {}}
+        self.channelmapping = {'idtoname': {}, 'nametoid': {}}
+        self.channels = self.mmDriver.channels.get_channels_for_user(self.my_id,self.my_team_id)
         
         try:
             bindmap = pathlib.Path(options.Matterbot['bindmap'])
@@ -133,8 +134,10 @@ class MattermostManager(object):
         try:
             if 'event' in message:
                 post_data = message['data']
-                if 'post' in post_data:
+                if 'post' in post_data: # We're handling some kind of post, e.g. a channel message
                     await self.handle_post(post_data)
+                else: # We're probably handling something administrative, such as channel adds/removals
+                    await self.handle_event(post_data)
         except json.JSONDecodeError as e:
             log.error(f"Could not handle message {message}: {e}")
 
@@ -267,7 +270,7 @@ class MattermostManager(object):
                         return True
                 except:
                     # Apparently the channel does not exist; perhaps it is spelled incorrectly or otherwise a misconfiguration?
-                    log.error("There is a non-existent channel set up in the bot bindings or configuration: %s" % (channame,))
+                    log.error(f"There is a non-existent channel set up in the bot bindings or configuration: {channame}")
         log.info(f"User {userid} is not allowed to use {module} in {channame}.")
         return False
 
@@ -334,7 +337,7 @@ class MattermostManager(object):
                 await self.send_message(chanid, message, rootid)
 
     async def help_message(self, userid, params, chaninfo, rootid):
-        chanid=chaninfo['id']
+        chanid = chaninfo['id']
         commands = set()
         if not params:
             for module in self.commands:
@@ -385,6 +388,37 @@ class MattermostManager(object):
                         except NameError:
                             await self.send_message(chanid, text, rootid)
 
+    async def handle_event(self, event: dict):
+        eventtype = event['type'] if 'type' in event else None
+        chanid = event['channel_id'] if 'channel_id' in event else None
+        if chanid:
+            channame = self.channelmapping['idtoname'][chanid]['name'] if chanid in self.channelmapping['idtoname'] else None
+        userid = event['user_id'] if 'user_id' in event else None
+        if userid:
+            username = self.userid_to_username(userid)
+        if not eventtype: # Not a regular type of event, check for the various types
+            if 'remover_id' in event and [chanid not in self.mmDriver.channels.get_channels_for_user(self.my_id,self.my_team_id)]: # Removed from a channel!
+                userid = event['remover_id']
+                username = self.userid_to_username(userid)
+                for modulename in self.commands:
+                    if channame in self.commands[modulename]['chans']:
+                        self.commands[modulename]['chans'].remove(channame)
+                        log.info(f"I was just removed from the '{channame}' ({chanid}) channel by '{username}' ({userid}). Existing module bindings for the channel were removed the config file.")
+                await self.update_bindmap()
+            elif ('team_id' in event and 'user_id' in event) and len(event) == 2: # Probably added to a channel (is this check accurate?)
+                new_channel = [_ for _ in self.mmDriver.channels.get_channels_for_user(self.my_id,self.my_team_id) if _ not in self.channels][0]
+                self.channels = self.mmDriver.channels.get_channels_for_user(self.my_id,self.my_team_id)
+                newchanid = new_channel['id']
+                newchanname = self.chanid_to_channame(newchanid)
+                newchandisplayname = self.chanid_to_chandisplayname(newchanid)
+                helpcommands = '`, `'.join(options.Matterbot['helpcmds'])
+                mapcommands = '`, `'.join(options.Matterbot['mapcmds'])
+                text = f"""Hi everyone! I just got added to this channel: '{newchandisplayname}'. **I am not a regular user, but a bot used for automation**.\n\n
+- If you want to see what I can do, use one of the help commands to get started: `{helpcommands}`.\n
+- If you're an administrator, you can use the `{mapcommands}` commands to configure modules for this channel.\n"""
+                await self.send_message(newchanid, text)
+
+
     async def handle_post(self, data: dict):
         if 'sender_name' in data:
             username = data['sender_name']
@@ -398,7 +432,7 @@ class MattermostManager(object):
         channame = chaninfo['name']
         rootid = post['root_id'] if len(post['root_id']) else post['id']
         messagelines = post['message'].splitlines()
-        # Check if the bot is allowed to respond to its own messages (see config file)
+        # We're probably handling a regular message; make sure to check we're allowed to respond our own messages too (see config file)
         if options.Matterbot['recursion'] or userid != self.my_id:
             messages = list()
             for mline in messagelines:
