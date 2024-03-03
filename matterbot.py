@@ -290,7 +290,7 @@ class MattermostManager(object):
                         text =  "**List of modules for channel: `%s`**\n" % (self.channame_to_chandisplayname(channame,))
                     text += "\n"
                     text += "\n| **Module Name** | **Available** | **Binds** | **Description** |"
-                    text += "\n| :- |  :- | :- |"
+                    text += "\n| :- | :- | :- | :- |"
                     for module in sorted(self.commands):
                         if self.isallowed_module(userid,module,chaninfo):
                             chans.add(module)
