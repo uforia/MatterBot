@@ -11,8 +11,8 @@ APIURL = {
 }
 HELP = {
     'DEFAULT': {
-        'args': '<lang> <type> <customer>',
-        'desc': 'Create a new composite `type` document in language `lang` for case number `casenumber`. E.g.: `@docgen en_US memo 2023041101`.',
+        'args': '<lang> <casenumber> or <upload>',
+        'desc': 'Generate a new composite PDF document in language `lang` for case number `casenumber`. E.g.: `@docgen en_US memo 2023041101`.\nWith the `upload` feature, the module will take the accompanying image attachment(s) and convert it/them to Base64 blobs on Wiki page(s) (with an optional title) for easy inclusion in other documents.',
     },
 }
 TEMPLATECASES = 'Template Cases'

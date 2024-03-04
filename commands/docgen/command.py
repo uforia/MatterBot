@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 
-import csv
-import datetime
-import os
+import base64
+import json
 import pypandoc
-import re
 import requests
-import sys
 import textwrap
 import traceback
 import weasyprint
@@ -28,19 +25,85 @@ else:
 
 def process(command, channel, username, params, files, conn):
     try:
+        subcommand = params[0]
         messages = []
-        if len(params)<2:
-            messages.append({'text': 'You need to specify the relevant language and case number!'})
+        if len(params)<1:
+            messages.append({'text': 'You need to specify a language from the list (`%s`) and case number, or the `upload` command with an image to convert to Base64.'} % ('`, `'.join(settings.LANGMAP,)))
         else:
             headers = {
                 'Authorization': 'Bearer %s' % settings.APIURL['docgen']['token'],
                 'Content-Type': settings.CONTENTTYPE,
             }
-            language = params[0]
-            casenumber = params[1]
-            if not language in settings.LANGMAP:
-                messages.append({'text': 'Language `%s` not recognized' % (language,)})
+            if subcommand == "upload":
+                if not len(files):
+                    messages.append({'text': "No image(s) to upload were given!"})
+                else:
+                    pagecontent = ""
+                    for file in files:
+                        id = file['id']
+                        imagebytes = conn.files.get_file(id).content # Grab the bytes
+                        imageb64 = base64.b64encode(imagebytes).decode('utf-8')
+                        imagename = file['name']
+                        mime_type = file['mime_type']
+                        for language in settings.LANGMAP:
+                            pagecontent += '\n<!---'+language+'--->\n'
+                            pagecontent += '\n<img class="%s" src="data:%s;base64,%s" alt="%s" /><br />\n' % (imagename,mime_type,imageb64,imagename)
+                            pagecontent += '\n<!---'+language+'--->\n'
+                        ### Now create a WikiJS page for every attached image
+                        description = "%s" % (imagename,)
+                        editor = "markdown"
+                        isPublished = "true"
+                        isPrivate = "false"
+                        locale = "en"
+                        path = "/home/%s" % (imagename.replace('.','-'),)
+                        title = "%s" % (imagename,)
+                        tags = '"'+title+'"'
+                        if len(params)>1:
+                            tags += ',"' + '", "'.join(params[1:]) + '"'
+                        tags = "[" + tags + "]"
+                        query = """
+                        mutation Page {
+                            pages {
+                                create (
+                                    content: \"\"\"%s\"\"\",
+                                    description: \"\"\"%s\"\"\",
+                                    editor: "%s",
+                                    isPublished: %s,
+                                    isPrivate: %s,
+                                    locale: "%s",
+                                    path: "%s",
+                                    tags: %s,
+                                    title: \"\"\"%s\"\"\"
+                                )
+                                {
+                                    responseResult {
+                                        succeeded,
+                                        errorCode,
+                                        slug,
+                                        message
+                                    },
+                                    page {
+                                        id,
+                                        path,
+                                        title
+                                    }
+                                }
+                            }
+                        }
+                        """ % (pagecontent, description, editor, isPublished, isPrivate, locale, path, tags, title,)
+                        query = json.dumps({'query': query.strip()})
+                        with requests.post(settings.APIURL['docgen']['url']+'/graphql', headers=headers, data=query) as response:
+                            json_response = response.json()
+                            if 'data' in json_response:
+                                if 'pages' in json_response['data']:
+                                    if 'create' in json_response['data']['pages']:
+                                        imagepath = settings.APIURL['docgen']['url'].replace('graphql','')
+                                        messages.append({'text': "Image page created for ["+imagename+"]("+imagepath+path+")"})
+            elif not subcommand in settings.LANGMAP:
+                messages.append({'text': 'Language `%s` not recognized' % (subcommand,)})
             else:
+                language = subcommand
+                casenumber = params[1]
                 query = '{"query":"query { pages { list (orderBy: PATH) { id path title }}}"}'
                 with requests.post(settings.APIURL['docgen']['url'], headers=headers, data=query) as response:
                     pages = response.json()
