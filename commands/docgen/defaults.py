@@ -11,8 +11,20 @@ APIURL = {
 }
 HELP = {
     'DEFAULT': {
-        'args': '<lang> <casenumber> or <upload>',
-        'desc': 'Generate a new composite PDF document in language `lang` for case number `casenumber`. E.g.: `@docgen en_US memo 2023041101`.\nWith the `upload` feature, the module will take the accompanying image attachment(s) and convert it/them to Base64 blobs on Wiki page(s) (with an optional title) for easy inclusion in other documents.',
+        'args': None,
+        'desc': 'This module is used for document processing: generating documents, creating resources such as image uploads, parsing response plan surveys, etc.',
+    },
+    '<lang>': {
+        'args': '<casenumber>',
+        'desc': 'Generate a new composite PDF document in language `lang` for case number `casenumber`. E.g.: `@docgen en_US memo 2023041101`.',
+    },
+    'upload': {
+        'args': '<comments> (optional!)',
+        'desc': 'The module will take the attached image(s) and create a separate Wiki page for every one (with the optional comment(s)). They can then be easily included into other documents.',
+    },
+    'parse': {
+        'args': '<title>',
+        'desc': 'The module will take the attached Excel/CSV file and attempt to parse its contents, creating a questions & answers page on the Wiki with the given title.',
     },
 }
 TEMPLATECASES = 'Template Cases'
