@@ -14,9 +14,9 @@ HELP = {
         'args': None,
         'desc': 'This module is used for document processing: generating documents, creating resources such as image uploads, parsing response plan surveys, etc.',
     },
-    '<lang>': {
+    '<language>': {
         'args': '<casenumber>',
-        'desc': 'Generate a new composite PDF document in language `lang` for case number `casenumber`. E.g.: `@docgen en_US memo 2023041101`.',
+        'desc': 'Generate a new composite PDF document in the language `language` for case number `casenumber`. ISO language codes should be configured/used wherever possible, including on the Wiki for page block separation. For example: `@docgen en_US memo 2023041101`.',
     },
     'upload': {
         'args': '<comments> (optional!)',
