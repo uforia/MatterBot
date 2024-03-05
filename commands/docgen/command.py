@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 
 import base64
+import csv
+from io import BytesIO
 import json
+import numpy
+import pandas
 import pypandoc
 import requests
 import textwrap
@@ -28,13 +32,115 @@ def process(command, channel, username, params, files, conn):
         subcommand = params[0]
         messages = []
         if len(params)<1:
-            messages.append({'text': 'You need to specify a language from the list (`%s`) and case number, or the `upload` command with an image to convert to Base64.'} % ('`, `'.join(settings.LANGMAP,)))
+            messages.append({'text': 'This module requires a subcommand and (optional) arguments. Please read the help first.'})
         else:
             headers = {
                 'Authorization': 'Bearer %s' % settings.APIURL['docgen']['token'],
                 'Content-Type': settings.CONTENTTYPE,
             }
-            if subcommand == "upload":
+            if subcommand == 'parse':
+                if not len(files) or len(files)>1:
+                    messages.append({'text': 'Please attach (exactly) one Excel/CSV file to parse.'})
+                else:
+                    pagecontent = ""
+                    file = files[0]
+                    fileid = file['id']
+                    filename = file['name']
+                    filebytes = conn.files.get_file(fileid).content
+                    mime_type = file['mime_type']
+                    if filename.endswith('.xls') or filename.endswith('.xlsx'):
+                        xl_sheets = pandas.read_excel(BytesIO(filebytes),sheet_name=None,na_values=None)
+                        for sheetname in xl_sheets:
+                            content = False
+                            pagecontent += '## %s\n\n' % (sheetname.capitalize(),)
+                            sheetcontent = xl_sheets[sheetname]
+                            columnnames = list(sheetcontent)
+                            columnlength = len(sheetcontent[columnnames[0]])
+                            alignment = ('| :- ' * len(columnnames))
+                            alignment += '|\n'
+                            row = 0
+                            while row < columnlength:
+                                line = '| '
+                                earliercontent = content
+                                content = False
+                                for columnname in columnnames:
+                                    cellcontent = sheetcontent[columnname][row]
+                                    celltype = type(cellcontent)
+                                    if celltype is float or celltype is int:
+                                        if numpy.isnan(cellcontent):
+                                            line += '- | '
+                                        else:
+                                            cellcontent = str(cellcontent).strip(':').replace('\n',' ')
+                                            line += '%s | ' % (cellcontent,)
+                                            content = True
+                                    else:
+                                        cellcontent = str(cellcontent).strip(':').replace('\n',' ')
+                                        line += '%s | ' % (cellcontent,)
+                                        content = True
+                                if content:
+                                    line = line[:-1]+'\n'
+                                    pagecontent += line
+                                    if not earliercontent:
+                                        pagecontent += alignment
+                                elif earliercontent:
+                                    pagecontent += '\n'
+                                row += 1
+                            pagecontent += '\n\n'
+                        for language in settings.LANGMAP:
+                            wikipage =  '\n<!---'+language+'--->\n'
+                            wikipage += pagecontent
+                            wikipage += '\n<!---'+language+'--->\n'
+                        ### Now create a WikiJS page for the parsed XLSX
+                        description = "%s" % (filename,)
+                        editor = "markdown"
+                        isPublished = "true"
+                        isPrivate = "false"
+                        locale = "en"
+                        path = "/home/%s" % (filename.replace('.','-'),)
+                        title = "%s" % (filename,)
+                        tags = '"'+title+'"'
+                        if len(params)>1:
+                            tags += ',"' + '", "'.join(params[1:]) + '"'
+                        tags = "[" + tags + "]"
+                        query = """
+                        mutation Page {
+                            pages {
+                                create (
+                                    content: \"\"\"%s\"\"\",
+                                    description: \"\"\"%s\"\"\",
+                                    editor: "%s",
+                                    isPublished: %s,
+                                    isPrivate: %s,
+                                    locale: "%s",
+                                    path: "%s",
+                                    tags: %s,
+                                    title: \"\"\"%s\"\"\"
+                                )
+                                {
+                                    responseResult {
+                                        succeeded,
+                                        errorCode,
+                                        slug,
+                                        message
+                                    },
+                                    page {
+                                        id,
+                                        path,
+                                        title
+                                    }
+                                }
+                            }
+                        }
+                        """ % (pagecontent, description, editor, isPublished, isPrivate, locale, path, tags, title,)
+                        query = json.dumps({'query': query.strip()})
+                        with requests.post(settings.APIURL['docgen']['url']+'/graphql', headers=headers, data=query) as response:
+                            json_response = response.json()
+                            if 'data' in json_response:
+                                if 'pages' in json_response['data']:
+                                    if 'create' in json_response['data']['pages']:
+                                        filepath = settings.APIURL['docgen']['url'].replace('graphql','')
+                                        messages.append({'text': "Excel conversion page created for ["+filename+"]("+filepath+path+")"})
+            elif subcommand == 'upload':
                 if not len(files):
                     messages.append({'text': "No image(s) to upload were given!"})
                 else:
@@ -99,9 +205,7 @@ def process(command, channel, username, params, files, conn):
                                     if 'create' in json_response['data']['pages']:
                                         imagepath = settings.APIURL['docgen']['url'].replace('graphql','')
                                         messages.append({'text': "Image page created for ["+imagename+"]("+imagepath+path+")"})
-            elif not subcommand in settings.LANGMAP:
-                messages.append({'text': 'Language `%s` not recognized' % (subcommand,)})
-            else:
+            elif subcommand in settings.LANGMAP:
                 language = subcommand
                 casenumber = params[1]
                 query = '{"query":"query { pages { list (orderBy: PATH) { id path title }}}"}'
@@ -131,7 +235,7 @@ def process(command, channel, username, params, files, conn):
                 if template_cases_content and template_idchain_content:
                     for entry in template_cases_content:
                         if entry['casenumber'].lower() == casenumber.lower():
-                            template_cases = entry 
+                            template_cases = entry
                 template_id_chain = None
                 if template_cases:
                     if 'type' in template_cases:
@@ -260,6 +364,8 @@ def process(command, channel, username, params, files, conn):
                             raise
                 else:
                     messages.append({'text': 'Case `%s` does not yet exist.' % (casenumber,)})
+            else:
+                messages.append({'text': 'Command or language `%s` not recognized.' % (subcommand,)})
     except Exception as e:
         messages.append({'text': 'A Python error occurred during document generation:\nError:' + str(traceback.format_exc())})
     finally:

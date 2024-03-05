@@ -5,6 +5,8 @@ ConfigArgParse
 feedparser
 graphviz
 mattermostdriver
+openpyxl
+pandas
 paramiko
 pyOpenSSL
 pypandoc
