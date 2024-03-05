@@ -5,6 +5,7 @@ ConfigArgParse
 feedparser
 graphviz
 mattermostdriver
+numpy
 openpyxl
 pandas
 paramiko
