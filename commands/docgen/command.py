@@ -8,6 +8,7 @@ import json
 import numpy
 import pandas
 import pypandoc
+import re
 import requests
 import textwrap
 import traceback
