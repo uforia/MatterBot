@@ -13,6 +13,7 @@ pyOpenSSL
 pypandoc
 PyYAML
 Requests
-tldextract
+tldextract # can be dropped soon!
 urllib3
 weasyprint
+validators
