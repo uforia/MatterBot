@@ -45,7 +45,10 @@ def process(command, channel, username, params, files, conn):
                 if not len(files) or len(files)>1:
                     messages.append({'text': 'Please attach (exactly) one Excel/CSV file to parse.'})
                 else:
-                    pagecontent = ""
+                    # Make this part multilingual
+                    pagecontent =  "# Klantgegevens Response Plan\n\n"
+                    pagecontent += "In dit hoofdstuk staan de ingevulde antwoorden uit het intakeformulier voor het response plan. "
+                    pagecontent += "De gegevens zijn, tenzij anders vermeld, ingevuld door <%customername%>."
                     file = files[0]
                     fileid = file['id']
                     filename = file['name']
