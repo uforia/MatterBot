@@ -331,7 +331,7 @@ def process(command, channel, username, params, files, conn):
                                 m = re.search('id=\"(.+?)\"', section)
                                 if m:
                                     chaptertitle = m.group(1)
-                                    toc += '\n<li><a href="#'+chaptertitle+'" class="toctext"></a> <a href="'+chaptertitle+'" class="tocpagenr"> </a></li>'
+                                    toc += '\n<li><a href="#'+chaptertitle+'" class="toctext"></a> <a href="#'+chaptertitle+'" class="tocpagenr"></a></li>'
                             html = html.replace('%TOCMARKER%',toc)
                         with open(mdfile, 'wb') as f:
                             f.write(content.encode())
@@ -353,7 +353,7 @@ def process(command, channel, username, params, files, conn):
                                         {'filename': filename, 'bytes': filecontent}
                                     ]
                                 })
-                            #with open(mdfile, 'rb') as f:
+                            ''' Debugging code: enable to be able to see the MarkDown source before final rendering
                             filecontent = skeletondocument
                             filename = mdfile.replace(MODULEDIR,'')
                             if len(filecontent):
@@ -363,6 +363,7 @@ def process(command, channel, username, params, files, conn):
                                         {'filename': filename, 'bytes': skeletondocument}
                                     ]
                                 })
+                            '''
                             os.unlink(mdfile)
                             os.unlink(htmlfile)
                             os.unlink(pdffile)
