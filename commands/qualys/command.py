@@ -122,16 +122,8 @@ def process(command, channel, username, params, files, conn):
                             'operation': 'OR',
                         },
                     }
-                    query = params[1]
+                    query = ' '.join(params[1:])
                     completeAPIurl = settings.APIURL['qualys']['csam']
-                    outputFilters = None
-                    collation = None
-                    if len(params)>2:
-                        filters = ' '.join(params[2:])
-                        if 'filters:' in filters:
-                            outputFilters = set(normalizeFields(' '.join(filters.split('filters:')[1:]).split(' ')[0].split(',')))
-                        if 'collate:' in filters:
-                            collation = set(' '.join(filters.split('output:')[1:]).split(' ')[0].split(',')[0])
                     for filter in filtermap[querytype]['filters']:
                         filter['value'] = query.lower()
                     if querytype in ('host',):
@@ -233,8 +225,6 @@ def process(command, channel, username, params, files, conn):
                                                             headercount = 0
                                                             message = '\n**Qualys CSAM query results**'
                                                             message += '\n*Querytype*: `%s` --- *Query*: `%s`' % (querytype,query)
-                                                            if outputFilters or collation:
-                                                                message += '\n*Note: your filters are ignored, since IP/host lookups are specific matches.*`'
                                                             message += '\n\n'
                                                             foundfields = set()
                                                             for asset in assets:
