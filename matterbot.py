@@ -405,20 +405,6 @@ class MattermostManager(object):
                         self.commands[modulename]['chans'].remove(channame)
                         log.info(f"I was just removed from the '{channame}' ({chanid}) channel by '{username}' ({userid}). Existing module bindings for the channel were removed the config file.")
                 await self.update_bindmap()
-            elif ('team_id' in event and 'user_id' in event) and len(event) == 2: # Probably added to a channel (this check is not yet accurate, needs improvement)
-                new_channel = [_ for _ in self.mmDriver.channels.get_channels_for_user(self.my_id,self.my_team_id) if _ not in self.channels][0]
-                self.channels = self.mmDriver.channels.get_channels_for_user(self.my_id,self.my_team_id)
-                newchanid = new_channel['id']
-                newchanname = self.chanid_to_channame(newchanid)
-                newchandisplayname = self.chanid_to_chandisplayname(newchanid)
-                helpcommands = '`, `'.join(options.Matterbot['helpcmds'])
-                mapcommands = '`, `'.join(options.Matterbot['mapcmds'])
-                """
-                text =  f"Hi everyone! I just got added to this channel: '{newchandisplayname}'. **I am not a regular user, but a bot used for automation**.\n\n"
-                text += f"- If you want to see what I can do, use one of the help commands to get started: `{helpcommands}`.\n"
-                text += f"- If you're an administrator, you can use the `{mapcommands}` commands to configure modules for this channel.\n"
-                await self.send_message(newchanid, text)
-                """
 
 
     async def handle_post(self, data: dict):
