@@ -425,6 +425,10 @@ def process(command, channel, username, params, files, conn):
                     text += '\n**Monitor**: ' + monitored_ips_remaining + '/' + monitored_ips_limit
                     messages.append({'text': text})
             return {'messages': messages}
+        except ValueError as e:
+            return {'messages': [
+                {'text': 'Seems like Shodan did not return something like JSON: `%s`' % (response.content,)}
+            ]}
         except Exception as e:
             return {'messages': [
                 {'text': 'A Python error occurred searching Shodan:\nError: `%s`' % (traceback.format_exc(),)}
