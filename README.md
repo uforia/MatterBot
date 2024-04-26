@@ -28,6 +28,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | CSHub (configurable list of CSHub feeds)                                                         | RSS            | No               | No                |
 | DarkNet blog                                                                                     | RSS            | No               | No                |
 | DataBreachSecurity News                                                                          | RSS            | No               | No                |
+| DIVD CSIRT                                                                                       | RSS            | No               | No                |
 | GBHackers News                                                                                   | RSS            | No               | No                |
 | Kitploit Tool Updates                                                                            | RSS            | No               | No                |
 | KnowBe4 News                                                                                     | RSS            | No               | No                |
