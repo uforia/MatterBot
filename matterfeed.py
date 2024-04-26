@@ -88,7 +88,7 @@ class MsgWorker(threading.Thread):
         while True:
             newsItem = self.msgQueue.get()
             channel, module, content = newsItem
-            self.logQueue.put(('INFO', 'Message: ' + module.lower() + ' => ' + channel + ' => ' + content[:20] + '...'))
+            self.logQueue.put(('INFO', 'Message  : ' + module.lower() + ' => ' + channel + ' => ' + content[:20] + '...'))
             self.mm.createPost(self.mm.channels[channel], content)
             self.msgQueue.task_done()
 
@@ -175,9 +175,9 @@ class ModuleWorker(threading.Thread):
                             history[self.module].append(item)
                             if not first_run:
                                 if options.debug:
-                                    self.logQueue.put(('DEBUG', 'Posting : ' + self.module + ' => ' + channel + ' => ' + content + '...'))
+                                    self.logQueue.put(('DEBUG', 'Posting  : ' + self.module + ' => ' + channel + ' => ' + content + '...'))
                                 else:
-                                    self.logQueue.put(('INFO', 'Posting : ' + self.module + ' => ' + channel + ' => ' + content[:80] + '...'))
+                                    self.logQueue.put(('INFO', 'Posting  : ' + self.module + ' => ' + channel + ' => ' + content[:80] + '...'))
                                     self.msgQueue.put((channel, self.module, content))
                 if options.debug:
                     logQueue.put(('DEBUG', 'Summary : ' + self.module + ' => '+ str(len(items)) + ' messages ...'))
