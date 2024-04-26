@@ -22,7 +22,7 @@ def process(command, channel, username, params, files, conn):
     # Methods to query the current API account info (credits etc.)
     messages = []
     querytypes = ['IPv4','IPv6','hostname','md5','sha1','sha256','url']
-    stripchars = '`\[\]\n\r\'\"'
+    stripchars = '`\\[\\]\n\r\'\"'
     regex = re.compile('[%s]' % stripchars)
     try:
         if len(params)>0:

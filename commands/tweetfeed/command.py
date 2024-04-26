@@ -30,7 +30,7 @@ def process(command, channel, username, params, files, conn):
     messages = []
     try:
         if len(params)>3:
-            stripchars = '`\n\r\'\"\[\]'
+            stripchars = '`\n\r\'\"\\[\\]'
             regex = re.compile('[%s]' % stripchars)
             params = regex.sub('',params).replace('hxxp','http')
             APIENDPOINT = settings.APIURL['tweetfeed']['url']

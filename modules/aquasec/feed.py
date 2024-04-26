@@ -33,7 +33,7 @@ def query(MAX=settings.ENTRIES):
     items = []
     feed = feedparser.parse(settings.URL)
     count = 0
-    stripchars = '`\[\]\'\"'
+    stripchars = '`\\[\\]\'\"'
     regex = re.compile('[%s]' % stripchars)
     while count < MAX:
         try:

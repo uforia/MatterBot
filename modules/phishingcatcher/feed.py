@@ -41,7 +41,7 @@ def query(MAX=settings.ENTRIES):
     items = []
     data = None
     count = 0
-    stripchars = '`\[\]\'\"\(\)'
+    stripchars = '`\\[\\]\'\"\(\)'
     regex = re.compile('[%s]' % stripchars)
     if 'http' in settings.SUSLOG.lower():
         if settings.AUTH['username'] and settings.AUTH['password']:

@@ -31,7 +31,7 @@ else:
 
 def query(MAX=settings.ENTRIES):
     items = []
-    stripchars = '`\[\]\'\"'
+    stripchars = '`\\[\\]\'\"'
     regex = re.compile('[%s]' % stripchars)
     for subreddit in settings.SUBREDDITS:
         feed = feedparser.parse("https://www.reddit.com/r/"+subreddit+"/.rss")

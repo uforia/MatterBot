@@ -31,7 +31,7 @@ else:
 
 def query(MAX=settings.ENTRIES):
     items = []
-    stripchars = '`\[\]\'\"'
+    stripchars = '`\\[\\]\'\"'
     regex = re.compile('[%s]' % stripchars)
     for category in settings.CATEGORIES:
         feedurl = "https://us-cert.cisa.gov/"+category+".xml"

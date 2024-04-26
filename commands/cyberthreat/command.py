@@ -86,7 +86,6 @@ def process(command, channel, username, params, files, conn):
                             text+=f"Last seen: {fqdnlist[domain]['last_seen'].strftime('%Y-%m-%d')}.\n"
                             if len(fqdnlist[domain]['subdomains']):
                                 text+=f"We have found the following subdomains: \n- `{listitem.join(fqdnlist[domain]['subdomains'])}`."
-                        
                 else:
                     """ In case the params doesnt even look like a valid domain name. """
                     return

@@ -25,7 +25,7 @@ def process(command, channel, username, params, files, conn):
     # Methods to query the current API account info (credits etc.)
     messages = []
     querytypes = ['domain','host','subdomains']
-    stripchars = '`\[\]\n\r\'\"'
+    stripchars = '`\\[\\]\n\r\'\"'
     regex = re.compile('[%s]' % stripchars)
     try:
         if len(params)>0:

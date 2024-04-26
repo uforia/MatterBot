@@ -42,7 +42,7 @@ def query(MAX=settings.ENTRIES):
             with requests.get("https://www.cshub.com/rss/categories/"+category,headers=headers) as response:
                 feed = feedparser.parse(response.content)
                 count = 0
-                stripchars = '`\[\]\'\"'
+                stripchars = '`\\[\\]\'\"'
                 regex = re.compile('[%s]' % stripchars)
                 while count < MAX:
                     try:
