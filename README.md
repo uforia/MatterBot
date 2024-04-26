@@ -30,6 +30,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | DataBreachSecurity News                                                                          | RSS            | No               | No                |
 | DIVD CSIRT                                                                                       | RSS            | No               | No                |
 | GBHackers News                                                                                   | RSS            | No               | No                |
+| Group-IB Blog                                                                                    | RSS            | No               | No                |
 | Kitploit Tool Updates                                                                            | RSS            | No               | No                |
 | KnowBe4 News                                                                                     | RSS            | No               | No                |
 | KrebsOnSecurity Blog                                                                             | RSS            | No               | No                |
@@ -46,6 +47,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | SecurityAffairs News                                                                             | RSS            | No               | No                |
 | Spiceworks Tech News                                                                             | RSS            | No               | No                |
 | TheHackerNews News                                                                               | RSS            | No               | No                |
+| The Record Media                                                                                 | RSS            | No               | No                |
 | Threatpost News                                                                                  | RSS            | No               | No                |
 | TrendMicro Research                                                                              | RSS            | No               | No                |
 | Tripwire State of Security                                                                       | RSS            | No               | No                |
