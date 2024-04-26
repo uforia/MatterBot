@@ -1,6 +1,7 @@
 azure-search-documents
 azure-storage-blob
 beautifulsoup4
+lxml
 ConfigArgParse
 feedparser
 graphviz
