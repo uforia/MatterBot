@@ -17,15 +17,15 @@ import feedparser
 import re
 from pathlib import Path
 try:
-    from modules.bruceschneier import defaults as settings
+    from modules.divd import defaults as settings
 except ModuleNotFoundError: # local test run
     import defaults as settings
     if Path('settings.py').is_file():
         import settings
 else:
-    if Path('modules/bruceschneier/settings.py').is_file():
+    if Path('modules/divd/settings.py').is_file():
         try:
-            from modules.bruceschneier import settings
+            from modules.divd import settings
         except ModuleNotFoundError: # local test run
             import settings
 
