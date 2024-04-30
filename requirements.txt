@@ -1,10 +1,11 @@
 azure-search-documents
 azure-storage-blob
 beautifulsoup4
-lxml
+chardet
 ConfigArgParse
 feedparser
 graphviz
+lxml
 mattermostdriver
 numpy
 openpyxl

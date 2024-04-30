@@ -15,6 +15,7 @@ bindmap.json
 commands/*/settings.py
 commands/csirt*/*
 modules/*/*.cache
+modules/*/*.cache.db
 modules/*/*.json
 modules/*/settings.py
 modules/csirt*/*
