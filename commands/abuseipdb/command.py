@@ -139,10 +139,11 @@ def process(command, channel, username, params, files, conn):
                                                     categories = report['categories']
                                                     for category in categories:
                                                         uniquecats.add(reportCategories[str(category)])
-                                            if len(uniquecats):
-                                                value = '`'+'`, `'.join(uniquecats)+'`'
-                                            else:
-                                                value = '-'
+                                            if 'categories' in report:
+                                                if len(uniquecats):
+                                                    value = '`'+'`, `'.join(uniquecats)+'`'
+                                                else:
+                                                    value = '-'
                                         else:
                                             if isinstance(value,int) or isinstance(value,float):
                                                 value = '`'+str(value)+'`'
