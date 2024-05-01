@@ -2,6 +2,7 @@
 
 import datetime
 import json
+import pytz
 import requests
 from pathlib import Path
 try:
@@ -44,6 +45,7 @@ def process(command, channel, username, params, files, conn):
                 "value": params,
             }
             with requests.post(settings.APIENDPOINT, data=json.dumps(data), headers=headers) as response:
+                print(response.content)
                 answer = response.json()
                 results = answer['response']['Attribute']
                 resultset = set()
@@ -52,7 +54,7 @@ def process(command, channel, username, params, files, conn):
                     for result in results:
                         name = result['Event']['info'].replace('\n', ' ')
                         comment = result['Event']['comment'].replace('\n', ' ') if 'comment' in result['Event'] else None
-                        timestamp = datetime.datetime.utcfromtimestamp(int(result['timestamp'])).strftime('%Y-%m-%dT%H:%M:%SZ')
+                        timestamp = datetime.datetime.fromtimestamp(int(result['timestamp']),pytz.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
                         category = result['category']
                         type = result['type'].replace('|','` and `')
                         to_ids = result['to_ids']
