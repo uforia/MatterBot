@@ -28,7 +28,7 @@ def process(command, channel, username, params, files, conn):
             messages = []
             data = None
             if '/' in query:
-                ip,netblock = query.split('/')
+                ip,netblock = query.split('/')[0],query.split('/')[1]
                 url = settings.APIURL['abuseipdb']['url']+'check-block'
                 querytype = 'network'
             else:
