@@ -45,7 +45,6 @@ def process(command, channel, username, params, files, conn):
                 "value": params,
             }
             with requests.post(settings.APIENDPOINT, data=json.dumps(data), headers=headers) as response:
-                print(response.content)
                 answer = response.json()
                 results = answer['response']['Attribute']
                 resultset = set()
