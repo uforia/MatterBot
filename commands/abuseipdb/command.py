@@ -133,17 +133,16 @@ def process(command, channel, username, params, files, conn):
                                             else:
                                                 value = ':waving_black_flag:'
                                         elif field == 'reports':
+                                            uniquecats = set()
                                             for report in data[field]:
                                                 if 'categories' in report:
-                                                    uniquecats = set()
                                                     categories = report['categories']
                                                     for category in categories:
                                                         uniquecats.add(reportCategories[str(category)])
-                                            if 'categories' in report:
-                                                if len(uniquecats):
-                                                    value = '`'+'`, `'.join(uniquecats)+'`'
-                                                else:
-                                                    value = '-'
+                                            if len(uniquecats):
+                                                value = '`'+'`, `'.join(uniquecats)+'`'
+                                            else:
+                                                value = '-'
                                         else:
                                             if isinstance(value,int) or isinstance(value,float):
                                                 value = '`'+str(value)+'`'
