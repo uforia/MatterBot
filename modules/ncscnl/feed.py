@@ -39,11 +39,11 @@ def query(MAX=settings.ENTRIES):
         try:
             title = feed.entries[count].title
             if settings.AUTOADVISORY:
+                productnames = set()
                 for lookupvalue in settings.LOOKUPVALUES:
                     luregex = re.compile('%s' % lookupvalue)
                     matches = luregex.search(title)
                     if matches:
-                        productnames = set()
                         for productsplit in settings.PRODUCTSPLIT:
                             if productsplit in title:
                                 productname = title.split(productsplit)[1]
@@ -51,10 +51,10 @@ def query(MAX=settings.ENTRIES):
                                     productnames.update(productname.split(' en '))
                                 else:
                                     productnames.add(productname)
-                        for productname in productnames:
-                            for channel in settings.ADVISORYCHANS:
-                                for lookup in settings.ADVISORYCHANS[channel]:
-                                    items.append([channel, ' '.join([lookup,productname])])
+                for productname in productnames:
+                    for channel in settings.ADVISORYCHANS:
+                        for lookup in settings.ADVISORYCHANS[channel]:
+                            items.append([channel, ' '.join([lookup,productname])])
             link = feed.entries[count].link
             content = settings.NAME + ': ['+title+']('+link+')'
             if len(feed.entries[count].description):
