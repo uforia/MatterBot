@@ -71,4 +71,3 @@ def query(MAX=settings.ENTRIES):
 
 if __name__ == "__main__":
     print(query())
-    #print
