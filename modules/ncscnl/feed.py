@@ -33,11 +33,28 @@ def query(MAX=settings.ENTRIES):
     items = []
     feed = feedparser.parse(settings.URL)
     count = 0
-    stripchars = '`\\[\\]\'\"'
+    stripchars = r'`\\[\\]\'\"'
     regex = re.compile('[%s]' % stripchars)
     while count < MAX:
         try:
             title = feed.entries[count].title
+            if settings.AUTOADVISORY:
+                for lookupvalue in settings.LOOKUPVALUES:
+                    luregex = re.compile('%s' % lookupvalue)
+                    matches = luregex.search(title)
+                    if matches:
+                        productnames = set()
+                        for productsplit in settings.PRODUCTSPLIT:
+                            if productsplit in title:
+                                productname = title.split(productsplit)[1]
+                                if ' en ' in productname:
+                                    productnames.update(productname.split(' en '))
+                                else:
+                                    productnames.add(productname)
+                        for productname in productnames:
+                            for channel in settings.ADVISORYCHANS:
+                                for lookup in settings.ADVISORYCHANS[channel]:
+                                    items.append([channel, ' '.join([lookup,productname])])
             link = feed.entries[count].link
             content = settings.NAME + ': ['+title+']('+link+')'
             if len(feed.entries[count].description):
@@ -54,3 +71,4 @@ def query(MAX=settings.ENTRIES):
 
 if __name__ == "__main__":
     print(query())
+    #print
