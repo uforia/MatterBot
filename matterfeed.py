@@ -173,12 +173,13 @@ class ModuleWorker(threading.Thread):
                         channel, content = item
                         # Deal with self-referential calls. They should always trigger and not once.
                         if content.startswith('@') or content.startswith('!'):
-                            if options.debug:
-                                self.logQueue.put(('DEBUG', 'Posting  : ' + self.module + ' => ' + channel + ' => ' + content + '...'))
-                            else:
-                                self.logQueue.put(('INFO', 'Posting  : ' + self.module + ' => ' + channel + ' => ' + content[:80] + '...'))
-                                self.msgQueue.put((channel, self.module, content))
-                        if not item in history[self.module]:
+                            if not first_run:
+                                if options.debug:
+                                    self.logQueue.put(('DEBUG', 'Posting  : ' + self.module + ' => ' + channel + ' => ' + content + '...'))
+                                else:
+                                    self.logQueue.put(('INFO', 'Posting  : ' + self.module + ' => ' + channel + ' => ' + content[:80] + '...'))
+                                    self.msgQueue.put((channel, self.module, content))
+                        elif not item in history[self.module]:
                             history[self.module].append(item)
                             if not first_run:
                                 if options.debug:
