@@ -48,7 +48,9 @@ def query(MAX=settings.ENTRIES):
                             if productsplit in title:
                                 productname = title.split(productsplit)[1]
                                 if ' en ' in productname:
-                                    productnames.update(productname.split(' en '))
+                                    products = productname.split(' en ')
+                                    for product in products:
+                                        productnames.add(product)
                                 else:
                                     productnames.add(productname)
                 for productname in productnames:
@@ -70,4 +72,5 @@ def query(MAX=settings.ENTRIES):
     return items
 
 if __name__ == "__main__":
-    print(query())
+    for item in query():
+        print(item)
