@@ -22,6 +22,11 @@ HISTORY = "history.cache"
 HISTORYFILTER = (
     r'NCSC-\d{1,4}-\d{1,4} \[\d{1}\.\d{1,2}] \[[hHmMlL]/[hHmMlL]\]',
 )
+# Title filter: remove all parts of the title with this part in it. Useful
+# for removing generic terms such as 'products', in order to improve asset
+# management query accuracy. Can be a regular expression as well!
+TITLEFILTER = (
+)
 # List of e.g. chance/impact levels to check up (or not). This is probably
 # fine in its default configuration, if you are only looking at severities.
 # You could also use other strings to wildcard match on here; they are

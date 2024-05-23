@@ -83,6 +83,10 @@ def query(MAX=settings.ENTRIES):
                                     if matches:
                                         for productsplit in settings.PRODUCTSPLIT:
                                             if productsplit in title:
+                                                if len(settings.TITLEFILTER):
+                                                    for titlefilter in settings.TITLEFILTER:
+                                                        tfregex = re.compile(re.escape(titlefilter), re.IGNORECASE)
+                                                        title = tfregex.sub('',title).strip()
                                                 productname = title.split(productsplit)[1]
                                                 if ' en ' in productname:
                                                     products = productname.split(' en ')
