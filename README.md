@@ -119,12 +119,12 @@ New Matterbot modules can be created. A boilerplate example can be found in the 
 
 ### General information
 
-`matterfeed.py` goes through the `modules` directory and will run all detected modules every 5 minutes, outputting the results to the specified channels. Every module has its own custom configuration: you'll need to check the individual directories for more information. For example, the WikiJS module requires you to have a WikiJS instance with GraphQL API access, as well as a Microsoft Azure Search instance. You'll need to put the API key etc. in its configuration for it to work properly.
+`matterfeed.py` goes through the `modules` directory and will run all detected modules every (by default) 5 minutes, outputting the results to the specified channels. Every module has its own custom configuration: you'll need to check the individual directories for more information. For example, the WikiJS module requires you to have a WikiJS instance with GraphQL API access, as well as a Microsoft Azure Search instance. You'll need to put the API key etc. in its configuration for it to work properly.
 
 ### Getting started
 
 1) Copy `config.defaults.yaml` to `config.yaml` and edit the settings.
-2) For every module you want to use, check the respective configuration in `modules/.../`. Create a `settings.py` and use that to override the configuration from `defaults.py`. If you do not want to use a module, the easiest way to disable it is to rename the `feed.py` file to something else, so it will not be detected on startup.
+2) For every module you want to use, check the respective configuration in `modules/.../`. If you do not want to use a `feed` module, the easiest way to disable it is to move the directory somewhere else (or delete it), so it will not be detected on startup.
 3) Start up the `matterfeed.py` and watch the logfile for errors.
 
 ## matterbot.py
@@ -136,7 +136,7 @@ New Matterbot modules can be created. A boilerplate example can be found in the 
 ### Getting started
 
 1) Copy `config.defaults.yaml` to `config.yaml` and edit the settings.
-2) For every module you want to use, check the respective configuration in `commands/.../`. Create a `settings.py` and use that to override the configuration from `defaults.py`. If you do not want to use a module, the easiest way to disable it is to rename the `command.py` file to something else, so it will not be detected on startup.
+2) For every module you want to use, check the respective configuration in `commands/.../`. **You must make create your own `settings.py` for every module in the `commands/.../` directory you want to use!** This is necessary so the bot can override the default configuration from `defaults.py`.. If you do not want to use a module, the easiest way to disable it is to move the directory somewhere else (or delete it), so it will not be detected on startup.
 3) Start up the `matterbot.py`.
 
 ## Writing your own module
