@@ -195,7 +195,7 @@ def process(command, channel, username, params, files, conn):
                                                                             tagList.add(tag['tagName'])
                                                                 tags = ','.join(sorted(tagList))
                                                                 for software in asset['softwareListData']['software']:
-                                                                    product = software['discoveredName']
+                                                                    product = software['discoveredName'].lower().title()
                                                                     version = software['version'] if software['version'] else "Unknown"
                                                                     if query.lower() in product.lower():
                                                                         csvFile += f'"{ipAddress}","{hostName}","{systemName}","{product}","{version}","{tags}"\n'
