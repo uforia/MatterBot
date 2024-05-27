@@ -54,7 +54,7 @@ def process(command, channel, username, params, files, conn):
     # Methods to query the current API account info (credits etc.)
     messages = []
     querytypes = ['domain','host','ip','software','sw']
-    stripchars = '`\\[\\]\n\r\'\"'
+    stripchars = '`\\[\\]\n\r\'\"\|'
     regex = re.compile('[%s]' % stripchars)
     try:
         if len(params)>0:
@@ -195,7 +195,7 @@ def process(command, channel, username, params, files, conn):
                                                                             tagList.add(tag['tagName'])
                                                                 tags = ','.join(sorted(tagList))
                                                                 for software in asset['softwareListData']['software']:
-                                                                    product = software['discoveredName'].lower().title()
+                                                                    product = regex.sub(' ',software['discoveredName'].lower().title())
                                                                     version = software['version'] if software['version'] else "Unknown"
                                                                     if query.lower() in product.lower():
                                                                         csvFile += f'"{ipAddress}","{hostName}","{systemName}","{product}","{version}","{tags}"\n'
@@ -206,6 +206,7 @@ def process(command, channel, username, params, files, conn):
                                                                         productlist[product][version] += 1
                                                             message += '\n| Product | Version | Count |'
                                                             message += '\n| :- | -: | -: |'
+                                                            print(productlist)
                                                             for product in sorted(productlist):
                                                                 for version in {k: v for k,v in sorted(productlist[product].items(), key=lambda _: _[1], reverse=True)}:
                                                                     message += f'\n| {product} | {version} | {productlist[product][version]} |'
@@ -241,7 +242,7 @@ def process(command, channel, username, params, files, conn):
                                                                             message += f'| `{asset[displayfield]}` '
                                                                         if displayfield == 'hardware':
                                                                             hwtype = asset[displayfield]['category2']
-                                                                            product = asset[displayfield]['manufacturer']
+                                                                            product = regex.sub(' ',asset[displayfield]['manufacturer'])
                                                                             message += f'| `{hwtype}` (`{product}`)'
                                                                         if displayfield == 'address':
                                                                             addresses = set()
