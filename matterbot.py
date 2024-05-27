@@ -487,6 +487,7 @@ class MattermostManager(object):
                                                     file_ids.append(file_id)
                                                 self.mmDriver.posts.create_post(options={'channel_id': chanid,
                                                                                         'message': text,
+                                                                                        'root_id': rootid,
                                                                                         'file_ids': file_ids,
                                                                                         })
                                             else:
