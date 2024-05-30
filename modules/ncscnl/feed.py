@@ -67,8 +67,7 @@ def query(MAX=settings.ENTRIES):
                         description = description[:396]+' ...'
                     content += '\n>'+description+'\n'
                 for channel in settings.CHANNELS:
-                    pass
-                    #items.append([channel, content])
+                    items.append([channel, content])
                 if settings.AUTOADVISORY:
                     for historyfilter in settings.HISTORYFILTER:
                         historyregex = re.compile('%s' % historyfilter)
