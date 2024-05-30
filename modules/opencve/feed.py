@@ -69,7 +69,6 @@ def query(MAX=settings.ENTRIES):
                 last_update = json_response[count]['updated_at']
                 historyitem = (cve,last_update)
                 if not historyitem in history['opencve']:
-                    history['opencve'].append(historyitem)
                     link = settings.URL+'/cve/'+cve
                     description = regex.sub('',title).strip().replace('\n','. ')
                     if len(description)>400:
@@ -102,6 +101,7 @@ def query(MAX=settings.ENTRIES):
                     if (settings.NOCVSS and cvss == 'N/A') or not settings.NOCVSS:
                         for channel in settings.CHANNELS:
                             items.append([channel,content])
+                            history['opencve'].append(historyitem)
                     if settings.AUTOADVISORY:
                         if isinstance(cvss,float):
                             if cvss > settings.THRESHOLD:
