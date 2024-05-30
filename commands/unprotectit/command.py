@@ -28,49 +28,48 @@ def buildcache(messages):
         headers = {
             'Content-Type': settings.CONTENTTYPE,
         }
-        if os.path.isfile(settings.CACHE):
-            page = 1
-            with requests.get(settings.APIURL['unprotectit']['url'], headers=headers) as cat_response:
-                cat_json_response = cat_response.json()
-                for category in cat_json_response:
-                    cache[category] = {}
-                    with requests.get(cat_json_response[category], headers=headers) as response:
-                        json_response = response.json()
-                        if 'count' in json_response:
-                            if 'results' in json_response:
-                                results = json_response['results']
-                                for result in results:
-                                    if 'id' in result:
-                                        id = result['id']
-                                        cache[category][result['id']] = result
-                            # Grab the next pages as well (if they exist)
-                            if 'next' in json_response:
-                                nextpage = json_response['next']
-                                while nextpage:
-                                    with requests.get(nextpage, headers=headers) as response:
-                                        json_response = response.json()
-                                        if 'count' in json_response:
-                                            if 'results' in json_response:
-                                                results = json_response['results']
-                                                for result in results:
-                                                    if 'id' in result:
-                                                        id = result['id']
-                                                        cache[category][id] = result
-                                                if 'next' in json_response:
-                                                    nextpage = json_response['next']
-                    if not len(cache[category]):
-                        del cache[category]
-            if len(cache):
-                with open(settings.CACHE, mode='w') as f:
-                    fh = json.dumps(cache)
-                    f.write(fh)
-                    message = "**Unprotect.it Cache Rebuilt**:\n\n"
-                    message += '| Category | Entries |\n'
-                    message += '| :- | -: |\n'
-                    for category in sorted(cache.keys()):
-                        message += '| '+category.replace('_',' ').title()+' | '+str(len(cache[category]))+' |\n'
-                    message += '\n'
-                    return message
+        page = 1
+        with requests.get(settings.APIURL['unprotectit']['url'], headers=headers) as cat_response:
+            cat_json_response = cat_response.json()
+            for category in cat_json_response:
+                cache[category] = {}
+                with requests.get(cat_json_response[category], headers=headers) as response:
+                    json_response = response.json()
+                    if 'count' in json_response:
+                        if 'results' in json_response:
+                            results = json_response['results']
+                            for result in results:
+                                if 'id' in result:
+                                    id = result['id']
+                                    cache[category][result['id']] = result
+                        # Grab the next pages as well (if they exist)
+                        if 'next' in json_response:
+                            nextpage = json_response['next']
+                            while nextpage:
+                                with requests.get(nextpage, headers=headers) as response:
+                                    json_response = response.json()
+                                    if 'count' in json_response:
+                                        if 'results' in json_response:
+                                            results = json_response['results']
+                                            for result in results:
+                                                if 'id' in result:
+                                                    id = result['id']
+                                                    cache[category][id] = result
+                                            if 'next' in json_response:
+                                                nextpage = json_response['next']
+                if not len(cache[category]):
+                    del cache[category]
+        if len(cache):
+            with open(settings.CACHE, mode='w') as f:
+                fh = json.dumps(cache)
+                f.write(fh)
+                message = "**Unprotect.it Cache Rebuilt**:\n\n"
+                message += '| Category | Entries |\n'
+                message += '| :- | -: |\n'
+                for category in sorted(cache.keys()):
+                    message += '| '+category.replace('_',' ').title()+' | '+str(len(cache[category]))+' |\n'
+                message += '\n'
+                return message
     except Exception as e:
         return 'An error occurred during the Unprotect.it cache building:\nError:\n'+traceback.format_exc()
 
