@@ -98,11 +98,10 @@ def query(MAX=settings.ENTRIES):
                         cwes = cwes[:-2]
                     if not len(cwes):
                         cwes = '`N/A`'
-                    if cvss == 'N/A':
-                        if settings.NOCVSS:
-                            content = settings.NAME + f': [{cve}]({link}) - CVSS: `{cvss}` - CWEs: {cwes}\n>{description}\n'
-                    for channel in settings.CHANNELS:
-                        items.append([channel,content])
+                    content = settings.NAME + f': [{cve}]({link}) - CVSS: `{cvss}` - CWEs: {cwes}\n>{description}\n'
+                    if (settings.NOCVSS and cvss == 'N/A') or not settings.NOCVSS:
+                        for channel in settings.CHANNELS:
+                            items.append([channel,content])
                     if settings.AUTOADVISORY:
                         if isinstance(cvss,float):
                             if cvss > settings.THRESHOLD:

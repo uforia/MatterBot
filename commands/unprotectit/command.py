@@ -4,6 +4,7 @@ import json
 import os
 import re
 import requests
+import traceback
 from pathlib import Path
 try:
     from commands.unprotectit import defaults as settings
@@ -21,179 +22,144 @@ else:
             import defaults
             import settings
 
-def process(command, channel, username, params, files, conn):
-    if len(params):
-        stripchars = ' `\n\r\'\"'
-        regex = re.compile('[%s]' % stripchars)
+def buildcache(messages):
+    try:
+        cache = {}
         headers = {
             'Content-Type': settings.CONTENTTYPE,
         }
-        if params[0] == 'rebuildcache':
-            if os.path.isfile(settings.CACHE):
-                page = 1
-                techniques = {'techniques': []}
-                with requests.get(settings.APIURL['unprotectit']['url'], headers=headers) as response:
-                    json_response = response.json()
-                    if 'count' in json_response:
-                        if 'results' in json_response:
-                            results = json_response['results']
-                            for result in results:
-                                techniques['techniques'].append(result)
-                        # Grab the next pages as well (if they exist)
-                        if 'next' in json_response:
-                            nextpage = json_response['next']
-                            while nextpage:
-                                with requests.get(nextpage, headers=headers) as response:
-                                    json_response = response.json()
-                                    if 'count' in json_response:
-                                        if 'results' in json_response:
-                                            results = json_response['results']
-                                            for result in results:
-                                                techniques['techniques'].append(result)
-                                            if 'next' in json_response:
-                                                nextpage = json_response['next']
-                if len(techniques):
-                    with open(settings.CACHE, mode='w') as f:
-                        cache = json.dumps(techniques)
-                        f.write(cache)
-                        text = "Unprotect.it cache rebuilt."
-                        return {'messages': [
-                            {'text': text},
-                        ]}
+        if os.path.isfile(settings.CACHE):
+            page = 1
+            with requests.get(settings.APIURL['unprotectit']['url'], headers=headers) as cat_response:
+                cat_json_response = cat_response.json()
+                for category in cat_json_response:
+                    cache[category] = {}
+                    with requests.get(cat_json_response[category], headers=headers) as response:
+                        json_response = response.json()
+                        if 'count' in json_response:
+                            if 'results' in json_response:
+                                results = json_response['results']
+                                for result in results:
+                                    if 'id' in result:
+                                        id = result['id']
+                                        cache[category][result['id']] = result
+                            # Grab the next pages as well (if they exist)
+                            if 'next' in json_response:
+                                nextpage = json_response['next']
+                                while nextpage:
+                                    with requests.get(nextpage, headers=headers) as response:
+                                        json_response = response.json()
+                                        if 'count' in json_response:
+                                            if 'results' in json_response:
+                                                results = json_response['results']
+                                                for result in results:
+                                                    if 'id' in result:
+                                                        id = result['id']
+                                                        cache[category][id] = result
+                                                if 'next' in json_response:
+                                                    nextpage = json_response['next']
+                    if not len(cache[category]):
+                        del cache[category]
+            if len(cache):
+                with open(settings.CACHE, mode='w') as f:
+                    fh = json.dumps(cache)
+                    f.write(fh)
+                    message = "**Unprotect.it Cache Rebuilt**:\n\n"
+                    message += '| Category | Entries |\n'
+                    message += '| :- | -: |\n'
+                    for category in sorted(cache.keys()):
+                        message += '| '+category.replace('_',' ').title()+' | '+str(len(cache[category]))+' |\n'
+                    message += '\n'
+                    return message
+    except Exception as e:
+        return 'An error occurred during the Unprotect.it cache building:\nError:\n'+traceback.format_exc()
+
+def process(command, channel, username, params, files, conn):
+    if len(params):
+        messages = []
+        stripchars = ' `\n\r\'\"'
+        regex = re.compile('[%s]' % stripchars)
+        if not os.path.isfile(settings.CACHE) or params[0] == 'rebuildcache':
+            messages.append({'text': buildcache(messages)})
+        with open(settings.CACHE, mode='r') as f:
+            data = f.read()
+            cache = json.loads(data)
         try:
-            messages = []
-            uploads = []
-            techniques = {'techniques': []}
             # Check if the local cache already exists. If so, skip the cache building
             # perform the search query. Otherwise, build the cache first and then do
             # the search.
-            if os.path.isfile(settings.CACHE):
-                with open(settings.CACHE, mode='r') as f:
-                    cache = f.read()
-                    techniques = json.loads(cache)
-                    source = 'cache'
-            else:
-                page = 1
-                with requests.get(settings.APIURL['unprotectit']['url'], headers=headers) as response:
-                    json_response = response.json()
-                    if 'count' in json_response:
-                        if 'results' in json_response:
-                            results = json_response['results']
-                            for result in results:
-                                techniques['techniques'].append(result)
-                        # Grab the next pages as well (if they exist)
-                        if 'next' in json_response:
-                            nextpage = json_response['next']
-                            while nextpage:
-                                with requests.get(nextpage, headers=headers) as response:
-                                    json_response = response.json()
-                                    if 'count' in json_response:
-                                        if 'results' in json_response:
-                                            results = json_response['results']
-                                            for result in results:
-                                                techniques['techniques'].append(result)
-                                            if 'next' in json_response:
-                                                nextpage = json_response['next']
-                        source = 'website'
-                if len(techniques):
-                    with open(settings.CACHE, mode='w') as f:
-                        cache = json.dumps(techniques)
-                        f.write(cache)
-            text = 'Unprotect.it results for `' + '`, `'.join(params) + '`:\n'
-            text += '*(Loaded ' + str(len(techniques['techniques'])) + ' techniques from ' + source + ')*'
-            messages.append({'text': text})
             # Check if all search terms appear in the content (logical AND search)
             results = 0
-            for technique in techniques['techniques']:
-                name = technique['name']
-                ids = set()
-                unprotect_ids = technique['unprotect_id'].split(',')
-                for unprotect_id in unprotect_ids:
-                    ids.add(regex.sub('', unprotect_id))
-                categories = set()
-                for category in technique['categories']:
-                    categories.add(category['label'])
-                description = technique['description']
-                resources = []
-                for resource in technique['resources'].split('\n'):
-                    resources.append(regex.sub('', resource))
-                tags = set()
-                for tag in technique['tags'].split(','):
-                    tags.add(regex.sub('', tag))
-                snippets = []
-                for snippet in technique['snippets']:
-                    snippet_description = snippet['description']
-                    snippet_plain_code = snippet['plain_code']
-                    snippet_code_class = regex.sub('', snippet['language']['code_class'])
-                    if not snippet_code_class in defaults.LANGS:
-                        snippet_code_class = 'unknown-language'
-                    snippets.append({
-                        'name': snippet_description,
-                        'lang': snippet_code_class,
-                        'code': snippet_plain_code,
-                    })
-                detection_rules = []
-                rules = []
-                for detection_rule in technique['detection_rules']:
-                    detection_rule_syntax_lang = detection_rule['type']['syntax_lang'].lower()
-                    detection_rule_name = detection_rule['name'].lower()
-                    detection_rule_rule = detection_rule['rule']
-                    detection_rules.append(detection_rule_name + '\n' + detection_rule_rule + '\n')
-                    rules.append({
-                        'name': detection_rule_name + '.' + detection_rule_syntax_lang,
-                        'rule': detection_rule_rule.encode(),
-                    })
-                if any([
-                    all(param in name for param in params),
-                    all(param in unprotect_id for param in params),
-                    all(param in ' '.join(categories) for param in params),
-                    all(param in description for param in params),
-                    all(param in ' '.join(resources) for param in params),
-                    all(param in ' '.join(tags) for param in params),
-                    all(param in ' '.join([snippet['name']+snippet['code'] for snippet in snippets]) for param in params),
-                    all(param in ' '.join(detection_rules) for param in params),
-                    ]):
-                    results += 1
-                    text = '\n\n---\n'
-                    text += '\n**Technique**: `' + name + '` '
-                    techniquetype = None
-                    if len(ids):
-                        text += '**IDs**: '
-                        for id in ids:
-                            text += '[' + id + ']('
-                            if id.startswith('T'):
-                                text += settings.APIURL['attackmatrix']['url'] + '/Techniques/' + id
-                            else:
-                                text += 'https://unprotect.it/search/?keyword=' + id
-                            text += '), '
-                        text = text[:-2]
-                    text += '\n**Categories**: '
-                    text += '`' + '`, `'.join(categories) + '`'
-                    text += ' **References**: '
-                    for resource in resources:
-                        text += '[' + str(resources.index(resource)+1) + ']'
-                        text += '(' + resource + '), '
-                    text = text[:-2]
-                    messages.append({'text': text})
-                    for snippet in snippets:
-                        snippetname = snippet['name']
-                        snippetlang = snippet['lang']
-                        snippetcode = snippet['code']
-                        uploads = [{'filename': 'Unprotectit-'+regex.sub('_', name).lower()+'-'+snippetlang+'-sample.txt',
-                                    'bytes': snippetcode.encode()}]
-                        messages.append({
-                            'text': '**Example Code for**: '+name+'\n**Language**: '+snippetlang+'\n',
-                            'uploads': uploads,
-                        })
-                    uploads = []
-                    for rule in rules:
-                        name = rule['name']
-                        rule = rule['rule']
-                        uploads.append({'filename': name, 'bytes': rule})
-                    if len(uploads):
-                        detection = '\n\n---\n\n**Detection Rules**:'
-                        messages.append({'text': detection, 'uploads': uploads})
+            searchmap = {
+                'techniques': [
+                    'unprotect_id',
+                    'name',
+                    'description',
+                    'tags',
+                ],
+                'detection_rules': [
+                    'name',
+                    'rule',
+                ],
+                'snippets': [
+                    'plain_code',
+                    'description',
+                ],
+                'windows_library': [
+                    'name',
+                    'description',
+                ],
+            }
+            urlmap = {
+                'techniques': 'technique',
+                'detection_rules': 'detection_rule',
+            }
+            results = []
+            uploads = []
+            for category in cache:
+                if category in searchmap:
+                    for searchfield in searchmap[category]:
+                        for entry in cache[category]:
+                            if any(param.lower() in cache[category][entry][searchfield].lower() for param in params):
+                                resultcategory = category.replace('_',' ').title()
+                                if category in ('techniques','windows_library'):
+                                    value = cache[category][entry]['description']
+                                    if category in urlmap:
+                                        link = settings.APIURL['unprotectit']['url'].replace('/api','')+'/'+urlmap[category]+'/'+cache[category][entry]['key']
+                                        url = f'[{entry}]({link})'
+                                    else:
+                                        url = 'N/A'
+                                    results.append((resultcategory,value,url))
+                                if category in ('detection_rules'):
+                                    bytes = cache[category][entry]['rule'].encode()
+                                    name = cache[category][entry]['name'].lower()+'_'+entry.lower()
+                                    dettext = cache[category][entry]['type']['name'].lower()
+                                    dettype = cache[category][entry]['type']['syntax_lang'].lower()
+                                    uploads.append({'filename': 'unprotectit-'+name+'-'+dettext+'.'+dettype, 'bytes': bytes})
+                                if category in ('snippets'):
+                                    bytes = cache[category][entry]['plain_code'].encode()
+                                    name = resultcategory.lower()+'_'+entry.lower()
+                                    langtext = cache[category][entry]['language']['label'].lower()
+                                    langtype = cache[category][entry]['language']['code_class'].lower()
+                                    uploads.append({'filename': 'unprotectit-'+name+'-'+langtext+'.'+langtype, 'bytes': bytes})
+            if len(results):
+                message = 'Unprotect.it results for `' + '`, `'.join(params) + '`:\n\n'
+                message += '| Category | Value | UPI ID |\n'
+                message += '| :- | :- | :- |\n'
+                for result in results:
+                    category,value,url = result
+                    category = regex.sub(' ',category)
+                    value = regex.sub(' ',value)
+                    if len(value)>400:
+                        value = value.split('. ')[0]+'...'
+                    message += f'| {category} | {value} | {url} |\n' 
+                message += '\n'
+                messages.append({'text': message})
+            if len(uploads):
+                chunks = [uploads[_:_ + 10] for _ in range(0, len(uploads), 10)]
+                for chunk in chunks:
+                    messages.append({'text': 'Related Downloads', 'uploads': chunk})
         except Exception as e:
-            messages.append({'text': 'An error occurred searching Unprotect.it:\nError: ' + str(e)})
+            messages.append({'text': 'An error occurred in the Unprotect.it module:\nError: '+traceback.format_exc()})
         finally:
             return {'messages': messages}

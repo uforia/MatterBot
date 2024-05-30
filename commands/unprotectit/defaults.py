@@ -3,7 +3,7 @@
 BINDS = ['@upi', '@ttp']
 CHANS = ['debug']
 APIURL = {
-    'unprotectit':   {'url': 'https://unprotect.it/api/techniques/'},
+    'unprotectit':   {'url': 'https://unprotect.it/api'},
     'attackmatrix':  {'url': 'http://149.210.137.179:8008/api/explore'},
 }
 CONTENTTYPE = 'application/json'
