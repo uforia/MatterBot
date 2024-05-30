@@ -206,7 +206,6 @@ def process(command, channel, username, params, files, conn):
                                                                         productlist[product][version] += 1
                                                             message += '\n| Product | Version | Count |'
                                                             message += '\n| :- | -: | -: |'
-                                                            print(productlist)
                                                             for product in sorted(productlist):
                                                                 for version in {k: v for k,v in sorted(productlist[product].items(), key=lambda _: _[1], reverse=True)}:
                                                                     message += f'\n| {product} | {version} | {productlist[product][version]} |'
