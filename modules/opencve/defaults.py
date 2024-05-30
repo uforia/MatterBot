@@ -8,11 +8,15 @@ CHANNELS = (
 # be aware of rate limits. It is strongly recommended to setup your own
 # OpenCVE instance.
 URL = "https://<your-opencve-instance-here>"
-API = "/api/cve"
+# API endpoint URL
+API = "/api"
 # Username and password to connect to the API endpoint.
 USERNAME = "<your-opencve-username>"
 PASSWORD = "<your-opencve-password>"
+# Number of entries to consider
 ENTRIES = 30
+# Should we display CVEs without a CVSS score?
+NOCVSS = False
 # The AUTOADVISORY feature is really only useful if you are using other
 # related bot modules, such as Qualys, and the bot can 'call itself'.
 # E.g.: you would need something like '@qualys sw' as the command.
