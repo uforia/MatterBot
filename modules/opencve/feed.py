@@ -83,6 +83,8 @@ def query(MAX=settings.ENTRIES):
                             cvss = cve_details['cvss']['v2']
                         else:
                             cvss = 'N/A'
+                    if not cvss:
+                        cvss = 'N/A'
                     if 'cwes' in cve_details:
                         cwes = ''
                         cwelist = cve_details['cwes']
