@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import collections
 import json
 import os
 import re
@@ -104,31 +105,41 @@ def process(command, channel, username, params, files, conn):
                     'plain_code',
                     'description',
                 ],
-                'windows_library': [
-                    'name',
-                    'description',
-                ],
             }
             urlmap = {
-                'techniques': 'technique',
+                'techniques': {
+                    'link': 'technique',
+                    'name': 'unprotect_id',
+                },
                 'detection_rules': 'detection_rule',
             }
             results = []
+            fieldorder = collections.OrderedDict({
+                'Unprotect ID(s)': 'url',
+                'Value': 'value',
+            })
             uploads = []
             for category in cache:
                 if category in searchmap:
                     for searchfield in searchmap[category]:
                         for entry in cache[category]:
-                            if any(param.lower() in cache[category][entry][searchfield].lower() for param in params):
+                            if all(param.lower() in cache[category][entry][searchfield].lower() for param in params):
                                 resultcategory = category.replace('_',' ').title()
-                                if category in ('techniques','windows_library'):
+                                if category in ('techniques',):
                                     value = cache[category][entry]['description']
                                     if category in urlmap:
-                                        link = settings.APIURL['unprotectit']['url'].replace('/api','')+'/'+urlmap[category]+'/'+cache[category][entry]['key']
-                                        url = f'[{entry}]({link})'
+                                        linkval = urlmap[category]['link']
+                                        nameval = urlmap[category]['name']
+                                        keyval = cache[category][entry]['key']
+                                        link = settings.APIURL['unprotectit']['url'].replace('/api','')+'/'+linkval+'/'+keyval
+                                        url = f'[{cache[category][entry][nameval]}]({link})'
                                     else:
                                         url = 'N/A'
-                                    results.append((resultcategory,value,url))
+                                    results.append({
+                                        'category': resultcategory,
+                                        'value': value,
+                                        'url': url,
+                                    })
                                 if category in ('detection_rules'):
                                     bytes = cache[category][entry]['rule'].encode()
                                     name = cache[category][entry]['name'].lower()+'_'+entry.lower()
@@ -143,21 +154,25 @@ def process(command, channel, username, params, files, conn):
                                     uploads.append({'filename': 'unprotectit-'+name+'-'+langtext+'.'+langtype, 'bytes': bytes})
             if len(results):
                 message = 'Unprotect.it results for `' + '`, `'.join(params) + '`:\n\n'
-                message += '| Category | Value | UPI ID |\n'
-                message += '| :- | :- | :- |\n'
+                for field in fieldorder:
+                    message += f'| {field} '
+                message += '|\n'
+                message += len(fieldorder.keys())*'| :- '
+                message += '|\n'
                 for result in results:
-                    category,value,url = result
-                    category = regex.sub(' ',category)
-                    value = regex.sub(' ',value)
-                    if len(value)>400:
-                        value = value.split('. ')[0]+'...'
-                    message += f'| {category} | {value} | {url} |\n' 
+                    for field in fieldorder:
+                        fieldvalue = fieldorder[field]
+                        value = regex.sub(' ',result[fieldvalue])
+                        if len(value)>400:
+                            value = value.split('. ')[0]+'...'
+                        message += f'| {value} ' 
+                    message += '|\n'
                 message += '\n'
                 messages.append({'text': message})
             if len(uploads):
                 chunks = [uploads[_:_ + 10] for _ in range(0, len(uploads), 10)]
                 for chunk in chunks:
-                    messages.append({'text': 'Related Downloads', 'uploads': chunk})
+                    messages.append({'text': f'Unprotect.it Related Downloads for %s' % (', '.join(params)), 'uploads': chunk})
         except Exception as e:
             messages.append({'text': 'An error occurred in the Unprotect.it module:\nError: '+traceback.format_exc()})
         finally:
