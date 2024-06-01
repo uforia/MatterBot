@@ -62,6 +62,7 @@ def query(MAX=settings.ENTRIES):
                 json_response = response.json()
     if json_response:
         cwe_cache = {}
+        filtered = False
         while count < MAX:
             try:
                 cve = json_response[count]['id']
@@ -70,62 +71,64 @@ def query(MAX=settings.ENTRIES):
                     pfregex = re.compile('%s' % product)
                     matches = pfregex.search(title)
                     if matches:
-                        last_update = json_response[count]['updated_at']
-                        historyitem = (cve,last_update)
-                        if not historyitem in history['opencve']:
-                            link = settings.URL+'/cve/'+cve
-                            description = regex.sub('',title).strip().replace('\n','. ')
-                            if len(description)>400:
-                                description = description[:396]+' ...'
-                            cve_details_response = session.get(settings.URL+settings.API+f'/cve/{cve}')
-                            if cve_details_response.status_code == 200:
-                                cve_details = cve_details_response.json()
-                            if 'cvss' in cve_details:
-                                if 'v3' in cve_details['cvss']:
-                                    cvss = cve_details['cvss']['v3']
-                                elif 'v2' in cve_details['cvss']:
-                                    cvss = cve_details['cvss']['v2']
-                                else:
-                                    cvss = 'N/A'
-                            if not cvss:
+                        filtered = True
+                if not filtered:
+                    last_update = json_response[count]['updated_at']
+                    historyitem = (cve,last_update)
+                    if not historyitem in history['opencve']:
+                        link = settings.URL+'/cve/'+cve
+                        description = regex.sub('',title).strip().replace('\n','. ')
+                        if len(description)>400:
+                            description = description[:396]+' ...'
+                        cve_details_response = session.get(settings.URL+settings.API+f'/cve/{cve}')
+                        if cve_details_response.status_code == 200:
+                            cve_details = cve_details_response.json()
+                        if 'cvss' in cve_details:
+                            if 'v3' in cve_details['cvss']:
+                                cvss = cve_details['cvss']['v3']
+                            elif 'v2' in cve_details['cvss']:
+                                cvss = cve_details['cvss']['v2']
+                            else:
                                 cvss = 'N/A'
-                            if 'cwes' in cve_details:
-                                cwes = ''
-                                cwelist = cve_details['cwes']
-                                for cwe in cwelist:
-                                    if not cwe in cwe_cache:
-                                        cwe_cache[cwe] = ''
-                                        cwe_details_response = session.get(settings.URL+settings.API+f'/cwe/{cwe}')
-                                        if cwe_details_response.status_code == 200:
-                                            cwe_details = cwe_details_response.json()
-                                            cwe_cache[cwe] = cwe_details['name']
-                                    cwes += f'[{cwe_cache[cwe]}]({settings.URL}{settings.API}/cwe/{cwe}), '
-                                cwes = cwes[:-2]
-                            if not len(cwes):
-                                cwes = '`N/A`'
-                            content = settings.NAME + f': [{cve}]({link}) - CVSS: `{cvss}` - CWEs: {cwes}\n>{description}\n'
-                            if (settings.NOCVSS and cvss == 'N/A') or not settings.NOCVSS:
-                                for channel in settings.CHANNELS:
-                                    items.append([channel,content])
-                                    history['opencve'].append(historyitem)
-                            if settings.AUTOADVISORY:
-                                if isinstance(cvss,float):
-                                    if cvss > settings.THRESHOLD:
-                                        productlist = set()
-                                        if 'vendors' in cve_details:
-                                            vendors = cve_details['vendors']
-                                            if len(vendors):
-                                                for vendor in vendors:
-                                                    productlist.add(vendor)
-                                            else:
-                                                productlist.add(f'N/A {title}')
-                                        for productname in productlist:
-                                            for channel in settings.ADVISORYCHANS:
-                                                for lookup in settings.ADVISORYCHANS[channel]:
-                                                    if productname.startswith('N/A '):
-                                                        items.append([channel, f'**Manual Asset Management Lookup Needed**: [{cve}]({link}) - CVSS: `{cvss}` - CWEs: {cwes}:\n>{productname[4:]}\n'])
-                                                    else:
-                                                        items.append([channel, ' '.join([lookup,productname])])
+                        if not cvss:
+                            cvss = 'N/A'
+                        if 'cwes' in cve_details:
+                            cwes = ''
+                            cwelist = cve_details['cwes']
+                            for cwe in cwelist:
+                                if not cwe in cwe_cache:
+                                    cwe_cache[cwe] = ''
+                                    cwe_details_response = session.get(settings.URL+settings.API+f'/cwe/{cwe}')
+                                    if cwe_details_response.status_code == 200:
+                                        cwe_details = cwe_details_response.json()
+                                        cwe_cache[cwe] = cwe_details['name']
+                                cwes += f'[{cwe_cache[cwe]}]({settings.URL}{settings.API}/cwe/{cwe}), '
+                            cwes = cwes[:-2]
+                        if not len(cwes):
+                            cwes = '`N/A`'
+                        content = settings.NAME + f': [{cve}]({link}) - CVSS: `{cvss}` - CWEs: {cwes}\n>{description}\n'
+                        if (settings.NOCVSS and cvss == 'N/A') or not settings.NOCVSS:
+                            for channel in settings.CHANNELS:
+                                items.append([channel,content])
+                                history['opencve'].append(historyitem)
+                        if settings.AUTOADVISORY:
+                            if isinstance(cvss,float):
+                                if cvss > settings.THRESHOLD:
+                                    productlist = set()
+                                    if 'vendors' in cve_details:
+                                        vendors = cve_details['vendors']
+                                        if len(vendors):
+                                            for vendor in vendors:
+                                                productlist.add(vendor)
+                                        else:
+                                            productlist.add(f'N/A {title}')
+                                    for productname in productlist:
+                                        for channel in settings.ADVISORYCHANS:
+                                            for lookup in settings.ADVISORYCHANS[channel]:
+                                                if productname.startswith('N/A '):
+                                                    items.append([channel, f'**Manual Asset Management Lookup Needed**: [{cve}]({link}) - CVSS: `{cvss}` - CWEs: {cwes}:\n>{productname[4:]}\n'])
+                                                else:
+                                                    items.append([channel, ' '.join([lookup,productname])])
                 count+=1
             except IndexError:
                 return items # No more items
