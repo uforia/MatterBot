@@ -17,6 +17,14 @@ PASSWORD = "<your-opencve-password>"
 ENTRIES = 30
 # Should we display CVEs without a CVSS score?
 NOCVSS = False
+# Title filter: ignore all vulnerabilities with any of the following words
+# in them (can be a regex, see examples below). This is useful if you are
+# not interested in particular products/versions/brands/companies/etc. and
+# want to filter those out.
+PRODUCTFILTER = (
+    r'[wW]ordpress',
+    r'[pP]lugin',
+)
 # The AUTOADVISORY feature is really only useful if you are using other
 # related bot modules, such as Qualys, and the bot can 'call itself'.
 # E.g.: you would need something like '@qualys sw' as the command.
