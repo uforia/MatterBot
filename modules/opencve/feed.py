@@ -107,7 +107,7 @@ def query(MAX=settings.ENTRIES):
                         if not len(cwes):
                             cwes = '`N/A`'
                         content = settings.NAME + f': [{cve}]({link}) - CVSS: `{cvss}` - CWEs: {cwes}\n>{description}\n'
-                        if (settings.NOCVSS and cvss == 'N/A') or not settings.NOCVSS:
+                        if cvss != 'N/A' or settings.NOCVSS:
                             for channel in settings.CHANNELS:
                                 items.append([channel,content])
                                 history['opencve'].append(historyitem)
