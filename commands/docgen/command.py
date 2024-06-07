@@ -252,6 +252,7 @@ def process(command, channel, username, params, files, conn):
                     template_cases['currentdate'] = datetime.datetime.now().strftime('%Y%m%d')
                     template_cases['reporttypename'] = template_id_chain['reporttypename']
                     skeletondocument = []
+                    pagecount = 0
                     for pid in template_id_chain['ids'].split(' '):
                         pages = '{"query":"query { pages { list (orderBy: PATH) { id path title }}}"}'
                         with requests.post(settings.APIURL['docgen']['url'], headers=headers, data=pages) as response:
@@ -265,10 +266,11 @@ def process(command, channel, username, params, files, conn):
                                         if 'data' in pagecontent:
                                             langsplit = '<!---'+language+'--->'
                                             content = pagecontent['data']['pages']['single']['content'].split(langsplit)[1]
-                                        if 'Report_Cover' in page['path']:
+                                        if page['path'].lower().endswith('_cover') and pagecount == 0:
                                             coverpage = content
                                         else:
                                             skeletondocument += content
+                                        pagecount += 1
                     skeletondocument = ''.join(skeletondocument).encode('utf-8')
                     for template_variable in template_cases:
                         source = b'%'+bytes(template_variable.encode('utf-8'))+b'%'
