@@ -33,7 +33,7 @@ else:
             import settings
 
 def query(MAX=settings.ENTRIES):
-    items = []
+    items = set()
     count = 0
     stripchars = r'`\\[\\]\'\"'
     regex = re.compile('[%s]' % stripchars)
@@ -63,6 +63,7 @@ def query(MAX=settings.ENTRIES):
     if json_response:
         cwe_cache = {}
         filtered = False
+        productlist = set()
         while count < MAX:
             try:
                 cve = json_response[count]['id']
@@ -109,12 +110,11 @@ def query(MAX=settings.ENTRIES):
                         content = settings.NAME + f': [{cve}]({link}) - CVSS: `{cvss}` - CWEs: {cwes}\n>{description}\n'
                         if cvss != 'N/A' or settings.NOCVSS:
                             for channel in settings.CHANNELS:
-                                items.append([channel,content])
+                                items.add((channel, content))
                                 history['opencve'].append(historyitem)
                         if settings.AUTOADVISORY:
                             if isinstance(cvss,float):
                                 if cvss > settings.THRESHOLD:
-                                    productlist = set()
                                     if 'vendors' in cve_details:
                                         vendors = cve_details['vendors']
                                         if len(vendors):
@@ -126,9 +126,10 @@ def query(MAX=settings.ENTRIES):
                                         for channel in settings.ADVISORYCHANS:
                                             for lookup in settings.ADVISORYCHANS[channel]:
                                                 if productname.startswith('N/A '):
-                                                    items.append([channel, f'**Manual Asset Management Lookup Needed**: [{cve}]({link}) - CVSS: `{cvss}` - CWEs: {cwes}:\n>{productname[4:]}\n'])
+                                                    items.add((channel, f'**Manual Lookup Required**: [{cve}]({link}) - CVSS: `{cvss}` - CWEs: {cwes}:\n>{productname[4:]}\n'))
                                                 else:
-                                                    items.append([channel, ' '.join([lookup,productname])])
+                                                    items.add((channel, content))
+                                                    items.add((channel, ' '.join([lookup,productname])))
                 count+=1
             except IndexError:
                 return items # No more items
