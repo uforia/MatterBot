@@ -407,6 +407,40 @@ class MattermostManager(object):
                 await self.update_bindmap()
 
 
+    async def call_module(self, module, command, channame, rootid, username, params, files, conn):
+        try:
+            chanid = self.channame_to_chanid(channame)
+            result = self.commands[module]['process'](command, channame, username, params, files, conn)
+            if result and 'messages' in result:
+                for message in result['messages']:
+                    if 'text' in message:
+                        text = message['text']
+                    if 'uploads' in message:
+                        if message['uploads'] != None:
+                            file_ids = []
+                            for upload in message['uploads']:
+                                filename = upload['filename']
+                                payload = upload['bytes']
+                                if not isinstance(payload, (bytes, bytearray)):
+                                    payload = payload.encode()
+                                file_id = conn.files.upload_file(
+                                    channel_id=chanid,
+                                    files={'files': (filename, payload)}
+                                )['file_infos'][0]['id']
+                                file_ids.append(file_id)
+                            conn.posts.create_post(options={'channel_id': chanid,
+                                                                    'message': text,
+                                                                    'root_id': rootid,
+                                                                    'file_ids': file_ids,
+                                                                    })
+                        else:
+                            await self.send_message(chanid, text, rootid)
+                    else:
+                        await self.send_message(chanid, text, rootid)
+        except Exception as e:
+            text = 'A Python error occurred: '+str(type(e))+': '+str(e)
+            await self.send_message(chanid, text, rootid)
+
     async def handle_post(self, data: dict):
         if 'sender_name' in data:
             username = data['sender_name']
@@ -436,67 +470,25 @@ class MattermostManager(object):
                     elif addparams:
                         messages[-1]['parameters'].append(word)
             log.debug(f"Messages: {messages}")
-
             for messagedict in messages:
                 command = messagedict['command']
                 params = messagedict['parameters']
                 if command in options.Matterbot['helpcmds']:
-                    await self.help_message(userid,params,chaninfo,rootid)
+                    await self.help_message(userid, params, chaninfo, rootid)
                 elif command in options.Matterbot['mapcmds']:
-                    await self.bind_message(userid,post,params,chaninfo,rootid)
+                    await self.bind_message(userid, post, params, chaninfo, rootid)
                 else:
                     tasks = []
                     for module in self.commands:
                         if command in self.commands[module]['binds']:
                             if self.isallowed_module(userid, module, chaninfo):
                                 if not module in tasks:
-                                    tasks.append(module)
-                    if len(tasks):
-                        try:
-                            results = []
-                            files = []
-                            if 'metadata' in post:
-                                if 'files' in post['metadata']:
-                                    if len(post['metadata']['files']):
-                                        files = post['metadata']['files']
-                            with concurrent.futures.ThreadPoolExecutor(max_workers=None) as executor:
-                                for task in tasks:
-                                    try:
-                                        results.append(executor.submit(self.commands[task]['process'], command, channame, username, params, files, self.mmDriver))
-                                    except Exception as e:
-                                        text = 'An error occurred within module: '+task+': '+str(type(e))+': '+e
-                                        await self.send_message(chanid, text, rootid)
-                            for _ in concurrent.futures.as_completed(results):
-                                result = _.result()
-                                if result and 'messages' in result:
-                                    for message in result['messages']:
-                                        if 'text' in message:
-                                            text = message['text']
-                                        if 'uploads' in message:
-                                            if message['uploads'] != None:
-                                                file_ids = []
-                                                for upload in message['uploads']:
-                                                    filename = upload['filename']
-                                                    payload = upload['bytes']
-                                                    if not isinstance(payload, (bytes, bytearray)):
-                                                        payload = payload.encode()
-                                                    file_id = self.mmDriver.files.upload_file(
-                                                        channel_id=chanid,
-                                                        files={'files': (filename, payload)}
-                                                    )['file_infos'][0]['id']
-                                                    file_ids.append(file_id)
-                                                self.mmDriver.posts.create_post(options={'channel_id': chanid,
-                                                                                        'message': text,
-                                                                                        'root_id': rootid,
-                                                                                        'file_ids': file_ids,
-                                                                                        })
-                                            else:
-                                                await self.send_message(chanid, text, rootid)
-                                        else:
-                                            await self.send_message(chanid, text, rootid)
-                        except Exception as e:
-                            text = 'A Python error occurred: '+str(type(e))+': '+str(e)
-                            await self.send_message(chanid, text, rootid)
+                                    files = []
+                                    if 'metadata' in post:
+                                        if 'files' in post['metadata']:
+                                            if len(post['metadata']['files']):
+                                                files = post['metadata']['files']
+                                    await self.call_module(module, command, channame, rootid, username, params, files, self.mmDriver)
 
 if __name__ == '__main__' :
     '''
