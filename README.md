@@ -38,6 +38,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | Microsoft Vulnerability Reports                                                                  | RSS            | No               | No                |
 | NCSC Netherlands Advisories                                                                      | RSS            | No               | No                |
 | NCSC United Kingdom Advisories                                                                   | RSS            | No               | No                |
+| OpenCVE feed of CVEs                                                                             | RSS            | Yes              | No                |
 | PacketStorm Security                                                                             | RSS            | No               | No                |
 | Ransomwatch                                                                                      | JSON           | No               | No                |
 | Reddit (configurable list of subreddits)                                                         | RSS            | No               | No                |
