@@ -311,7 +311,7 @@ def process(command, channel, username, params, files, conn):
                             for template_variable in template_cases:
                                 source = '%'+template_variable+'%'
                                 if template_variable == 'reporttypename':
-                                    target = '<br /><br />'.join(textwrap.wrap(template_cases[template_variable],24))
+                                    target = '<br /><br />'.join(textwrap.wrap(template_cases[template_variable],20))
                                 else:
                                     target = template_cases[template_variable]
                                 html = html.replace(source,target)

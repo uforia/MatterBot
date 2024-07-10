@@ -99,12 +99,12 @@ def process(command, channel, username, params, files, conn):
                                     toc = ''
                                     sections = re.findall(r'<section id=[^>]+>',html,re.DOTALL)
                                     for section in sections:
-                                        html = re.sub('</h1>','</h1></section>',html,flags=re.DOTALL)
-                                        html = re.sub('</h2>','</h2></section>',html,flags=re.DOTALL)
-                                        html = re.sub('</h3>','</h3></section>',html,flags=re.DOTALL)
-                                        html = re.sub('</h4>','</h4></section>',html,flags=re.DOTALL)
-                                        html = re.sub('</h5>','</h5></section>',html,flags=re.DOTALL)
-                                        html = re.sub('</h6>','</h6></section>',html,flags=re.DOTALL)
+                                        html = re.sub('</h1>(?!</section>)','</h1></section>',html,flags=re.DOTALL)
+                                        html = re.sub('</h2>(?!</section>)','</h2></section>',html,flags=re.DOTALL)
+                                        html = re.sub('</h3>(?!</section>)','</h3></section>',html,flags=re.DOTALL)
+                                        html = re.sub('</h4>(?!</section>)','</h4></section>',html,flags=re.DOTALL)
+                                        html = re.sub('</h5>(?!</section>)','</h5></section>',html,flags=re.DOTALL)
+                                        html = re.sub('</h6>(?!</section>)','</h6></section>',html,flags=re.DOTALL)
                                         m = re.search('id=\"(.+?)\"', section)
                                         if m:
                                             chaptertitle = m.group(1)
