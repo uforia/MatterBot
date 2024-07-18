@@ -15,6 +15,9 @@ USERNAME = "<your-opencve-username>"
 PASSWORD = "<your-opencve-password>"
 # Number of entries to consider
 ENTRIES = 30
+# What's the minimum CVSS score we should consider? Set to '0.0' to see
+# every single CVSS (noisy!).
+THRESHOLD = 6.0
 # Should we display CVEs without a CVSS score?
 NOCVSS = False
 # Title filter: ignore all vulnerabilities with any of the following words
@@ -35,8 +38,8 @@ AUTOADVISORY = False
 # Format: 'channel name': [ 'command1', 'command2', ... ]
 ADVISORYCHANS = {
 }
+# Consider all CVEs with a score above this value. Prevents noise and helps
+# focusing on the high/criticals only for the AUTOADVISORY FEATURE.
+ADVISORYTHRESHOLD = 7.0
 # History file used to prevent double-posting.
 HISTORY = "history.cache"
-# Consider all CVEs with a score above this value. Prevents noise and helps
-# focusing on the high/criticals only.
-THRESHOLD = 7.0

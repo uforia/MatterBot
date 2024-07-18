@@ -90,9 +90,9 @@ def query(MAX=settings.ENTRIES):
                             elif 'v2' in cve_details['cvss']:
                                 cvss = cve_details['cvss']['v2']
                             else:
-                                cvss = 'N/A'
+                                cvss = 0.0
                         if not cvss:
-                            cvss = 'N/A'
+                            cvss = 0.0
                         if 'cwes' in cve_details:
                             cwes = ''
                             cwelist = cve_details['cwes']
@@ -108,13 +108,13 @@ def query(MAX=settings.ENTRIES):
                         if not len(cwes):
                             cwes = '`N/A`'
                         content = settings.NAME + f': [{cve}]({link}) - CVSS: `{cvss}` - CWEs: {cwes}\n>{description}\n'
-                        if cvss != 'N/A' or settings.NOCVSS:
+                        if (isinstance(cvss,float) and cvss >= settings.THRESHOLD) or settings.NOCVSS:
                             for channel in settings.CHANNELS:
                                 items.add((channel, content))
                                 history['opencve'].append(historyitem)
                         if settings.AUTOADVISORY:
                             if isinstance(cvss,float):
-                                if cvss > settings.THRESHOLD:
+                                if cvss > settings.ADVISORYTHRESHOLD:
                                     if 'vendors' in cve_details:
                                         vendors = cve_details['vendors']
                                         if len(vendors):
