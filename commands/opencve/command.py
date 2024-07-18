@@ -137,7 +137,7 @@ def process(command, channel, username, params, files, conn):
                                     'URL': settings.APIURL['opencve']['url'].replace('/api','')+'/cve/%s' % (id,)
                                 })
                             else:
-                                messages.append({'text': 'The specified CVE `%s` could not be found.'} % (cve,))
+                                messages.append({'text': 'The specified CVE `%s` could not be found.' % (cve,)})
                     if len(cves):
                         cves = sorted(cves, key=lambda v: v['Last Update'], reverse=True)
                         count = 0
