@@ -229,7 +229,7 @@ def process(command, channel, username, params, files, conn):
                                                     scoretext = 'Likely malicious'
                                                 elif score == 10:
                                                     scoretext = 'Known bad'
-                                                value = '**'+scoretext+'**'
+                                                value = 'scoretext'
                                             else:
                                                 value = sampleinfo[field]
                                         message += '| **%s** | `%s` |\n' % (fields[field], value)
