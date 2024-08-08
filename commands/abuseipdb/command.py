@@ -135,10 +135,11 @@ def process(command, channel, username, params, files, conn):
                                         elif field == 'reports':
                                             uniquecats = set()
                                             for report in data[field]:
-                                                if 'categories' in report:
-                                                    categories = report['categories']
-                                                    for category in categories:
-                                                        uniquecats.add(reportCategories[str(category)])
+                                                if report:
+                                                    if 'categories' in report:
+                                                        categories = report['categories']
+                                                        for category in categories:
+                                                            uniquecats.add(reportCategories[str(category)])
                                             if len(uniquecats):
                                                 value = '`'+'`, `'.join(uniquecats)+'`'
                                             else:

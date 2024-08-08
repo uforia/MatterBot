@@ -24,8 +24,6 @@ else:
 
 def process(command, channel, username, params, files, conn):
     # Methods to query the current API account info (credits etc.)
-    querytypes = ['search', 'cve']
-    severities = ['low', 'medium', 'high', 'critical']
     stripchars = '`\n\r\'\"'
     regex = re.compile('[%s]' % stripchars)
     messages = []
