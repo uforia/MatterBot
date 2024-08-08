@@ -73,7 +73,10 @@ def process(command, channel, username, params, files, conn):
                     else:
                         APIENDPOINT = APIENDPOINT.strip('/')+'/search?query=%s:%s' % (querytype,query)
                 if len(filters):
-                    APIENDPOINT+='+and+%s' % (filters,)
+                    if querytype and query:
+                        APIENDPOINT += '+and+%s' % (filters,)
+                    else:
+                        APIENDPOINT = APIENDPOINT.strip('/')+'/search?query=%s' % (filters,)
                 if APIENDPOINT:
                     if not querytype in ('sample',):
                         APIENDPOINT+='&limit=%d' % (settings.APIURL['triage']['apilimit'],)
@@ -96,6 +99,7 @@ def process(command, channel, username, params, files, conn):
                                     json_response = response.json()
                                     if 'error' in json_response:
                                         error_message = json_response['message'].lower()
+                                        print(APIENDPOINTOFFSET)
                                         messages.append({'text': 'Tria.ge API error: `%s`.' % (error_message, )})
                                         break
                                 except:
@@ -182,9 +186,14 @@ def process(command, channel, username, params, files, conn):
                             messages.append({'text': message})
                             if printcount > 10:
                                 messages.append({'text': 'Maximum number of displayed results limited to 10; check the JSON attachment for %d results.' % (len(results),)})
-                                messages.append({'text': 'Tria.ge JSON output:', 'uploads': [
-                                                    {'filename': 'triage-'+querytype+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': json.dumps(results, indent=4)}
-                                                ]})
+                                if querytype:
+                                    messages.append({'text': 'Tria.ge JSON output:', 'uploads': [
+                                                        {'filename': 'triage-'+querytype+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': json.dumps(results, indent=4)}
+                                                    ]})
+                                else:
+                                    messages.append({'text': 'Tria.ge JSON output:', 'uploads': [
+                                                        {'filename': 'triage-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': json.dumps(results, indent=4)}
+                                                    ]})
                         else:
                             for samplesection in results:
                                 message = ''
