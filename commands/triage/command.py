@@ -99,7 +99,6 @@ def process(command, channel, username, params, files, conn):
                                     json_response = response.json()
                                     if 'error' in json_response:
                                         error_message = json_response['message'].lower()
-                                        print(APIENDPOINTOFFSET)
                                         messages.append({'text': 'Tria.ge API error: `%s`.' % (error_message, )})
                                         break
                                 except:
