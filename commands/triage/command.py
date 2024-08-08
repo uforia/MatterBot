@@ -213,6 +213,7 @@ def process(command, channel, username, params, files, conn):
                                     message += '| **Type** | **Value **|\n'
                                     message += '| :- | :- |\n'
                                     for field in fields:
+                                        value = '-'
                                         if field in sampleinfo:
                                             if field in ('score',):
                                                 score = sampleinfo[field]
