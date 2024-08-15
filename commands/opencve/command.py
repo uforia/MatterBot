@@ -27,6 +27,7 @@ def process(command, channel, username, params, files, conn):
     stripchars = '`\n\r\'\"'
     regex = re.compile('[%s]' % stripchars)
     messages = []
+    querytypes = ('cve', 'search')
     try:
         if len(params) == 0:
             messages.append({'text': 'OpenCVE: you need to specify one of `%s`!' % ('`, `'.join(querytypes),)})
