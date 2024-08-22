@@ -96,6 +96,7 @@ def query(MAX=settings.ENTRIES):
                                 for productname in productnames:
                                     for channel in settings.ADVISORYCHANS:
                                         for lookup in settings.ADVISORYCHANS[channel]:
+                                            items.append([channel, content])
                                             items.append([channel, ' '.join([lookup,productname])])
                                 history['ncscnl'].append(historyitem)
                 count+=1
