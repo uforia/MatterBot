@@ -126,7 +126,8 @@ def query(MAX=settings.ENTRIES):
                                         for channel in settings.ADVISORYCHANS:
                                             for lookup in settings.ADVISORYCHANS[channel]:
                                                 if productname.startswith('N/A '):
-                                                    items.add((channel, f'**Manual Lookup Required**: [{cve}]({link}) - CVSS: `{cvss}` - CWEs: {cwes}:\n>{productname[4:]}\n'))
+                                                    items.add((channel, content))
+                                                    items.add((channel, f'**Check AM Manually**: [{cve}]({link}) - CVSS: `{cvss}` - CWEs: {cwes}:\n>{productname[4:]}\n'))
                                                 else:
                                                     items.add((channel, content))
                                                     items.add((channel, ' '.join([lookup,productname])))
