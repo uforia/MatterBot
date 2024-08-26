@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import collections
 import datetime
 import json
 import pytz
@@ -47,36 +48,44 @@ def process(command, channel, username, params, files, conn):
             with requests.post(settings.APIENDPOINT, data=json.dumps(data), headers=headers) as response:
                 answer = response.json()
                 results = answer['response']['Attribute']
-                resultset = set()
                 if len(results)>0:
-                    messages.append({'text': 'MISP search for `%s`:' % (params,)})
+                    count = 0
+                    fields = ('Date', 'Name', 'TTP(s)', 'IoC type', 'IDS', 'Comment', 'Tag(s)')
+                    message = '**MISP search for `%s`: `%d` results**\n\n' % (params,len(results))
+                    for field in fields:
+                        message += '| **%s** ' % (field,)
+                    message += '|\n'
+                    for field in fields:
+                        if field in ('Date', 'IDS'):
+                            message += '| -: '
+                        else:
+                            message += '| :- '
+                    message += '|\n'
                     for result in results:
-                        name = result['Event']['info'].replace('\n', ' ')
-                        comment = result['Event']['comment'].replace('\n', ' ') if 'comment' in result['Event'] else None
-                        timestamp = datetime.datetime.fromtimestamp(int(result['timestamp']),pytz.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
-                        category = result['category']
-                        type = result['type'].replace('|','` and `')
-                        to_ids = result['to_ids']
-                        to_ids = "Yes" if to_ids else "No"
-                        tags = [_['name'].split(':',1) for _ in result['Tag']] if 'Tag' in result else None
-                        url = settings.APIURL + '/events/view/' + result['event_id']
-                        message = "\n\n"
-                        message += "| Event: [%s](%s) | Date/Time: `%s` |\n" % (name, url, timestamp)
-                        message += "| :--- | -: |\n"
-                        message += "| TTP Type / Kill-chain Phase | `%s` |\n" % (category,)
-                        message += "| Indicator of Compromise type(s) | `%s` |\n" % (type,)
-                        message += "| Suitable for IDS | `%s` |\n" % (to_ids,)
-                        if comment:
-                            message += "| Comment | `%s` |\n" % (comment,)
-                        if tags:
-                            for tag in tags:
-                                if len(tag)>1:
-                                    value = tag[1:].join(':').capitalize() if len(tag)>2 else tag[1]
-                                else:
-                                    value = "N/A"
-                                message += "| *Extra Tag*: `%s` | `%s` |\n" % (tag[0].capitalize(), value)
-                        message += "\n\n"
-                        messages.append({'text': message})
+                        tags = set()
+                        if count < 11:
+                            name = result['Event']['info'].replace('\n', ' ')
+                            comment = result['Event']['comment'].replace('\n', ' ') if 'comment' in result['Event'] else '-'
+                            timestamp = datetime.datetime.fromtimestamp(int(result['timestamp']),pytz.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+                            ttp = result['category']
+                            ioctype = '`'+result['type'].replace('|','` and `')+'`'
+                            ids = 'Yes' if result['to_ids'] else 'No'
+                            rawtags = [_['name'].split(':',1) for _ in result['Tag']] if 'Tag' in result else None
+                            if rawtags:
+                                for rawtag in rawtags:
+                                    for tag in rawtag:
+                                        tags.add(tag)
+                            if len(tags):
+                                tags = '`'+'`, `'.join(tags)+'`'
+                            else:
+                                tags = '-'
+                            url = settings.APIURL + '/events/view/' + result['event_id']
+                            message += '| %s | [%s](%s) | %s | %s | %s | %s | %s |\n' % (timestamp, name, url, ttp, ioctype, ids, comment, tags)
+                            count += 1
+                    message += '\n\n'
+                    if count >= 10:
+                        message += '*More than 10 results (`%d`) found. Refer to your MISP instance for more comprehensive results.*' % (len(results),)
+                    messages.append({'text': message})
         else:
             messages.append({'text': 'At least ask me something, %s!' % (username,)})
     except Exception as e:
