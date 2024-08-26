@@ -91,6 +91,8 @@ def process(command, channel, username, params, files, conn):
                                 ttps = '-'
                             if len(comments):
                                 comments = '`'+'`, `'.join(comments).replace('\n', ', ').replace('http', 'hxxp')+'`'
+                                if len(comments)<3:
+                                    comments = '-'
                             else:
                                 comments = '-'
                             if len(ioctypes):
