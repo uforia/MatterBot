@@ -115,6 +115,6 @@ def process(command, channel, username, params, files, conn):
         else:
             messages.append({'text': 'At least ask me something, %s!' % (username,)})
     except Exception as e:
-        messages.append({'text': 'An error occurred searching VirusTotal\nError: `%s`' % (traceback.format_exc(),)})
+        messages.append({'text': 'An error occurred searching MISP\nError: `%s`' % (traceback.format_exc(),)})
     finally:
         return {'messages': messages}
