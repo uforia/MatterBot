@@ -36,16 +36,14 @@ def process(command, channel, username, params, files, conn):
                 "enforceWarninglist": "1",
                 "searchAll": "1",
                 "quickfilter": "1",
-                "limit": "%s" % (settings.MAXHITS,),
-                "order": "Event.date desc",
+                "order": "Event.publish_timestamp desc",
             }
             data = {
                 "returnformat": "json",
                 "enforceWarninglist": "1",
                 "searchAll": "1",
                 "quickfilter": "1",
-                "order": "Event.date desc",
-                "limit": "%s" % (settings.MAXHITS,),
+                "order": "Event.publish_timestamp desc",
                 "value": params,
             }
             with requests.post(settings.APIENDPOINT, data=json.dumps(data), headers=headers) as response:
@@ -111,7 +109,7 @@ def process(command, channel, username, params, files, conn):
                             count += 1
                     message += '\n\n'
                     if count >= settings.MAXHITS:
-                        message += '*%d results found, refer to your MISP instance for more comprehensive results. Empty TTP, IoC and Comments fields may indicate an inherited/related IoC.*' % (len(results),)
+                        message += '*Newest `%d` results displayed out of `%d` total, refer to your MISP instance for more comprehensive results. Empty TTP, IoC and Comments fields may indicate an inherited/related IoC.*' % (settings.MAXHITS, len(results))
                 if len(message):
                     messages.append({'text': message})
         else:
