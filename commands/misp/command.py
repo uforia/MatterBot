@@ -5,6 +5,7 @@ import datetime
 import json
 import pytz
 import requests
+import traceback
 from pathlib import Path
 try:
     from commands.misp import defaults as settings
@@ -35,6 +36,7 @@ def process(command, channel, username, params, files, conn):
                 "enforceWarninglist": "1",
                 "searchAll": "1",
                 "quickfilter": "1",
+                "limit": "%s" % (settings.MAXHITS,),
                 "order": "Event.date desc",
             }
             data = {
@@ -43,14 +45,16 @@ def process(command, channel, username, params, files, conn):
                 "searchAll": "1",
                 "quickfilter": "1",
                 "order": "Event.date desc",
+                "limit": "%s" % (settings.MAXHITS,),
                 "value": params,
             }
             with requests.post(settings.APIENDPOINT, data=json.dumps(data), headers=headers) as response:
                 answer = response.json()
-                results = answer['response']['Attribute']
+                results = answer['response']
+                message = ''
                 if len(results)>0:
                     count = 0
-                    fields = ('Date', 'Name', 'TTP(s)', 'IoC type', 'IDS', 'Comment', 'Tag(s)')
+                    fields = ('Date', 'Name', 'TTP(s)', 'IoC type', 'Comment', 'Event Tag(s)')
                     message = '**MISP search for `%s`: `%d` results**\n\n' % (params,len(results))
                     for field in fields:
                         message += '| **%s** ' % (field,)
@@ -62,33 +66,57 @@ def process(command, channel, username, params, files, conn):
                             message += '| :- '
                     message += '|\n'
                     for result in results:
+                        event = result['Event']
                         tags = set()
-                        if count < 11:
-                            name = result['Event']['info'].replace('\n', ' ')
-                            comment = result['Event']['comment'].replace('\n', ' ') if 'comment' in result['Event'] else '-'
-                            timestamp = datetime.datetime.fromtimestamp(int(result['timestamp']),pytz.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
-                            ttp = result['category']
-                            ioctype = '`'+result['type'].replace('|','` and `')+'`'
-                            ids = 'Yes' if result['to_ids'] else 'No'
-                            rawtags = [_['name'].split(':',1) for _ in result['Tag']] if 'Tag' in result else None
-                            if rawtags:
-                                for rawtag in rawtags:
-                                    for tag in rawtag:
-                                        tags.add(tag)
+                        if count < settings.MAXHITS:
+                            name = event['info'].replace('\n', ' ')
+                            timestamp = datetime.datetime.fromtimestamp(int(event['timestamp']),pytz.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+                            ttps = set()
+                            comments = set()
+                            ioctypes = set()
+                            tags = set()
+                            attributes = []
+                            if len(event['Attribute']):
+                                attributes = event['Attribute']
+                            elif len(event['Object']):
+                                for mispobject in event['Object']:
+                                    for attribute in mispobject['Attribute']:
+                                        attributes.append(attribute)
+                            for attribute in attributes:
+                                if params in attribute['value']:
+                                    comments.add(attribute['comment'])
+                                    ttps.add(attribute['category'])
+                                    ioctypes.add(attribute['type'].replace('|','` and `'))
+                            if len(ttps):
+                                ttps = '`'+'`, `'.join(ttps)+'`'
+                            else:
+                                ttps = '-'
+                            if len(comments):
+                                comments = '`'+'`, `'.join(comments).replace('\n', ', ').replace('http', 'hxxp')+'`'
+                            else:
+                                comments = '-'
+                            if len(ioctypes):
+                                ioctypes = '`'+'`, `'.join(ioctypes)+'`'
+                            else:
+                                ioctypes = '-'
+                            if 'Tag' in event:
+                                for tag in event['Tag']:
+                                    tags.add(tag['name'])
                             if len(tags):
                                 tags = '`'+'`, `'.join(tags)+'`'
                             else:
                                 tags = '-'
-                            url = settings.APIURL + '/events/view/' + result['event_id']
-                            message += '| %s | [%s](%s) | %s | %s | %s | %s | %s |\n' % (timestamp, name, url, ttp, ioctype, ids, comment, tags)
+                            url = settings.APIURL + '/events/view/' + event['id']
+                            message += '| %s | [%s](%s) | %s | %s | %s | %s |\n' % (timestamp, name, url, ttps, ioctypes, comments, tags)
                             count += 1
                     message += '\n\n'
-                    if count >= 10:
-                        message += '*More than 10 results (`%d`) found. Refer to your MISP instance for more comprehensive results.*' % (len(results),)
+                    if count >= settings.MAXHITS:
+                        message += '*%d results found, refer to your MISP instance for more comprehensive results. Empty TTP, IoC and Comments fields may indicate an inherited/related IoC.*' % (len(results),)
+                if len(message):
                     messages.append({'text': message})
         else:
             messages.append({'text': 'At least ask me something, %s!' % (username,)})
     except Exception as e:
-        messages.append({'text': 'An error occurred querying MISP: `%s`' % (str(e),)})
+        messages.append({'text': 'An error occurred searching VirusTotal\nError: `%s`' % (traceback.format_exc(),)})
     finally:
         return {'messages': messages}

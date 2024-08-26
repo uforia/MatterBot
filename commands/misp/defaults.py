@@ -6,6 +6,7 @@ APIURL = '<your-MISP-instance>'
 APIENDPOINT = '<your-MISP-instance>/attributes/restSearch'
 APIKEY = '<your-API-key>'
 CONTENTTYPE = 'application/json'
+MAXHITS = 5
 HELP = {
     'DEFAULT': {
         'args': '<IP address|Host|Domain|URL|Hash|...>',
