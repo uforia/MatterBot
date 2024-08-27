@@ -126,11 +126,10 @@ def query(MAX=settings.ENTRIES):
                                         for channel in settings.ADVISORYCHANS:
                                             for lookup in settings.ADVISORYCHANS[channel]:
                                                 if productname.startswith('N/A '):
-                                                    items.add((channel, content))
-                                                    items.add((channel, f'**Check AM Manually**: [{cve}]({link}) - CVSS: `{cvss}` - CWEs: {cwes}:\n>{productname[4:]}\n'))
+                                                    msg = f'**A vulnerability has been published which CVSS score exceeds the threshold:**\n{content}\n*A manual asset management check may be required for this CVE.*'
                                                 else:
-                                                    items.add((channel, content))
-                                                    items.add((channel, ' '.join([lookup,productname])))
+                                                    msg = f'**A vulnerability has been published which CVSS score exceeds the threshold:**\n{content}\n*An automatic asset management check is triggered for this CVE:*\n\n' + ' '.join([lookup,productname])
+                                                items.add((channel, msg))
                 count+=1
             except IndexError:
                 return items # No more items
