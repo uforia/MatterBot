@@ -370,7 +370,7 @@ def process(command, channel, username, params, files, conn):
                         except:
                             raise
                         try:
-                            pypandoc.convert_file(htmlfile, format='html', to='docx', outputfile=docxfile, extra_args=["-M2GB", "+RTS", "-K64m", "-RTS", "--embed-resources"])
+                            pypandoc.convert_file(htmlfile, format='html', to='docx', outputfile=docxfile, extra_args=["--datadir=./commands/docgen", "-M2GB", "+RTS", "-K64m", "-RTS", "--embed-resources"])
                             with open(docxfile, 'rb') as f:
                                 filecontent = f.read()
                                 filename = docxfile.replace(MODULEDIR,'')
