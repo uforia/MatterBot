@@ -370,8 +370,8 @@ def process(command, channel, username, params, files, conn):
                         except:
                             raise
                         try:
-                            pypandoc.convert_file(pdffile, to='docx', outputfile=docxfile)
-                            with open(htmlfile, 'rb') as f:
+                            pypandoc.convert_file(mdfile, to='docx', outputfile=docxfile)
+                            with open(docxfile, 'rb') as f:
                                 filecontent = f.read()
                                 filename = docxfile.replace(MODULEDIR,'')
                             if len(filecontent):
