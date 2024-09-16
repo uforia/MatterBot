@@ -342,7 +342,7 @@ def process(command, channel, username, params, files, conn):
                         with open(htmlfile, 'wb') as f:
                             f.write(html.encode())
                             f.flush()
-                        pypandoc.convert_file(htmlfile, to='docx', outputfile=docxfile, extra_args='--standalone')
+                        pypandoc.convert_file(htmlfile, to='docx', outputfile=docxfile, extra_args=('--standalone'))
                         html_writer = weasyprint.HTML(htmlfile)
                         css = weasyprint.CSS(filename=MODULEDIR+settings.LANGMAP[language]['css'], base_url=MODULEDIR+settings.TEMPLATEDIR)
                         html_writer.write_pdf(pdffile, stylesheets=[MODULEDIR+settings.LANGMAP[language]['css']])
