@@ -370,7 +370,7 @@ def process(command, channel, username, params, files, conn):
                         except:
                             raise
                         try:
-                            pypandoc.convert_file(mdfile, to='docx', outputfile=docxfile)
+                            pypandoc.convert_file(mdfile, to='docx', outputfile=docxfile, extra_args=('--standalone'))
                             with open(docxfile, 'rb') as f:
                                 filecontent = f.read()
                                 filename = docxfile.replace(MODULEDIR,'')
