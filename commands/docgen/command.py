@@ -293,6 +293,7 @@ def process(command, channel, username, params, files, conn):
                         MODULEDIR = "commands/docgen/"
                         templatefiles = {}
                         mdfile = MODULEDIR+now+'-'+doctype+'-'+nameid+'.md'.replace(' ','_')
+                        docxfile = MODULEDIR+now+'-'+doctype+'-'+nameid+'.docx'.replace(' ','_')
                         htmlfile = MODULEDIR+now+'-'+doctype+'-'+nameid+'.html'.replace(' ','_')
                         pdffile = MODULEDIR+now+'-'+doctype+'-'+nameid+'.pdf'.replace(' ','_')
                         for templatefile in settings.LANGMAP[language]:
@@ -338,6 +339,7 @@ def process(command, channel, username, params, files, conn):
                         with open(mdfile, 'wb') as f:
                             f.write(content.encode())
                             f.flush()
+                        pypandoc.convert_file(mdfile, to='docx', outputfile=docxfile)
                         with open(htmlfile, 'wb') as f:
                             f.write(html.encode())
                             f.flush()
@@ -371,6 +373,19 @@ def process(command, channel, username, params, files, conn):
                             os.unlink(pdffile)
                         except:
                             raise
+                        try:
+                            with open(docxfile, 'rb') as f:
+                                filecontent = f.read()
+                                filename = docxfile.replace(MODULEDIR,'')
+                            if len(filecontent):
+                                messages.append({
+                                    'text': '**Word Document Generated Successfully**: `%s`' % (filename,),
+                                    'uploads': [
+                                        {'filename': filename, 'bytes': filecontent}
+                                    ]
+                                })
+                        except:
+                            os.unlink(docxfile)
                 else:
                     messages.append({'text': 'Case `%s` does not yet exist.' % (casenumber,)})
             else:
