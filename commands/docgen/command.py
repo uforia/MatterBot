@@ -339,7 +339,7 @@ def process(command, channel, username, params, files, conn):
                         with open(mdfile, 'wb') as f:
                             f.write(content.encode())
                             f.flush()
-                        pypandoc.convert_file(mdfile, to='docx', outputfile=docxfile)
+                        pypandoc.convert_file(htmlfile, to='docx', outputfile=docxfile)
                         with open(htmlfile, 'wb') as f:
                             f.write(html.encode())
                             f.flush()
@@ -374,9 +374,9 @@ def process(command, channel, username, params, files, conn):
                         except:
                             raise
                         try:
-                            with open(docxfile, 'rb') as f:
+                            with open(htmlfile, 'rb') as f:
                                 filecontent = f.read()
-                                filename = docxfile.replace(MODULEDIR,'')
+                                filename = htmlfile.replace(MODULEDIR,'')
                             if len(filecontent):
                                 messages.append({
                                     'text': '**Word Document Generated Successfully**: `%s`' % (filename,),
