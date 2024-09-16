@@ -342,7 +342,6 @@ def process(command, channel, username, params, files, conn):
                         with open(htmlfile, 'wb') as f:
                             f.write(html.encode())
                             f.flush()
-                        pypandoc.convert_file(pdffile, to='docx', outputfile=docxfile)
                         html_writer = weasyprint.HTML(htmlfile)
                         css = weasyprint.CSS(filename=MODULEDIR+settings.LANGMAP[language]['css'], base_url=MODULEDIR+settings.TEMPLATEDIR)
                         html_writer.write_pdf(pdffile, stylesheets=[MODULEDIR+settings.LANGMAP[language]['css']])
@@ -371,6 +370,7 @@ def process(command, channel, username, params, files, conn):
                         except:
                             raise
                         try:
+                            pypandoc.convert_file(pdffile, to='docx', outputfile=docxfile)
                             with open(htmlfile, 'rb') as f:
                                 filecontent = f.read()
                                 filename = docxfile.replace(MODULEDIR,'')
