@@ -373,7 +373,7 @@ def process(command, channel, username, params, files, conn):
                         try:
                             with open(htmlfile, 'rb') as f:
                                 filecontent = f.read()
-                                filename = htmlfile.replace(MODULEDIR,'')
+                                filename = docxfile.replace(MODULEDIR,'')
                             if len(filecontent):
                                 messages.append({
                                     'text': '**Word Document Generated Successfully**: `%s`' % (filename,),
