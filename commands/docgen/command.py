@@ -368,9 +368,6 @@ def process(command, channel, username, params, files, conn):
                                     ]
                                 })
                             '''
-                            os.unlink(mdfile)
-                            os.unlink(htmlfile)
-                            os.unlink(pdffile)
                         except:
                             raise
                         try:
@@ -385,7 +382,14 @@ def process(command, channel, username, params, files, conn):
                                     ]
                                 })
                         except:
+                            raise
+                        try:
                             os.unlink(docxfile)
+                            os.unlink(mdfile)
+                            os.unlink(pdffile)
+                            os.unlink(htmlfile)
+                        except:
+                            raise
                 else:
                     messages.append({'text': 'Case `%s` does not yet exist.' % (casenumber,)})
             else:
