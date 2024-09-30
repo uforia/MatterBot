@@ -285,8 +285,8 @@ def process(command, channel, username, params, files, conn):
                                                                             message += '| `%s` ' % ('`, `'.join(assettags),)
                                                             messages.append({'text': message})
                                                         else:
-                                                            messages.append({'text': 'No Qualys assets were found matching the given fields/values.'})
-                                
+                                                            messages.append({'text': f'No Qualys assets were found matching for {query}:{querytype}.'})
+
                                         except Exception as e:
                                             messages.append({'text': 'A Python error occurred parsing the Qualys API response: `%s`\n```%s```\n' % (str(e), traceback.format_exc())})
                             else:
