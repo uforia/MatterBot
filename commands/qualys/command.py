@@ -290,7 +290,7 @@ def process(command, channel, username, params, files, conn):
                                         except Exception as e:
                                             messages.append({'text': 'A Python error occurred parsing the Qualys API response: `%s`\n```%s```\n' % (str(e), traceback.format_exc())})
                             else:
-                                messages.append({'text': 'No Qualys assets were found matching the given fields/values.'})
+                                messages.append({'text': f'No Qualys assets were found matching for {query}:{querytype}.'})
                         except Exception as e:
                             messages.append({'text': 'The Qualys CSAM API call returned an unexpected result/error: `%s`\n```%s```\n```%s```\n' % (str(e), traceback.format_exc(), response.content)})
                 else:
