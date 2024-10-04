@@ -24,6 +24,7 @@ commands/*/template/*
 # Not really useful for public use
 commands/docgen/*
 CVE-*
+*.bak
 *.json
 *.log
 develop-eggs/

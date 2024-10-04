@@ -130,7 +130,9 @@ def process(command, channel, username, params, files, conn):
                                         elif field == 'isWhitelisted':
                                             if value:
                                                 value = ':waving_white_flag:'
-                                            else:
+                                            elif value == None:
+                                                value = ':grey_question:'
+                                            elif value == False:
                                                 value = ':waving_black_flag:'
                                         elif field == 'reports':
                                             uniquecats = set()

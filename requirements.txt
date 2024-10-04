@@ -7,12 +7,12 @@ feedparser
 graphviz
 lxml
 mattermostdriver
+mwdblib
 numpy
-openpyxl
 pandas
-paramiko
 pyOpenSSL
 pypandoc
+pytz
 PyYAML
 Requests
 tldextract
