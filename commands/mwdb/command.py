@@ -20,7 +20,7 @@ else:
             import settings
 
 headers = {
-    'Authorization': f'Bearer {settings.APIURL['mwdb']['key']}',
+    'Authorization': f"Bearer {settings.APIURL['mwdb']['key']}",
 }
 filefields = collections.OrderedDict({
     'file_name': {
