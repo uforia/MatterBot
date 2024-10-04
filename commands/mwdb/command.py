@@ -117,7 +117,7 @@ def checkHash(value):
 
 def getBlobParents(id, mwdb):
     try:
-        result = mwdb.query(f'{id}')
+        result = mwdb.query(f"{id}")
         if blob := result.data:
             return blob['parents']
     except:
@@ -128,7 +128,7 @@ def getConfigs(values, mwdb):
     configs = []
     for value in values:
         try:
-            result = mwdb.query(f'{value}')
+            result = mwdb.query(f"{value}")
             if config := result.data:
                 configs.append(config)
         except:
@@ -138,7 +138,7 @@ def getConfigs(values, mwdb):
 def getDownloads(ids):
     downloads = []
     for id in ids:
-        url = settings.APIURL['mwdb']['url']+f'file/{id}/download/zip'
+        url = settings.APIURL['mwdb']['url']+f"file/{id}/download/zip"
         try:
             with requests.get(url, headers=headers) as response:
                 if response.status_code == 404:
@@ -155,7 +155,7 @@ def getFiles(ids, mwdb):
     files = []
     for id in ids:
         try:
-            data = mwdb.query_file(f'{id}').data
+            data = mwdb.query_file(f"{id}").data
             files.append(data)
         except:
             pass
@@ -180,7 +180,7 @@ def process(command, channel, username, params, files, conn):
                     querytype = 'multi'
             else:
                 if len(query) == 0:
-                    messages.append({'text': f'MWDB Error: please specify what `{querytype}` to search for!'})
+                    messages.append({'text': f"MWDB Error: please specify what `{querytype}` to search for!"})
                 if len(query) > 1:
                     querytype = 'multi'
             if not settings.APIURL['mwdb']['key']:
@@ -195,7 +195,7 @@ def process(command, channel, username, params, files, conn):
                 if querytype == 'hash':
                     hash = query
                     try:
-                        result = mwdb.query(f'{hash}')
+                        result = mwdb.query(f"{hash}")
                     except (mwdblib.exc.ObjectNotFoundError, mwdblib.exc.EndpointNotFoundError):
                         pass
                     if result:
@@ -209,7 +209,7 @@ def process(command, channel, username, params, files, conn):
                                 if configresults := getConfigs([hash], mwdb):
                                     configs += configresults
                 if querytype == 'multi':
-                    url = settings.APIURL['mwdb']['url']+f'blob?query=multi:{query}'
+                    url = settings.APIURL['mwdb']['url']+f"blob?query=multi:{query}"
                     try:
                         with requests.get(url, headers=headers) as response:
                             json_response = response.json()
@@ -221,14 +221,14 @@ def process(command, channel, username, params, files, conn):
                     except:
                         raise
                 for file in files:
-                    message = f'**MWDB Files** `{querytype}`:`{file['id']}`\n\n'
+                    message = f"**MWDB Files** `{querytype}`:`{file['id']}`\n\n"
                     for filefield in filefields:
                         if filefield in file:
-                            message += f'| **{filefields[filefield]['name']}** '
+                            message += f"| **{filefields[filefield]['name']}** "
                     message += '|\n'
                     for filefield in filefields:
                         if filefield in file:
-                            message += f'| {filefields[filefield]['align']} '
+                            message += f"| {filefields[filefield]['align']} "
                     message += '|\n'
                     for filefield in filefields:
                         if filefield in file:
@@ -242,19 +242,19 @@ def process(command, channel, username, params, files, conn):
                                     value = '-'
                             elif not len(value):
                                 value = '-'
-                            message += f'| `{value}` '
+                            message += f"| `{value}` "
                     message += '|\n'
                     message += '\n\n'
                     messages.append({'text': message})
                 if len(configs):
-                    message = f'**MWDB Configs** `{querytype}`:`{query}`\n\n'
+                    message = f"**MWDB Configs** `{querytype}`:`{query}`\n\n"
                     for configfield in configfields:
                         if configfield in configs[0]:
-                            message += f'| **{configfields[configfield]['name']}** '
+                            message += f"| **{configfields[configfield]['name']}** "
                     message += '|\n'
                     for configfield in configfields:
                         if configfield in configs[0]:
-                            message += f'| {configfields[configfield]['align']} '
+                            message += f"| {configfields[configfield]['align']} "
                     message += '|\n'
                     for config in configs:
                         for configfield in configfields:
@@ -280,17 +280,17 @@ def process(command, channel, username, params, files, conn):
                                         value = '-'
                                 elif not len(value):
                                     value = '-'
-                                message += f'| `{value}` '
+                                message += f"| `{value}` "
                     message += '|\n'
                     message += '\n\n'
                     messages.append({'text': message})
                 if len(blobs):
-                    message = f'**MWDB Configs** `{querytype}`:`{query}`\n\n'
+                    message = f"**MWDB Configs** `{querytype}`:`{query}`\n\n"
                     for blobfield in blobfields:
-                        message += f'| **{blobfields[blobfield]['name']}** '
+                        message += f"| **{blobfields[blobfield]['name']}** "
                     message += '|\n'
                     for blobfield in blobfields:
-                        message += f'| {blobfields[blobfield]['align']} '
+                        message += f"| {blobfields[blobfield]['align']} "
                     message += '|\n'
                     for blob in blobs:
                         for blobfield in blobfields:
@@ -313,12 +313,12 @@ def process(command, channel, username, params, files, conn):
                                     value = '-'
                             elif not len(value):
                                 value = '-'
-                            message += f'| `{value}` '
+                            message += f"| `{value}` "
                         message += '|\n'
                     message += '\n\n'
                     messages.append({'text': message})
                 if len(downloads):
-                    messages.append({'text': f'**MWDB**: *Sample download(s)*', 'uploads': downloads})
+                    messages.append({'text': f"**MWDB**: *Sample download(s)*", 'uploads': downloads})
         except Exception as e:
             messages.append({'text': 'A Python error occurred searching the MWDB API: `%s`\n```%s```\n' % (str(e), traceback.format_exc())})
         finally:
