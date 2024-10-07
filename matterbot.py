@@ -150,7 +150,8 @@ class MattermostManager(object):
             if options.Matterbot['logcmd']:
                 logline = f'Channel: {channame} - User: {username} - Command: {command}'
             if options.Matterbot['logcmdparams']:
-                logline += f' - Params: {params}'
+                if len(params):
+                    logline += f' - Params: {params}'
             if logline:
                 log.info(f'Command Logging -> {logline}')
         except:
