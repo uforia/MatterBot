@@ -2,8 +2,6 @@
 
 import ast
 import asyncio
-import collections
-import concurrent.futures
 import copy
 import fnmatch
 import importlib.util
@@ -140,6 +138,23 @@ class MattermostManager(object):
                     await self.handle_event(post_data)
         except json.JSONDecodeError as e:
             log.error(f"Could not handle message {message}: {e}")
+
+    async def log_message(self, userid, command, params, chaninfo, rootid):
+        try:
+            logline = None
+            channame = chaninfo['name']
+            myname = self.userid_to_username(self.my_id)
+            if '__' in channame and userid in channame and self.my_id in channame:
+                channame = f'Direct Message with me ({myname})'
+            username = self.userid_to_username(userid)
+            if options.Matterbot['logcmd']:
+                logline = f'Channel: {channame} - User: {username} - Command: {command}'
+            if options.Matterbot['logcmdparams']:
+                logline += f' - Params: {params}'
+            if logline:
+                log.info(f'Command Logging -> {logline}')
+        except:
+            raise
 
     async def send_message(self, chanid, text, postid=None):
         try:
@@ -411,6 +426,7 @@ class MattermostManager(object):
         try:
             chanid = self.channame_to_chanid(channame)
             result = self.commands[module]['process'](command, channame, username, params, files, conn)
+            # Command logging: see config.defaults.yaml for clarification
             if result and 'messages' in result:
                 for message in result['messages']:
                     if 'text' in message:
@@ -474,10 +490,13 @@ class MattermostManager(object):
                 command = messagedict['command']
                 params = messagedict['parameters']
                 if command in options.Matterbot['helpcmds']:
+                    await self.log_message(userid, command, params, chaninfo, rootid)
                     await self.help_message(userid, params, chaninfo, rootid)
                 elif command in options.Matterbot['mapcmds']:
+                    await self.log_message(userid, command, params, chaninfo, rootid)
                     await self.bind_message(userid, post, params, chaninfo, rootid)
                 else:
+                    await self.log_message(userid, command, params, chaninfo, rootid)
                     tasks = []
                     for module in self.commands:
                         if command in self.commands[module]['binds']:
@@ -506,9 +525,9 @@ if __name__ == '__main__' :
     options.Matterbot = ast.literal_eval(options.Matterbot)
     options.Modules = ast.literal_eval(options.Modules)
     if not options.debug:
-        logging.basicConfig(filename=options.Matterbot['logfile'], format='%(levelname)s - %(name)s - %(asctime)s - %(message)s')
+        logging.basicConfig(level=logging.INFO, filename=options.Matterbot['logfile'], format='%(levelname)s - %(name)s - %(asctime)s - %(message)s')
     else:
-        logging.basicConfig(level=0,format='%(levelname)s - %(name)s - %(asctime)s - %(message)s')
+        logging.basicConfig(level=logging.DEBUG,format='%(levelname)s - %(name)s - %(asctime)s - %(message)s')
     log = logging.getLogger('MatterAPI')
     log.info('Starting MatterBot')
     mm = MattermostManager()

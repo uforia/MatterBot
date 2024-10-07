@@ -23,6 +23,8 @@ Matterbot:
     - "@map"
   recursion: True # Is the bot allowed to respond to its own messages?
   msglength: 16383 # Change to '4000' if you are using Mattermost <=5.x (seriously, you should upgrade!)
+  logcmd: True
+  logcmdparams: False
 
 Modules:
   moduledir: "modules"
