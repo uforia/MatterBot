@@ -40,7 +40,7 @@ def getToken():
         return None
 
 def normalizeFields(filters: list):
-    normalization = { # Simplify handling the case sensitivity of the CSAM API (seriously!?)
+    normalization = { # Simplify handling the case sensitivity of the Cyber Security Asset Management API (seriously!?)
         'assetname': 'assetName',
         'dnsname': 'dnsName',
         'operatingsystem': 'operatingSystem',
@@ -123,7 +123,7 @@ def process(command, channel, username, params, files, conn):
                         },
                     }
                     query = ' '.join(params[1:])
-                    completeAPIurl = settings.APIURL['qualys']['csam']
+                    completeAPIurl = settings.APIURL['qualys']['am']
                     for filter in filtermap[querytype]['filters']:
                         filter['value'] = query.lower()
                     if querytype in ('host',):
@@ -147,7 +147,7 @@ def process(command, channel, username, params, files, conn):
                                 json_response = json.loads(response.content)
                                 if 'responseCode' in json_response:
                                     if json_response['responseCode'].lower() != 'success':
-                                        messages.append({'text': 'The provided Qualys CSAM query did not return a successful result.'})
+                                        messages.append({'text': 'The provided Qualys Cyber Security Asset Management query did not return a successful result.'})
                                     else:
                                         displayfields = collections.OrderedDict({
                                             'assetName': 'Name',
@@ -180,7 +180,7 @@ def process(command, channel, username, params, files, conn):
                                                                         lastSeenAssetId = json_response['lastSeenAssetId']
                                                             csvFile = '"IP Address","Hostname","Asset Name","Product","Version","Tags"\n'
                                                             productlist = {}
-                                                            message = '\n**Qualys CSAM query results**'
+                                                            message = '\n**Qualys Cyber Security Asset Management query results**'
                                                             message += '\n*Querytype*: `%s` | *Query*: `%s` | *Assets*: `%s` ' % (querytype,query,len(assets))
                                                             message += '\n\n'
                                                             for asset in assets:
@@ -223,7 +223,7 @@ def process(command, channel, username, params, files, conn):
                                                         assets = assetListData['asset']
                                                         if len(assets):
                                                             headercount = 0
-                                                            message = '\n**Qualys CSAM query results**'
+                                                            message = '\n**Qualys Cyber Security Asset Management query results**'
                                                             message += '\n*Querytype*: `%s` --- *Query*: `%s`' % (querytype,query)
                                                             message += '\n\n'
                                                             foundfields = set()
@@ -292,7 +292,7 @@ def process(command, channel, username, params, files, conn):
                             else:
                                 messages.append({'text': f'No Qualys assets were found matching for `{querytype}`: `{query}`.'})
                         except Exception as e:
-                            messages.append({'text': 'The Qualys CSAM API call returned an unexpected result/error: `%s`\n```%s```\n```%s```\n' % (str(e), traceback.format_exc(), response.content)})
+                            messages.append({'text': 'The Qualys Cyber Security Asset Management API call returned an unexpected result/error: `%s`\n```%s```\n```%s```\n' % (str(e), traceback.format_exc(), response.content)})
                 else:
                     messages.append({'text': 'The Qualys module could not obtain a valid JWT token. Check your credentials and/or subscription permissions.'})
     except Exception as e:

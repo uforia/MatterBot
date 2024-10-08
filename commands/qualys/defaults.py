@@ -5,7 +5,7 @@ CHANS = ['debug']
 APIURL = {
     'qualys':   {
         'jwt':  'https://gateway.qg1.apps.qualys.eu/auth',
-        'csam': 'https://gateway.qg1.apps.qualys.com/rest/2.0/',
+        'am': 'https://gateway.qg1.apps.qualys.com/rest/2.0/',
         'username': '<your-username>',
         'password': '<your-password>',
     },

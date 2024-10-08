@@ -191,6 +191,7 @@ def process(command, channel, username, params, files, conn):
                 configs = []
                 downloads = []
                 query = ' '.join(query)
+                result = None
                 mwdb = mwdblib.MWDB(api_url=settings.APIURL['mwdb']['url'], api_key=settings.APIURL['mwdb']['key'])
                 if querytype == 'hash':
                     hash = query
