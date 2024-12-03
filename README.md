@@ -144,6 +144,46 @@ New Matterbot modules can be created. A boilerplate example can be found in the 
 2) For every module you want to use, check the respective configuration in `commands/.../`. **You must make create your own `settings.py` for every module in the `commands/.../` directory you want to use!** This is necessary so the bot can override the default configuration from `defaults.py`.. If you do not want to use a module, the easiest way to disable it is to move the directory somewhere else (or delete it), so it will not be detected on startup.
 3) Start up the `matterbot.py`.
 
+## Configuring Matterbot behavior
+
+When doing threat intelligence investigations, it is crucial to observe Operational Security (OPSEC) best practices. Therefore, by default:
+
+1. MatterBot will not join any channels;
+
+2. MatterBot does not run with or need Mattermost Administrator access;
+
+3. MatterBot will not listen to any commands in a channel it gets added to.
+
+*Note: module configurations (e.g. in `settings.py`) may override this behavior!*
+
+### Configuring channel module listeners
+
+1. After setting up a channel (public or private), manually add the MatterBot to that channel;
+
+2. Use the `@map` command (these triggers may be changed in the `config..yaml`) to list all available modules and whether they are currently enabled for the channel or not;
+
+3. Use `@bind <modulename>` or `@unbind <modulename>` to respectively enable and disable a specific module for a channel, or ...
+
+4. ... use `@bind *` / `@unbind *` to enable/disable all modules.
+
+### OPSEC considerations and best practices
+
+- Some modules will reach out to online internet services! Whether or not this is an OPSEC concern, may depend on your threat model, if you are using paid API access, etc. **It is solely up to you to decide whether or not this is an acceptable risk!** By using MatterBot, you agree not to hold the author(s) responsible/liable for any OPSEC failures or resulting damage;
+
+- Consider using separate Mattermost channels for:
+  
+  - projects;
+  
+  - incidents;
+  
+  - day-to-day discussions;
+  
+  - 'security clearance' levels;
+  
+  - etc.
+
+- Use the MatterBot modules binding/unbinding feature (see above) to only enable MatterBot modules that align with your 'risk appetite' for each individual Mattermost channel.
+
 ## Writing your own module
 
 - For `matterfeed.py`, it is relatively simple to copy an existing module and alter it to your own needs. Make sure to update the `pathlib` construct to reflect the right module and directory names.
