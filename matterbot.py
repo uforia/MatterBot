@@ -361,7 +361,8 @@ class MattermostManager(object):
                     for bind in self.commands[module]['binds']:
                         commands.add('`' + bind + '`')
             text =  "I know about: `"+'`, `'.join(sorted(options.Matterbot['helpcmds']))+"`, " + ', '.join(sorted(commands)) + " here.\n"
-            text += "*Remember that not every command works everywhere: this depends on the configuration. Modules may offer additional help if you add the subcommand.*"
+            text += "Every command has its own specific help. For example: `!help @dice` will show you how to use the @dice command.\n"
+            text += "*Remember: not every command works in every channel: this depends on a module's configuration*"
             await self.send_message(chanid, text, rootid)        
         else:
             # User is asking for specific module help
