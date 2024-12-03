@@ -51,7 +51,7 @@ def process(command, channel, username, params, files, conn):
         'accept': 'application/json',
         'Content-Type': 'application/json',
         'User-Agent': 'MatterBot ReversingLabs API integration',
-        'Authorization': f'Token {settings.APIURL['a1000']['key']}',
+        'Authorization': f"Token {settings.APIURL['a1000']['key']}",
     }
     try:
         querytype = None
@@ -110,7 +110,7 @@ def process(command, channel, username, params, files, conn):
                                     messages.append({'text': message})
                         if 'third_party_reputations' in results:
                             if 'statistics' in results['third_party_reputations']:
-                                message = f'| **ReversingLabs Third Party Results** | **Query**: `{query}` |\n'
+                                message = f"| **ReversingLabs Third Party Results** | **Query**: `{query}` |\n"
                                 message += '| :- | :- |\n'
                                 malicious = results['third_party_reputations']['statistics']['malicious']
                                 suspicious = results['third_party_reputations']['statistics']['suspicious']
@@ -126,13 +126,13 @@ def process(command, channel, username, params, files, conn):
                                 messages.append({'text': message})
                         if 'classification' in results:
                             classification = results['classification']
-                            message = f'**ReversingLabs Classification:** `{classification}`'
+                            message = f"**ReversingLabs Classification:** `{classification}`"
                             if 'threat_level' in results:
                                 threat_level = results['threat_level']
-                                message += f' **Threat Level**: `{threat_level}`'
+                                message += f" **Threat Level**: `{threat_level}`"
                             if 'reason' in results:
                                 reason = results['reason'].replace('_', ' ').title()
-                                message += f' **Reason**: `{reason}`'
+                                message += f" **Reason**: `{reason}`"
                             messages.append({'text': message})
             if querytype == 'host':
                 endpoint += f"{query}/"
@@ -163,7 +163,7 @@ def process(command, channel, username, params, files, conn):
                                 messages.append({'text': message})
                         if 'third_party_reputations' in results:
                             if 'statistics' in results['third_party_reputations']:
-                                message = f'| **ReversingLabs Third Party Results** | **Query**: `{query}` |\n'
+                                message = f"| **ReversingLabs Third Party Results** | **Query**: `{query}` |\n"
                                 message += '| :- | :- |\n'
                                 malicious = results['third_party_reputations']['statistics']['malicious']
                                 suspicious = results['third_party_reputations']['statistics']['suspicious']
@@ -179,7 +179,7 @@ def process(command, channel, username, params, files, conn):
                                 messages.append({'text': message})
                         if 'last_dns_records' in results:
                             last_dns_records = results['last_dns_records']
-                            message = f'**ReversingLabs DNS Results**: `{query}`\n\n'
+                            message = f"**ReversingLabs DNS Results**: `{query}`\n\n"
                             message += f"| **Type** | **Value** | **Resolver** |\n"
                             message += '| :- | :- | :- |\n'
                             for last_dns_record in last_dns_records:
@@ -187,7 +187,7 @@ def process(command, channel, username, params, files, conn):
                             message += '\n\n'
                             messages.append({'text': message})
                         if 'last_dns_records_time' in results:
-                            messages.append({'text': f'**Last ReversingLabs DNS record resolution:** `{results['last_dns_records_time']}`\n'})
+                            messages.append({'text': f"**Last ReversingLabs DNS record resolution:** `{results['last_dns_records_time']}`\n"})
             if querytype == 'ip':
                 endpoint += f"{query}/report/"
                 with requests.get(url=endpoint, headers=headers) as response:
@@ -216,7 +216,7 @@ def process(command, channel, username, params, files, conn):
                                 messages.append({'text': message})
                         if 'third_party_reputations' in results:
                             if 'statistics' in results['third_party_reputations']:
-                                message = f'| **ReversingLabs Third Party Results** | **Query**: `{query}` |\n'
+                                message = f"| **ReversingLabs Third Party Results** | **Query**: `{query}` |\n"
                                 message += '| :- | :- |\n'
                                 malicious = results['third_party_reputations']['statistics']['malicious']
                                 suspicious = results['third_party_reputations']['statistics']['suspicious']
@@ -231,7 +231,7 @@ def process(command, channel, username, params, files, conn):
                                 message += "\n\n"
                                 messages.append({'text': message})
                         if 'modified_time' in results:
-                            messages.append({'text': f'**Last updated:** `{results['modified_time']}`\n'})
+                            messages.append({'text': f"**Last updated:** `{results['modified_time']}`\n"})
             if querytype == 'hash':
                 ticloudfields = collections.OrderedDict({
                     'classification': 'Classification',
@@ -248,7 +248,7 @@ def process(command, channel, username, params, files, conn):
                     'tlsh': 'TLSH',
                 })
                 data = {
-                    'hash_values': [f'{query}',],
+                    'hash_values': [f"{query}",],
                     'include_networkthreatintelligence': True,
                     'skip_reanalysis': True,
                 }
@@ -260,7 +260,7 @@ def process(command, channel, username, params, files, conn):
                             uploads = []
                             results = results['results']
                             for result in results:
-                                message = f'| **ReversingLabs Results Summary** | **Query**: `{query}` |\n'
+                                message = f"| **ReversingLabs Results Summary** | **Query**: `{query}` |\n"
                                 message += '| :- | :- |\n'
                                 if 'ticloud' in result:
                                     for ticloudfield in ticloudfields:
@@ -293,7 +293,7 @@ def process(command, channel, username, params, files, conn):
                             uploads.append({'filename': 'reversingslabs-'+query+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content})
                             messages.append({'text': 'ReversingLabs JSON output and related samples:', 'uploads': uploads})
         else:
-            messages.append({'text': f'ReversingLabs module does not understand type/query: {query}'})
+            messages.append({'text': f"ReversingLabs module does not understand type/query: {query}"})
     except Exception as e:
         messages.append({'text': 'A Python error occurred searching the ReversingLabs API: `%s`\n```%s```\n' % (str(e), traceback.format_exc())})
     finally:
