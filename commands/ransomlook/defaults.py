@@ -36,8 +36,8 @@ HELP = {
     },
     'posts': {
         'args': '[string] [#]',
-        'desc': 'Show the last # (number) of posts where the post contains [string] (optional). If '
-                'the # is omitted, the number defaults to 10.',
+        'desc': 'If [string] (optional) is specified, only show recent posts (default: `%s` posts) ' % (LIMIT,) +
+                'that contain [string].',
     },
     'tgchannels': {
         'args': None,
