@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import base64
+import collections
 import re
 import requests
 import traceback
@@ -21,7 +22,7 @@ else:
 
 
 def process(command, channel, username, params, files, conn):
-    stripchars = '`|\n\r\'\"'
+    stripchars = r'\|\`\r\n\'\"'
     regex = re.compile('[%s]' % stripchars)
     messages = []
     headers = {
@@ -57,6 +58,8 @@ def process(command, channel, username, params, files, conn):
                 except ValueError:
                     limit = int(settings.LIMIT)
                 query = ' '.join(query)
+            else:
+                limit = int(settings.LIMIT)
         if querytype:
             if querytype == 'group':
                 if query:
@@ -84,12 +87,12 @@ def process(command, channel, username, params, files, conn):
                                     message += f"**Description:** `{meta}`\n\n"
                                     if 'locations' in groupinfo:
                                         locations = groupinfo['locations']
-                                        fields = {
+                                        fields = collections.OrderedDict({
                                             'fqdn': 'FQDN',
                                             'title': 'Title',
                                             'available': 'Active',
                                             'updated': 'Last Update',
-                                        }
+                                        })
                                         for field in fields:
                                             message += f"| {fields[field]} "
                                         message += '|\n'
@@ -122,11 +125,11 @@ def process(command, channel, username, params, files, conn):
                                         message += "\n\n"
                                         if len(posts):
                                             count = 1
-                                            fields = {
+                                            fields = collections.OrderedDict({
                                                 'post_title': 'Title',
                                                 'description': 'Description',
                                                 'discovered': 'Timestamp',
-                                            }
+                                            })
                                             for field in fields:
                                                 message += f"| {fields[field]} "
                                             message += '|\n'
@@ -198,12 +201,12 @@ def process(command, channel, username, params, files, conn):
                                     message += f"**Description:** `{meta}`\n\n"
                                     if 'locations' in marketinfo:
                                         locations = marketinfo['locations']
-                                        fields = {
+                                        fields = collections.OrderedDict({
                                             'fqdn': 'FQDN',
                                             'title': 'Title',
                                             'available': 'Active',
                                             'updated': 'Last Update',
-                                        }
+                                        })
                                         for field in fields:
                                             message += f"| {fields[field]} "
                                         message += '|\n'
@@ -236,11 +239,11 @@ def process(command, channel, username, params, files, conn):
                                         message += "\n\n"
                                         if len(posts):
                                             count = 1
-                                            fields = {
+                                            fields = collections.OrderedDict({
                                                 'post_title': 'Title',
                                                 'description': 'Description',
                                                 'discovered': 'Timestamp',
-                                            }
+                                            })
                                             for field in fields:
                                                 message += f"| {fields[field]} "
                                             message += '|\n'
@@ -286,6 +289,66 @@ def process(command, channel, username, params, files, conn):
                             count += 1
                         message += '\n\n'
                         messages.append({'text': message})
+            if querytype == 'posts':
+                endpoint = settings.APIURL['ransomlook']['url']+f"recent/{limit}"
+                filter = None
+                if query:
+                    filter = query
+                with requests.get(url=endpoint, headers=headers) as response:
+                    json_response = response.json()
+                    if len(json_response):
+                        count = 1
+                        if filter:
+                            message = f"**Ransomlook Posts matching `{filter}`** - Last `{limit}` entries\n\n"
+                        else:
+                            message = f"**Ransomlook Posts** - Last `{limit}` entries\n\n"
+                        fields = collections.OrderedDict({
+                            'discovered': 'Timestamp',
+                            'group_name': 'Group',
+                            'post_title': 'Title',
+                            'description': 'Description',
+                            'screen': 'Screenshot',
+                        })
+                        for field in fields:
+                            message += f"| {fields[field]} "
+                        message += '|\n'
+                        message += "| :- " * len(fields) + "|\n"
+                        count = 1
+                        content = False
+                        for post in json_response:
+                            messageline = ""
+                            if count < limit:
+                                for field in fields:
+                                    value = None
+                                    if field in post:
+                                        if post[field]:
+                                            if field == 'screen':
+                                                url = settings.APIURL['ransomlook']['url'].replace('/api','')+post[field]
+                                                desc = urllib.parse.unquote_plus(post[field].split('/')[-1])
+                                                value = f"[{desc}]({url})"
+                                            else:
+                                                value = '`' + regex.sub(' ', urllib.parse.unquote_plus(post[field].replace('`',''))) + '`'
+                                            if len(value)>400:
+                                                value = '`' + value[:396] + ' ...`'
+                                        else:
+                                            value = '`N/A`'
+                                    else:
+                                        value = '`N/A`'
+                                    messageline += f"| {value} "
+                            else:
+                                break
+                            messageline += '|\n'
+                            if filter:
+                                if filter.lower() in messageline.lower():
+                                    message += messageline
+                                    content = True
+                            else:
+                                message += messageline
+                                content = True
+                            count += 1
+                        message += '\n\n'
+                        if content:
+                            messages.append({'text': message})
             if querytype == 'tgchannels':
                 endpoint = settings.APIURL['ransomlook']['url']+'telegram/channels'
                 with requests.get(url=endpoint, headers=headers) as response:
@@ -335,9 +398,9 @@ def process(command, channel, username, params, files, conn):
                                         tgmessages = json_response[1]
                                     if len(tgchannelinfo):
                                         if filter:
-                                            message = f"**Ransomlook Telegram `{candidates[0]}` Channel Messages matching `{filter}` (Last `{settings.LIMIT}` entries)**\n"
+                                            message = f"**Ransomlook Telegram `{candidates[0]}` Channel Messages matching `{filter}` (Last `{limit}` entries)**\n"
                                         else:
-                                            message = f"**Ransomlook Telegram `{candidates[0]}` Channel Messages (Last `{settings.LIMIT}` entries)**\n"
+                                            message = f"**Ransomlook Telegram `{candidates[0]}` Channel Messages (Last `{limit}` entries)**\n"
                                         meta = tgchannelinfo['meta'] if tgchannelinfo['meta'] else 'N/A'
                                         link = tgchannelinfo['link'] if tgchannelinfo['link'] else 'N/A'
                                         message += f"**Description:** `{meta}`\n**Link:** `{link}`\n\n"
