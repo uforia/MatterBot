@@ -46,7 +46,7 @@ def process(command, channel, username, params, files, conn):
                         severity = None
                         for param in params:
                             if 'cvss:' in param:
-                                cvss = param.split('cvss:')[1:][0]
+                                severities = param.split('cvss:')[1:][0]
                                 if not cvss in severities:
                                     messages.append({'text': 'OpenCVE: `%s` is not one of `%s`!' % (cvss, '`, `'.join(severities))})
                                 else:
@@ -56,48 +56,46 @@ def process(command, channel, username, params, files, conn):
                         if not len(keywords):
                             messages.append({'text': 'OpenCVE: you need to specify something to look up!'})
                         else:
-                            page = 1
                             session = requests.Session()
                             session.auth = (settings.APIURL['opencve']['username'],settings.APIURL['opencve']['password'])
                             url = settings.APIURL['opencve']['url']+'/cve?search=%s' % (keywords[0],)
                             if severity:
                                 url += '&cvss=%s' % (severity,)
+                            json_response = None
                             while True:
-                                urlpage = url+'&page=%d' % (page,)
-                                with session.get(urlpage) as response:
+                                with session.get(url) as response:
                                     if response.status_code == 200:
-                                        page += 1
                                         json_response = response.json()
-                                        for cve in json_response:
-                                            id = cve['id']
+                                        for cve in json_response['results']:
+                                            id = cve['cve_id']
                                             creation = cve['created_at']
                                             updated = cve['updated_at']
-                                            desc = regex.sub('',cve['summary'])
+                                            desc = regex.sub('',cve['description'])
                                             vector = None
-                                            if all(keyword.lower() in desc.lower() for keyword in keywords):
-                                                cveurl = settings.APIURL['opencve']['url']+'/cve/%s' % (id,)
-                                                with session.get(cveurl) as response:
-                                                    cvedetails = response.json()
-                                                    if 'v3' in cvedetails['cvss']:
-                                                        cvss = cvedetails['cvss']['v3']
-                                                        if 'cvssMetricV31' in cvedetails['raw_nvd_data']['metrics']:
-                                                            vector = cvedetails['raw_nvd_data']['metrics']['cvssMetricV31'][0]['cvssData']['vectorString']
-                                                        elif 'cvssMetricV30' in cvedetails['raw_nvd_data']['metrics']:
-                                                            vector = cvedetails['raw_nvd_data']['metrics']['cvssMetricV30'][0]['cvssData']['vectorString']
-                                                    elif 'v2' in cvedetails['cvss']:
-                                                        cvss = cvedetails['cvss']['v2']
-                                                        vector = cvedetails['raw_nvd_data']['metrics']['cvssMetricV2'][0]['cvssData']['vectorString']
-                                                    else:
-                                                        cvss = 0.0
-                                                cves.append({
-                                                    'CVE ID': id,
-                                                    'Created At': creation,
-                                                    'Last Update': updated,
-                                                    'Description': desc,
-                                                    'CVSS': cvss,
-                                                    'Vector': vector,
-                                                    'URL': settings.APIURL['opencve']['url'].replace('/api','')+'/cve/%s' % (id,)
-                                                })
+                                            cveurl = settings.APIURL['opencve']['url']+'/cve/%s' % (id,)
+                                            with session.get(cveurl) as response:
+                                                cvedetails = response.json()
+                                                cvss = 0.0
+                                                vector = 'N/A'
+                                                for cvssversion in ('cvssV4_0', 'cvssV3_1', 'cvssV3_0', 'cvssV2_0'):
+                                                    if cvssversion in cvedetails['metrics']:
+                                                        cvssdata = cvedetails['metrics'][cvssversion]
+                                                        if len(cvssdata['data']):
+                                                            cvss = cvssdata['data']['score']
+                                                            vector = cvssdata['data']['vector']
+                                                            break
+                                            cves.append({
+                                                'CVE ID': id,
+                                                'Created At': creation,
+                                                'Last Update': updated,
+                                                'Description': desc,
+                                                'CVSS': cvss,
+                                                'Vector': vector,
+                                                'URL': settings.APIURL['opencve']['url'].replace('/api','')+'/cve/%s' % (id,)
+                                            })
+                                if 'next' in json_response:
+                                    if json_response['next']:
+                                        url = json_response['next'].replace('http://', 'https://')
                                     else:
                                         break
                     if querytype == 'cve':
@@ -111,21 +109,19 @@ def process(command, channel, username, params, files, conn):
                         with session.get(url) as response:
                             if response.status_code == 200:
                                 cvedetails = response.json()
-                                id = cvedetails['id']
+                                cvss = 0.0
+                                vector = 'N/A'
+                                id = cvedetails['cve_id']
                                 creation = cvedetails['created_at']
                                 updated = cvedetails['updated_at']
-                                desc = regex.sub('',cvedetails['summary'])
-                                if 'v3' in cvedetails['cvss']:
-                                    cvss = cvedetails['cvss']['v3']
-                                    if 'cvssMetricV31' in cvedetails['raw_nvd_data']['metrics']:
-                                        vector = cvedetails['raw_nvd_data']['metrics']['cvssMetricV31'][0]['cvssData']['vectorString']
-                                    elif 'cvssMetricV30' in cvedetails['raw_nvd_data']['metrics']:
-                                        vector = cvedetails['raw_nvd_data']['metrics']['cvssMetricV30'][0]['cvssData']['vectorString']
-                                elif 'v2' in cvedetails['cvss']:
-                                    cvss = cvedetails['cvss']['v2']
-                                    vector = cvedetails['raw_nvd_data']['metrics']['cvssMetricV2'][0]['cvssData']['vectorString']
-                                else:
-                                    cvss = 0.0
+                                desc = regex.sub('',cvedetails['description'])
+                                for cvssversion in ('cvssV4_0', 'cvssV3_1', 'cvssV3_0', 'cvssV2_0'):
+                                    if cvssversion in cvedetails['metrics']:
+                                        cvssdata = cvedetails['metrics'][cvssversion]
+                                        if len(cvssdata['data']):
+                                            cvss = cvssdata['data']['score']
+                                            vector = cvssdata['data']['vector']
+                                            break
                                 cves.append({
                                     'CVE ID': id,
                                     'Created At': creation,
@@ -161,7 +157,7 @@ def process(command, channel, username, params, files, conn):
                                 if field in ('CVE ID'):
                                     text += '| [%s](%s) ' % (cve[field],cve['URL'])
                                 else:
-                                    text += '| %s ' % (cve[field],)
+                                    text += '| `%s` ' % (cve[field],)
                             text += '|\n'
                             count += 1
                         text += '\n\n'

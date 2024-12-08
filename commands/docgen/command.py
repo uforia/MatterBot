@@ -334,7 +334,10 @@ def process(command, channel, username, params, files, conn):
                                 m = re.search('id=\"(.+?)\"', section)
                                 if m:
                                     chaptertitle = m.group(1)
-                                    toc += '\n<li><a href="#'+chaptertitle+'" class="toctext"></a> <a href="#'+chaptertitle+'" class="tocpagenr"></a></li>'
+                                    toc += '  <div class="left"><a href="#'+chaptertitle+'" class="toctext"></a></div>\n'
+                                    toc += '  <div class="dots"></div>\n'
+                                    toc += '  <div class="right"><a href="#'+chaptertitle+'" class="tocpagenr"></a></div>\n'
+                                    toc += '\n'
                             html = html.replace('%TOCMARKER%',toc)
                         with open(mdfile, 'wb') as f:
                             f.write(content.encode())
@@ -346,35 +349,43 @@ def process(command, channel, username, params, files, conn):
                         css = weasyprint.CSS(filename=MODULEDIR+settings.LANGMAP[language]['css'], base_url=MODULEDIR+settings.TEMPLATEDIR)
                         html_writer.write_pdf(pdffile, stylesheets=[MODULEDIR+settings.LANGMAP[language]['css']])
                         try:
+                            filecontent = None
                             with open(pdffile, 'rb') as f:
                                 filecontent = f.read()
                                 filename = pdffile.replace(MODULEDIR,'')
-                            if len(filecontent):
+                            if filecontent:
                                 messages.append({
                                     'text': '**Document Generated Successfully**: `%s`' % (filename,),
                                     'uploads': [
                                         {'filename': filename, 'bytes': filecontent}
                                     ]
                                 })
-                            ''' Debugging code: enable to be able to see the MarkDown source before final rendering
-                            filecontent = skeletondocument
-                            filename = mdfile.replace(MODULEDIR,'')
-                            if len(filecontent):
-                                messages.append({
-                                    'text': '**MarkDown Source Before Rendering**: `%s`' % (filename,),
-                                    'uploads': [
-                                        {'filename': filename, 'bytes': skeletondocument}
-                                    ]
-                                })
-                            '''
                         except:
                             raise
+                        # Debugging stuff
+                        #'''
                         try:
+                            filecontent = None
+                            with open(htmlfile, 'rb') as f:
+                                filecontent = f.read()
+                                filename = htmlfile.replace(MODULEDIR,'')
+                            if filecontent:
+                                messages.append({
+                                    'text': '**Debug Document Generated Successfully**: `%s`' % (filename,),
+                                    'uploads': [
+                                        {'filename': filename, 'bytes': filecontent}
+                                    ]
+                                })
+                        except:
+                            raise
+                        #'''
+                        try:
+                            filecontent = None
                             pypandoc.convert_file(htmlfile, format='html', to='docx', outputfile=docxfile, extra_args=["--datadir=./commands/docgen", "-M2GB", "+RTS", "-K64m", "-RTS", "--embed-resources"])
                             with open(docxfile, 'rb') as f:
                                 filecontent = f.read()
                                 filename = docxfile.replace(MODULEDIR,'')
-                            if len(filecontent):
+                            if filecontent:
                                 messages.append({
                                     'text': '**Word Document Generated Successfully**: `%s`' % (filename,),
                                     'uploads': [
