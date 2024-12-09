@@ -388,7 +388,7 @@ def process(command, channel, username, params, files, conn):
                         if len(candidates)>1:
                             message = 'Please be more specific, as multiple Telegram channels match your query: `%s`' % '`, `'.join(candidates)
                             messages.append({'text': message})
-                        else:
+                        if len(candidates):
                             endpoint = settings.APIURL['ransomlook']['url']+f"telegram/channel/{candidates[0]}"
                             with requests.get(url=endpoint, headers=headers) as response:
                                 json_response = response.json()
