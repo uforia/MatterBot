@@ -42,13 +42,12 @@ def process(command, channel, username, params, files, conn):
                     params = params[1:]
                     keywords = []
                     cves = []
+                    severities = set()
                     if querytype == 'search':
                         severity = ''
                         for param in params:
                             if 'cvss:' in param:
-                                severity = param.split('cvss:')[1:][0].lower()
-                                if len(severity) and not severity in settings.SEVERITIES:
-                                    messages.append({'text': 'OpenCVE: `%s` is not one of `%s`!' % (severity, '`, `'.join(severities))})
+                                severities.add(param.split('cvss:')[1:][0].lower())
                             else:
                                 keywords.append(param)
                         if not len(keywords):
@@ -59,8 +58,8 @@ def process(command, channel, username, params, files, conn):
                             url = settings.APIURL['opencve']['url']+'/cve?search=%s' % (keywords[0],)
                             json_response = None
                             while True:
-                                if severity:
-                                    url += '&cvss=%s' % (severity,)
+                                if len(severities):
+                                    url += '&cvss=%s' % ','.join(severities)
                                 with session.get(url) as response:
                                     if response.status_code == 200:
                                         json_response = response.json()
