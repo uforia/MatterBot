@@ -43,14 +43,12 @@ def process(command, channel, username, params, files, conn):
                     keywords = []
                     cves = []
                     if querytype == 'search':
-                        severity = None
+                        severity = ''
                         for param in params:
                             if 'cvss:' in param:
-                                severities = param.split('cvss:')[1:][0]
-                                if not cvss in severities:
-                                    messages.append({'text': 'OpenCVE: `%s` is not one of `%s`!' % (cvss, '`, `'.join(severities))})
-                                else:
-                                    severity = cvss
+                                severity = param.split('cvss:')[1:][0].lower()
+                                if len(severity) and not severity in settings.SEVERITIES:
+                                    messages.append({'text': 'OpenCVE: `%s` is not one of `%s`!' % (severity, '`, `'.join(severities))})
                             else:
                                 keywords.append(param)
                         if not len(keywords):
@@ -59,10 +57,10 @@ def process(command, channel, username, params, files, conn):
                             session = requests.Session()
                             session.auth = (settings.APIURL['opencve']['username'],settings.APIURL['opencve']['password'])
                             url = settings.APIURL['opencve']['url']+'/cve?search=%s' % (keywords[0],)
-                            if severity:
-                                url += '&cvss=%s' % (severity,)
                             json_response = None
                             while True:
+                                if severity:
+                                    url += '&cvss=%s' % (severity,)
                                 with session.get(url) as response:
                                     if response.status_code == 200:
                                         json_response = response.json()

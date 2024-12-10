@@ -11,6 +11,12 @@ APIURL = {
         },
 }
 CONTENTTYPE = 'application/json'
+SEVERITIES = {
+    'low': 3.9,
+    'medium': 6.9,
+    'high': 8.9,
+    'critical': 10,
+}
 HELP = {
     'DEFAULT': {
         'args': None,
@@ -28,7 +34,8 @@ HELP = {
     },
     'cve': {
         'args': '<CVE ID>',
-        'desc': 'Grab the detailed description for the given CVE-ID.',
+        'desc': 'Grab the detailed description for the given CVE-ID. Output will '
+                'include a JSON download.',
     },
 }
 
