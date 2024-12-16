@@ -47,13 +47,13 @@ def checkSHA512(value):
 
 def process(command, channel, username, params, files, conn):
     messages = []
-    headers = {
-        'accept': 'application/json',
-        'Content-Type': 'application/json',
-        'User-Agent': 'MatterBot ReversingLabs API integration',
-        'Authorization': f"Token {settings.APIURL['a1000']['key']}",
-    }
     try:
+        headers = {
+            'accept': 'application/json',
+            'Content-Type': 'application/json',
+            'User-Agent': 'MatterBot ReversingLabs API integration',
+            'Authorization': f"Token {settings.APIURL['a1000']['key']}",
+        }
         querytype = None
         if len(params)>0:
             querytypes = ('ip', 'host', 'url', 'hash')
@@ -64,20 +64,20 @@ def process(command, channel, username, params, files, conn):
                 query = params[0].lower()
                 if checkIP(querytype):
                     querytype = 'ip'
-                    endpoint = 'https://a1000.reversinglabs.com/api/network-threat-intel/ip/'
+                    a1kendpoint = 'https://a1000.reversinglabs.com/api/network-threat-intel/ip/'
                 elif checkHost(querytype):
                     querytype = 'host'
-                    endpoint = 'https://a1000.reversinglabs.com/api/network-threat-intel/domain/'
+                    a1kendpoint = 'https://a1000.reversinglabs.com/api/network-threat-intel/domain/'
                 elif checkURL(querytype):
                     querytype = 'url'
-                    endpoint = 'https://a1000.reversinglabs.com/api/network-threat-intel/url/'
+                    a1kendpoint = 'https://a1000.reversinglabs.com/api/network-threat-intel/url/'
                 elif checkHash(querytype):
                     querytype = 'hash'
-                    endpoint = 'https://a1000.reversinglabs.com/api/samples/v2/list/details/'
+                    a1kendpoint = 'https://a1000.reversinglabs.com/api/samples/v2/list/details/'
         if querytype:
             if querytype == 'url':
-                endpoint += f"?url={query}"
-                with requests.get(url=endpoint, headers=headers) as response:
+                a1kendpoint += f"?url={query}"
+                with requests.get(url=a1kendpoint, headers=headers) as response:
                     if response.status_code in (200,):
                         results = response.json()
                         if 'analysis' in results:
@@ -134,9 +134,11 @@ def process(command, channel, username, params, files, conn):
                                 reason = results['reason'].replace('_', ' ').title()
                                 message += f" **Reason**: `{reason}`"
                             messages.append({'text': message})
+                with requests.get(url=ticendpoint, headers=headers) as response:
+                    pass
             if querytype == 'host':
-                endpoint += f"{query}/"
-                with requests.get(url=endpoint, headers=headers) as response:
+                a1kendpoint += f"{query}/"
+                with requests.get(url=a1kendpoint, headers=headers) as response:
                     if response.status_code in (200,):
                         results = response.json()
                         print(results)
@@ -189,8 +191,8 @@ def process(command, channel, username, params, files, conn):
                         if 'last_dns_records_time' in results:
                             messages.append({'text': f"**Last ReversingLabs DNS record resolution:** `{results['last_dns_records_time']}`\n"})
             if querytype == 'ip':
-                endpoint += f"{query}/report/"
-                with requests.get(url=endpoint, headers=headers) as response:
+                a1kendpoint += f"{query}/report/"
+                with requests.get(url=a1kendpoint, headers=headers) as response:
                     if response.status_code in (200,):
                         results = response.json()
                         if 'top_threats' in results:
@@ -252,7 +254,7 @@ def process(command, channel, username, params, files, conn):
                     'include_networkthreatintelligence': True,
                     'skip_reanalysis': True,
                 }
-                with requests.post(url=endpoint, headers=headers, json=data) as response:
+                with requests.post(url=a1kendpoint, headers=headers, json=data) as response:
                     results = response.json()
                     if 'count' in results:
                         if results['count']>0:
@@ -286,8 +288,8 @@ def process(command, channel, username, params, files, conn):
                                 message += '\n\n'
                                 messages.append({'text': message})
                                 for samplehash in samplehashes:
-                                    endpoint = f"https://a1000.reversinglabs.com/api/samples/{samplehash}/download/"
-                                    with requests.get(url=endpoint, headers=headers) as sample:
+                                    a1kendpoint = f"https://a1000.reversinglabs.com/api/samples/{samplehash}/download/"
+                                    with requests.get(url=a1kendpoint, headers=headers) as sample:
                                         if response.status_code in (200,):
                                             uploads.append({'filename': f"sample-{samplehash}.bin", 'bytes': sample.content})
                             uploads.append({'filename': 'reversingslabs-'+query+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content})

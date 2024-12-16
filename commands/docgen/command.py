@@ -334,9 +334,15 @@ def process(command, channel, username, params, files, conn):
                                 m = re.search('id=\"(.+?)\"', section)
                                 if m:
                                     chaptertitle = m.group(1)
-                                    toc += '  <div class="left"><a href="#'+chaptertitle+'" class="toctext"></a></div>\n'
-                                    toc += '  <div class="dots"></div>\n'
-                                    toc += '  <div class="right"><a href="#'+chaptertitle+'" class="tocpagenr"></a></div>\n'
+                                    '''
+                                    toc += '<div class="left"><a href="#'+chaptertitle+'" class="toctext"></a></div>'
+                                    toc += '<div class="dots"></div>'
+                                    toc += '<div class="right"><a href="#'+chaptertitle+'" class="tocpagenr"></a></div>'
+                                    '''
+                                    toc += '<div class="entry">'
+                                    toc += '<div class="left"><a href="#'+chaptertitle+'" class="toctext"></a></div>'
+                                    toc += '<div class="right"><a href="#'+chaptertitle+'" class="tocpagenr"></a></div>'
+                                    toc += '</div><br />'
                                     toc += '\n'
                             html = html.replace('%TOCMARKER%',toc)
                         with open(mdfile, 'wb') as f:
@@ -363,7 +369,7 @@ def process(command, channel, username, params, files, conn):
                         except:
                             raise
                         # Debugging stuff
-                        #'''
+                        '''
                         try:
                             filecontent = None
                             with open(htmlfile, 'rb') as f:
@@ -378,24 +384,8 @@ def process(command, channel, username, params, files, conn):
                                 })
                         except:
                             raise
-                        #'''
+                        '''
                         try:
-                            filecontent = None
-                            pypandoc.convert_file(htmlfile, format='html', to='docx', outputfile=docxfile, extra_args=["--datadir=./commands/docgen", "-M2GB", "+RTS", "-K64m", "-RTS", "--embed-resources"])
-                            with open(docxfile, 'rb') as f:
-                                filecontent = f.read()
-                                filename = docxfile.replace(MODULEDIR,'')
-                            if filecontent:
-                                messages.append({
-                                    'text': '**Word Document Generated Successfully**: `%s`' % (filename,),
-                                    'uploads': [
-                                        {'filename': filename, 'bytes': filecontent}
-                                    ]
-                                })
-                        except:
-                            raise
-                        try:
-                            os.unlink(docxfile)
                             os.unlink(mdfile)
                             os.unlink(pdffile)
                             os.unlink(htmlfile)
