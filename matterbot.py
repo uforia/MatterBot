@@ -310,10 +310,12 @@ class MattermostManager(object):
                     for module in sorted(self.commands):
                         if self.isallowed_module(userid,module,chaninfo):
                             chans.add(module)
-                            text += "\n| %s | **YES** | `%s` | %s |" % (module,'`, `'.join(sorted(self.commands[module]['binds'])),self.commands[module]['help']['DEFAULT']['desc'].replace('|','/'))
+                            if 'binds' in self.commands[module] and 'help' in self.commands[module]:
+                                text += "\n| %s | **YES** | `%s` | %s |" % (module,'`, `'.join(sorted(self.commands[module]['binds'])),self.commands[module]['help']['DEFAULT']['desc'].replace('|','/'))
                         elif self.isadmin(userid):
                             chans.add(module)
-                            text += "\n| %s | **NO** | `%s` | %s |" % (module,'`, `'.join(sorted(self.commands[module]['binds'])),self.commands[module]['help']['DEFAULT']['desc'].replace('|','/'))
+                            if 'binds' in self.commands[module] and 'help' in self.commands[module]:
+                                text += "\n| %s | **NO** | `%s` | %s |" % (module,'`, `'.join(sorted(self.commands[module]['binds'])),self.commands[module]['help']['DEFAULT']['desc'].replace('|','/'))
                     text += "\n\n"
                 if not len(chans):
                     text = '@' + username + ", I don't know about any commands here.\n"
