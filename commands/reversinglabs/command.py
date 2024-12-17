@@ -48,11 +48,16 @@ def checkSHA512(value):
 def process(command, channel, username, params, files, conn):
     messages = []
     try:
-        headers = {
+        a1kheaders = {
             'accept': 'application/json',
             'Content-Type': 'application/json',
             'User-Agent': 'MatterBot ReversingLabs API integration',
             'Authorization': f"Token {settings.APIURL['a1000']['key']}",
+        }
+        ticheaders = {
+            'accept': 'application/json',
+            'Content-Type': 'application/json',
+            'User-Agent': 'MatterBot ReversingLabs API integration',
         }
         querytype = None
         if len(params)>0:
@@ -74,10 +79,11 @@ def process(command, channel, username, params, files, conn):
                 elif checkHash(querytype):
                     querytype = 'hash'
                     a1kendpoint = 'https://a1000.reversinglabs.com/api/samples/v2/list/details/'
+                    ticendpoint = 'https://data.reversinglabs.com/api/databrowser/malware_presence/query'
         if querytype:
             if querytype == 'url':
                 a1kendpoint += f"?url={query}"
-                with requests.get(url=a1kendpoint, headers=headers) as response:
+                with requests.get(url=a1kendpoint, headers=a1kheaders) as response:
                     if response.status_code in (200,):
                         results = response.json()
                         if 'analysis' in results:
@@ -97,7 +103,7 @@ def process(command, channel, username, params, files, conn):
                                         message += f"**First Seen**: `{first_analysis}`"
                                     message += "\n\n"
                                     for threat_field in threat_fields:
-                                        message += f"| **{threat_fields[threat_field]}** "
+                                        message += f"| {threat_fields[threat_field]} "
                                     message += "|\n"
                                     for threat_field in threat_fields:
                                         message += f"| :- "
@@ -134,14 +140,13 @@ def process(command, channel, username, params, files, conn):
                                 reason = results['reason'].replace('_', ' ').title()
                                 message += f" **Reason**: `{reason}`"
                             messages.append({'text': message})
-                with requests.get(url=ticendpoint, headers=headers) as response:
+                with requests.get(url=ticendpoint, headers=a1kheaders) as response:
                     pass
             if querytype == 'host':
                 a1kendpoint += f"{query}/"
-                with requests.get(url=a1kendpoint, headers=headers) as response:
+                with requests.get(url=a1kendpoint, headers=a1kheaders) as response:
                     if response.status_code in (200,):
                         results = response.json()
-                        print(results)
                         if 'top_threats' in results:
                             top_threats = results['top_threats']
                             if len(top_threats):
@@ -152,7 +157,7 @@ def process(command, channel, username, params, files, conn):
                                 }
                                 message = f"**ReversingLabs Top Threats**: `{query}`\n\n"
                                 for threat_field in threat_fields:
-                                    message += f"| **{threat_fields[threat_field]}** "
+                                    message += f"| {threat_fields[threat_field]} "
                                 message += "|\n"
                                 for threat_field in threat_fields:
                                     message += f"| :- "
@@ -192,7 +197,7 @@ def process(command, channel, username, params, files, conn):
                             messages.append({'text': f"**Last ReversingLabs DNS record resolution:** `{results['last_dns_records_time']}`\n"})
             if querytype == 'ip':
                 a1kendpoint += f"{query}/report/"
-                with requests.get(url=a1kendpoint, headers=headers) as response:
+                with requests.get(url=a1kendpoint, headers=a1kheaders) as response:
                     if response.status_code in (200,):
                         results = response.json()
                         if 'top_threats' in results:
@@ -205,7 +210,7 @@ def process(command, channel, username, params, files, conn):
                                 }
                                 message = f"**ReversingLabs Top Threats**: `{query}`\n\n"
                                 for threat_field in threat_fields:
-                                    message += f"| **{threat_fields[threat_field]}** "
+                                    message += f"| {threat_fields[threat_field]} "
                                 message += "|\n"
                                 for threat_field in threat_fields:
                                     message += f"| :- "
@@ -254,7 +259,7 @@ def process(command, channel, username, params, files, conn):
                     'include_networkthreatintelligence': True,
                     'skip_reanalysis': True,
                 }
-                with requests.post(url=a1kendpoint, headers=headers, json=data) as response:
+                with requests.post(url=a1kendpoint, headers=a1kheaders, json=data) as response:
                     results = response.json()
                     if 'count' in results:
                         if results['count']>0:
@@ -262,7 +267,7 @@ def process(command, channel, username, params, files, conn):
                             uploads = []
                             results = results['results']
                             for result in results:
-                                message = f"| **ReversingLabs Results Summary** | **Query**: `{query}` |\n"
+                                message = f"| **ReversingLabs A1000 Spectra Analyze** | **Query**: `{query}` |\n"
                                 message += '| :- | :- |\n'
                                 if 'ticloud' in result:
                                     for ticloudfield in ticloudfields:
@@ -270,7 +275,7 @@ def process(command, channel, username, params, files, conn):
                                             value = result['ticloud'][ticloudfield]
                                             if ticloudfield == 'classification':
                                                 value += f" ({result['ticloud']['riskscore']})"
-                                        message += f"| **{ticloudfields[ticloudfield]}** | `{value}` |\n"
+                                        message += f"| {ticloudfields[ticloudfield]} | `{value}` |\n"
                                 if 'ticore' in result:
                                     if 'info' in result['ticore']:
                                         if 'file' in result['ticore']['info']:
@@ -284,16 +289,69 @@ def process(command, channel, username, params, files, conn):
                                                                 value = hashset['value']
                                                                 if name.lower() in ('sha256',):
                                                                     samplehashes.append(value)
-                                                                message += f"| **{name}** | `{value}` |\n"
+                                                                message += f"| {name} | `{value}` |\n"
                                 message += '\n\n'
                                 messages.append({'text': message})
                                 for samplehash in samplehashes:
                                     a1kendpoint = f"https://a1000.reversinglabs.com/api/samples/{samplehash}/download/"
-                                    with requests.get(url=a1kendpoint, headers=headers) as sample:
+                                    with requests.get(url=a1kendpoint, headers=a1kheaders) as sample:
                                         if response.status_code in (200,):
                                             uploads.append({'filename': f"sample-{samplehash}.bin", 'bytes': sample.content})
                             uploads.append({'filename': 'reversingslabs-'+query+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content})
                             messages.append({'text': 'ReversingLabs JSON output and related samples:', 'uploads': uploads})
+                if checkMD5(query):
+                    ticendpoint += f'/md5/{query}'
+                if checkSHA1(query):
+                    ticendpoint += f'/sha1/{query}'
+                if checkSHA256(query):
+                    ticendpoint += f'/sha256/{query}'                    
+                ticendpoint += '?format=json&extended=True'
+                with requests.get(url=ticendpoint, headers=ticheaders, auth=(settings.APIURL['ticloud']['username'],settings.APIURL['ticloud']['password'])) as response:
+                    if response.status_code in (200,):
+                        json_response = response.json()
+                        if 'rl' in json_response:
+                            rl = json_response['rl']
+                            if 'malware_presence' in rl:
+                                results = rl['malware_presence']
+                                ticfields = collections.OrderedDict({
+                                    'status': 'Classification',
+                                    'reason': 'Reason',
+                                    'threat_name': 'Name',
+                                    'threat_level': 'Threat Level',
+                                    'trust_factor': 'Reliability',
+                                    'first_seen': 'First Seen',
+                                    'last_seen': 'Last Seen',
+                                    'scanner_percent': 'Detection Rate',
+                                })
+                                threat_levels = {
+                                    '1': 'Not urgent',
+                                    '2': 'Warrants investigation',
+                                    '3': 'Warrants investigation',
+                                    '4': 'Immediate response required',
+                                    '5': 'Immediate response required',
+                                }
+                                trust_levels = {
+                                    '0': 'Confirmed by other sources',
+                                    '1': 'Usually reliable',
+                                    '2': 'Fairly reliable',
+                                    '3': 'Doubtful',
+                                    '4': 'Reserved',
+                                    '5': 'Cannot be judged',
+                                }
+                                message = f"| **ReversingLabs TitaniumCloud** | **Query**: `{query}` |\n"
+                                message += f"| :- | :- |\n"
+                                for ticfield in ticfields:
+                                    if ticfield in results:
+                                        value = results[ticfield]
+                                        if ticfield == 'threat_level':
+                                            value = threat_levels[str(value)]
+                                        if ticfield == 'trust_factor':
+                                            value = trust_levels[str(value)]
+                                        if ticfield == 'scanner_percent':
+                                            value = str(round(value,2))+'%'
+                                        message += f"| {ticfields[ticfield]} | `{value}` |\n"
+                                message += f"\n\n"
+                                messages.append({'text': message})
         else:
             messages.append({'text': f"ReversingLabs module does not understand type/query: {query}"})
     except Exception as e:
