@@ -41,6 +41,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | OpenCVE feed of CVEs                                                                             | RSS            | Yes              | No                |
 | Osint10x Blog / News                                                                             | RSS            | No               | No                |
 | PacketStorm Security                                                                             | RSS            | No               | No                |
+| RansomLook (with support for detection of keywords/regex)                                        | JSON           | No               | No                |
 | Ransomwatch                                                                                      | JSON           | No               | No                |
 | Reddit (configurable list of subreddits)                                                         | RSS            | No               | No                |
 | SANS Internet Storm Center                                                                       | RSS            | No               | No                |
