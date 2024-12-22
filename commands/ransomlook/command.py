@@ -327,13 +327,15 @@ def process(command, channel, username, params, files, conn):
                                                 desc = urllib.parse.unquote_plus(post[field].split('/')[-1])
                                                 value = f"[{desc}]({url})"
                                             else:
-                                                value = '`' + regex.sub(' ', urllib.parse.unquote_plus(post[field].replace('`',''))) + '`'
+                                                value = regex.sub(' ', urllib.parse.unquote_plus(post[field].replace('`','')))
                                             if len(value)>400:
-                                                value = '`' + value[:396] + ' ...`'
+                                                value = value[:396] + ' ...'
                                         else:
-                                            value = '`N/A`'
+                                            value = 'N/A'
                                     else:
-                                        value = '`N/A`'
+                                        value = 'N/A'
+                                    if field in ('group_name', 'post_title', 'description'):
+                                        value = '`'+value+'`'
                                     messageline += f"| {value} "
                             else:
                                 break
