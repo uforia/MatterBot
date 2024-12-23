@@ -14,6 +14,7 @@
 
 import re
 import requests
+import urllib.parse
 from pathlib import Path
 try:
     from modules.ransomlook import defaults as settings
@@ -42,7 +43,7 @@ def query(MAX=settings.ENTRIES):
                     title = post['post_title']
                     description = post['description']
                     timestamp = post['discovered'].split(".")[0]
-                    screenshot = post['screen']
+                    screenshot = urllib.parse.quote_plus(post['screen'])
                     content = settings.NAME + f": `{group}` has posted/claimed `{title}` at `{timestamp}`"
                     if screenshot:
                         if len(screenshot):
