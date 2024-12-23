@@ -33,7 +33,7 @@ def query(MAX=settings.ENTRIES):
     items = []
     count = 0
     stripchars = '`\\[\\]\'\"'
-    regex = re.compile('[%s]' % stripchars)
+    regex = re.compile(r'[%s]' % stripchars)
     with requests.get(settings.URL+f'/{settings.ENTRIES}') as response:
         if response.status_code in (200,):
             json_response = response.json()
@@ -43,7 +43,8 @@ def query(MAX=settings.ENTRIES):
                     title = post['post_title']
                     description = post['description']
                     timestamp = post['discovered'].split(".")[0]
-                    screenshot = urllib.parse.quote_plus(post['screen'])
+                    print(post['screen'])
+                    screenshot = urllib.parse.quote(post['screen'].replace(r'\\\\',r'\\'), safe='/<>#')
                     content = settings.NAME + f": `{group}` has posted/claimed `{title}` at `{timestamp}`"
                     if screenshot:
                         if len(screenshot):
