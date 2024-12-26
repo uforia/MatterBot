@@ -44,12 +44,12 @@ def query(MAX=settings.ENTRIES):
                     description = post['description']
                     timestamp = post['discovered'].split(".")[0]
                     screen = post['screen'] if post['screen'] else None
+                    content = settings.NAME + f": `{group}` has posted/claimed `{title}` at `{timestamp}`"
                     if screen:
                         screenshot = urllib.parse.quote(post['screen'].replace(r'\\\\',r'\\'), safe='/<>#')
                         if len(screenshot):
                             url = settings.URL.replace('/api/recent','/')+f"{screenshot}"
                             content += f" - Screenshot: [link]({url})"
-                    content = settings.NAME + f": `{group}` has posted/claimed `{title}` at `{timestamp}`"
                     if len(description):
                         description = regex.sub('',description.strip().replace('\n','. '))
                         if len(description)>400:
