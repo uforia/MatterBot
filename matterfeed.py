@@ -141,7 +141,6 @@ class LogWorker(threading.Thread):
         while True:
             logItem = self.logQueue.get()
             uploads = None
-            print(logItem)
             try:
                 logLevel, logText, uploads = logItem
             except:
