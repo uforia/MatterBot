@@ -61,7 +61,7 @@ def query(MAX=settings.ENTRIES):
                                             if header.lower() == 'content-disposition':
                                                 filename = urllib.parse.unquote_plus(re.findall('filename=(.+)', scrdl.headers[header], re.IGNORECASE)[0]).replace('?','-').replace('"','')
                                                 bytes = scrdl.content
-                                        upload = {'filename': filename, 'bytes': bytes[:20]}
+                                        upload = {'filename': filename, 'bytes': bytes}
                     if len(description):
                         description = regex.sub('',description.strip().replace('\n','. '))
                         if len(description)>400:
