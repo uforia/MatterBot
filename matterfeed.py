@@ -48,7 +48,7 @@ class MattermostManager(object):
             channel_info = self.mmDriver.channels.get_channel(userchannel['id'])
             self.channels[channel_info['name']] = channel_info['id']
 
-    def createPost(self, channel, text):
+    def createPost(self, channel, text, uploads = []):
         try:
             if len(text) > options.Matterbot['msglength']: # Mattermost message limit
                 blocks = []
@@ -68,7 +68,25 @@ class MattermostManager(object):
             else:
                 blocks = [text]
             for block in blocks:
-                self.mmDriver.posts.create_post(options={'channel_id': channel,
+                if block == blocks[-1]:
+                    if len(uploads):
+                        file_ids = []
+                        for upload in uploads:
+                            filename = upload['filename']
+                            payload = upload['bytes']
+                            if not isinstance(payload, (bytes, bytearray)):
+                                payload = payload.encode()
+                            file_id = self.mmDriver.files.upload_file(
+                                channel_id=channel,
+                                files={'files': (filename, payload)}
+                            )['file_infos'][0]['id']
+                            file_ids.append(file_id)
+                    self.mmDriver.posts.create_post(options={'channel_id': channel,
+                                                            'message': block,
+                                                            'file_ids': file_ids,
+                                                            })
+                else:
+                    self.mmDriver.posts.create_post(options={'channel_id': channel,
                                                             'message': block,
                                                             })
         except:

@@ -44,19 +44,32 @@ def query(MAX=settings.ENTRIES):
                     description = post['description']
                     timestamp = post['discovered'].split(".")[0]
                     screen = post['screen'] if post['screen'] else None
+                    upload = None
                     content = settings.NAME + f": `{group}` has posted/claimed `{title}` at `{timestamp}`"
                     if screen:
                         screenshot = urllib.parse.quote(post['screen'].replace(r'\\\\',r'\\'), safe='/<>#')
                         if len(screenshot):
                             url = settings.URL.replace('/api/recent','/')+f"{screenshot}"
-                            content += f" - Screenshot: [link]({url})"
+                            if not settings.SCREENDL:
+                                content += f" - Screenshot: [link]({url})"
+                            else:
+                                with requests.get(url) as scrdl:
+                                    if scrdl.status_code in (200,):
+                                        for header in scrdl.headers:
+                                            if header.lower() == 'content-disposition':
+                                                filename = urllib.parse.unquote_plus(re.findall('filename=(.+)', scrdl.headers[header], re.IGNORECASE)[0]).replace('?','-').replace('"','')
+                                                bytes = scrdl.content
+                                        upload = {'filename': filename, 'bytes': bytes}
                     if len(description):
                         description = regex.sub('',description.strip().replace('\n','. '))
                         if len(description)>400:
                             description = description[:396]+" ..."
                         content += "\n>"+description+"\n"
                     for channel in settings.CHANNELS:
-                        items.append([channel, content])
+                        if upload:
+                            items.append([channel, content, upload])
+                        else:
+                            items.append([channel, content])
                     for keyword in settings.KEYWORDS:
                         keywordchannel = settings.KEYWORDS[keyword]
                         keywordregex = re.compile('%s' % keyword)
@@ -64,7 +77,10 @@ def query(MAX=settings.ENTRIES):
                         matches = keywordregex.search(fullpost)
                         if matches:
                             notification = f"@all Keyword `{keyword}` was found in a {content}"
-                            items.append([keywordchannel, notification])
+                            if upload:
+                                items.append([keywordchannel, notification, upload])
+                            else:
+                                items.append([keywordchannel, notification])
                     count+=1
     return items
 

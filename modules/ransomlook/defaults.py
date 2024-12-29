@@ -11,3 +11,5 @@ KEYWORDS = {
     "<special word 1>": "<private-channel>",
     "<regex 2>": "<other-private-channel>",
 }
+# Set to `True` to have the bot download and attach available screenshot to posts
+SCREENDL = True
