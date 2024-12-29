@@ -211,7 +211,7 @@ class ModuleWorker(threading.Thread):
                                 else:
                                     self.logQueue.put(('INFO', 'Posting  : ' + self.module + ' => ' + channel + ' => ' + content[:80] + '...'))
                                     self.msgQueue.put((channel, self.module, content, uploads))
-                        elif not item in history[self.module] or True:
+                        elif not item in history[self.module]:
                             history[self.module].append(item)
                             if not first_run:
                                 if options.debug:
