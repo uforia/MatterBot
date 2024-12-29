@@ -30,8 +30,6 @@ else:
             import settings
 
 def query(MAX=settings.ENTRIES):
-    #items = [['debug', 'test', [{'filename': 'test.png', 'bytes': b'\x00\x00'}]]]
-    #return items
     items = []
     count = 0
     stripchars = '`\\[\\]\'\"'
