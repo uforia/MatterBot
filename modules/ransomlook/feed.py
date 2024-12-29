@@ -32,7 +32,7 @@ else:
 def query(MAX=settings.ENTRIES):
     items = []
     count = 0
-    stripchars = '`\\[\\]\'\"'
+    stripchars = '\r\n|`\\[\\]\'\"'
     regex = re.compile(r'[%s]' % stripchars)
     with requests.get(settings.URL+f'/{settings.ENTRIES}') as response:
         if response.status_code in (200,):
@@ -40,8 +40,10 @@ def query(MAX=settings.ENTRIES):
             if len(json_response):
                 for post in json_response:
                     group = post['group_name']
-                    title = post['post_title']
-                    description = post['description']
+                    title = regex.sub('. ',post['post_title'])
+                    title = re.sub(r'(\. ){2,}', '. ', title)
+                    description = regex.sub('. ',post['description'])
+                    description = re.sub(r'(\. ){2,}', '. ', description)
                     timestamp = post['discovered'].split(".")[0]
                     screen = post['screen'] if post['screen'] else None
                     upload = None
@@ -60,10 +62,9 @@ def query(MAX=settings.ENTRIES):
                                                 filename = urllib.parse.unquote_plus(re.findall('filename=(.+)', scrdl.headers[header], re.IGNORECASE)[0]).replace('?','-').replace('"','')
                                                 bytes = scrdl.content
                                         upload = {'filename': filename, 'bytes': bytes}
+                    if len(description)>400:
+                        description = description[:396]+" ..."
                     if len(description):
-                        description = regex.sub('',description.strip().replace('\n','. '))
-                        if len(description)>400:
-                            description = description[:396]+" ..."
                         content += "\n>"+description+"\n"
                     for channel in settings.CHANNELS:
                         if upload:
