@@ -68,19 +68,18 @@ class MattermostManager(object):
             else:
                 blocks = [text]
             for block in blocks:
-                if block == blocks[-1]:
-                    if len(uploads):
-                        file_ids = []
-                        for upload in uploads:
-                            filename = upload['filename']
-                            payload = upload['bytes']
-                            if not isinstance(payload, (bytes, bytearray)):
-                                payload = payload.encode()
-                            file_id = self.mmDriver.files.upload_file(
-                                channel_id=channel,
-                                files={'files': (filename, payload)}
-                            )['file_infos'][0]['id']
-                            file_ids.append(file_id)
+                if len(uploads):
+                    file_ids = []
+                    for upload in uploads['uploads']:
+                        filename = upload['filename']
+                        payload = upload['bytes']
+                        if not isinstance(payload, (bytes, bytearray)):
+                            payload = payload.encode()
+                        file_id = self.mmDriver.files.upload_file(
+                            channel_id=channel,
+                            files={'files': (filename, payload)}
+                        )['file_infos'][0]['id']
+                        file_ids.append(file_id)
                     self.mmDriver.posts.create_post(options={'channel_id': channel,
                                                             'message': block,
                                                             'file_ids': file_ids,
@@ -105,9 +104,16 @@ class MsgWorker(threading.Thread):
         self.logQueue.put(('INFO', 'Starting PostMsg Worker ...'))
         while True:
             newsItem = self.msgQueue.get()
-            channel, module, content = newsItem
+            uploads = None
+            try:
+                channel, module, content, uploads = newsItem
+            except:
+                channel, module, content = newsItem
             self.logQueue.put(('INFO', 'Message  : ' + module.lower() + ' => ' + channel + ' => ' + content[:20] + '...'))
-            self.mm.createPost(self.mm.channels[channel], content)
+            if uploads:
+                self.mm.createPost(self.mm.channels[channel], content, uploads)
+            else:
+                self.mm.createPost(self.mm.channels[channel], content)
             self.msgQueue.task_done()
 
     def run(self):
@@ -134,7 +140,12 @@ class LogWorker(threading.Thread):
         log.info('Starting up log thread ...')
         while True:
             logItem = self.logQueue.get()
-            logLevel, logText = logItem
+            uploads = None
+            print(logItem)
+            try:
+                logLevel, logText, uploads = logItem
+            except:
+                logLevel, logText = logItem
             if logLevel.upper() == 'INFO':
                 log.info(logText)
             elif logLevel.upper() == 'ERROR':
@@ -188,7 +199,11 @@ class ModuleWorker(threading.Thread):
                     first_run = False
                 if len(items):
                     for item in items:
-                        channel, content = item
+                        try:
+                            channel, content, uploads = item
+                        except:
+                            channel, content = item
+                            uploads = []
                         # Deal with self-referential calls. They should always trigger and not once.
                         if content.startswith('@') or content.startswith('!'):
                             if not first_run:
@@ -196,15 +211,15 @@ class ModuleWorker(threading.Thread):
                                     self.logQueue.put(('DEBUG', 'Posting  : ' + self.module + ' => ' + channel + ' => ' + content + '...'))
                                 else:
                                     self.logQueue.put(('INFO', 'Posting  : ' + self.module + ' => ' + channel + ' => ' + content[:80] + '...'))
-                                    self.msgQueue.put((channel, self.module, content))
-                        elif not item in history[self.module]:
+                                    self.msgQueue.put((channel, self.module, content, uploads))
+                        elif not item in history[self.module] or True:
                             history[self.module].append(item)
                             if not first_run:
                                 if options.debug:
                                     self.logQueue.put(('DEBUG', 'Posting  : ' + self.module + ' => ' + channel + ' => ' + content + '...'))
                                 else:
                                     self.logQueue.put(('INFO', 'Posting  : ' + self.module + ' => ' + channel + ' => ' + content[:80] + '...'))
-                                    self.msgQueue.put((channel, self.module, content))
+                                    self.msgQueue.put((channel, self.module, content, uploads))
                 if options.debug:
                     logQueue.put(('DEBUG', 'Summary : ' + self.module + ' => '+ str(len(items)) + ' messages ...'))
                 history.sync()

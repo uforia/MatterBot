@@ -30,6 +30,8 @@ else:
             import settings
 
 def query(MAX=settings.ENTRIES):
+    #items = [['debug', 'test', [{'filename': 'test.png', 'bytes': b'\x00\x00'}]]]
+    #return items
     items = []
     count = 0
     stripchars = '`\\[\\]\'\"'
@@ -59,7 +61,7 @@ def query(MAX=settings.ENTRIES):
                                             if header.lower() == 'content-disposition':
                                                 filename = urllib.parse.unquote_plus(re.findall('filename=(.+)', scrdl.headers[header], re.IGNORECASE)[0]).replace('?','-').replace('"','')
                                                 bytes = scrdl.content
-                                        upload = {'filename': filename, 'bytes': bytes}
+                                        upload = {'filename': filename, 'bytes': bytes[:20]}
                     if len(description):
                         description = regex.sub('',description.strip().replace('\n','. '))
                         if len(description)>400:
@@ -67,7 +69,7 @@ def query(MAX=settings.ENTRIES):
                         content += "\n>"+description+"\n"
                     for channel in settings.CHANNELS:
                         if upload:
-                            items.append([channel, content, upload])
+                            items.append([channel, content, {'uploads': [upload]}])
                         else:
                             items.append([channel, content])
                     for keyword in settings.KEYWORDS:
@@ -78,7 +80,7 @@ def query(MAX=settings.ENTRIES):
                         if matches:
                             notification = f"@all Keyword `{keyword}` was found in a {content}"
                             if upload:
-                                items.append([keywordchannel, notification, upload])
+                                items.append([keywordchannel, notification, {'uploads': [upload]}])
                             else:
                                 items.append([keywordchannel, notification])
                     count+=1
