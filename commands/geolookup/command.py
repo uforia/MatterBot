@@ -20,6 +20,9 @@ else:
 def process(command, channel, username, params, files, conn):
     if len(params)>0:
         try:
+            headers = {
+                'User-Agent': 'MatterBot integration for Geolookup v0.1'
+            }
             if len(params)<2:
                 message = 'Geolookup: specify a valid latitude/longitude!'
             else:
@@ -27,7 +30,7 @@ def process(command, channel, username, params, files, conn):
                 long = params[1]
                 if re.search(r"^[\-\.0-9]+$", lat) and re.search(r"^[\-\.0-9]+$", long):
                     # Close enough
-                    with requests.get(settings.APIURL['osmdata']['url']+'lat='+lat+'&lon='+long+'&format=json') as response:
+                    with requests.get(settings.APIURL['osmdata']['url']+'lat='+lat+'&lon='+long+'&format=json', headers=headers) as response:
                         json_response = response.json()
                         message = 'Geographical address lookup for latitude `%s`, longitude `%s`: ' % (lat, long)
                         if 'display_name' in json_response:
