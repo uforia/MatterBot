@@ -13,3 +13,9 @@ CONTENTTYPE = 'application/json'
 TEMP = 0.9
 CL = 8192 # Max context length
 L = 512 # Max length
+HELP = {
+    'DEFAULT': {
+        'args': '<prompt>',
+        'desc': 'Ask the AI LLM for a response to the specified `prompt`. Depending on the AI/LLM system load, responses may take a while - be patient and use this sparingly.',
+    },
+}
