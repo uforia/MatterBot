@@ -34,7 +34,7 @@ def query(MAX=settings.ENTRIES):
     stripchars = '`\\[\\]\'\"'
     regex = re.compile('[%s]' % stripchars)
     for subreddit in settings.SUBREDDITS:
-        feed = feedparser.parse("https://www.reddit.com/r/"+subreddit+"/.rss")
+        feed = feedparser.parse("https://www.reddit.com/r/"+subreddit+"/.rss", agent='MatterBot RSS Automation 1.0'))
         count = 0
         while count < MAX:
             try:

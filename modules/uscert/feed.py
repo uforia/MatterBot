@@ -35,7 +35,7 @@ def query(MAX=settings.ENTRIES):
     regex = re.compile('[%s]' % stripchars)
     for category in settings.CATEGORIES:
         feedurl = "https://us-cert.cisa.gov/"+category+".xml"
-        feed = feedparser.parse(feedurl)
+        feed = feedparser.parse(feedurl, agent='MatterBot RSS Automation 1.0')
         count = 0
         while count < MAX:
             try:

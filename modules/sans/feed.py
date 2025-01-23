@@ -29,7 +29,7 @@ else:
 
 def query(MAX=settings.ENTRIES):
     items = []
-    feed = feedparser.parse(settings.URL)
+    feed = feedparser.parse(settings.URL, agent='MatterBot RSS Automation 1.0')
     count = 0
     while count < MAX:
         try:
