@@ -8,6 +8,9 @@ CHANNELS = (
 # be aware of rate limits. It is strongly recommended to setup your own
 # OpenCVE instance.
 URL = "https://<your-opencve-instance-here>"
+# If you want to link to the public OpenCVE descriptions, change this to
+# 'True'
+PUBLICDESCURL = True
 # API endpoint URL
 API = "/api"
 # Username and password to connect to the API endpoint.

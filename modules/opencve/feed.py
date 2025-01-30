@@ -77,7 +77,10 @@ def query(MAX=settings.ENTRIES):
                     last_update = entry['updated_at']
                     historyitem = (cve,last_update)
                     if not historyitem in history['opencve']:
-                        link = settings.URL+'/cve/'+cve
+                        if settings.PUBLICDESCURL:
+                            link = f"https://app.opencve.io/cve/{cve}"
+                        else:
+                            link = f"{settings.URL}/cve/{cve}"
                         description = regex.sub('',title).strip().replace('\n','. ')
                         if len(description)>400:
                             description = description[:396]+' ...'
