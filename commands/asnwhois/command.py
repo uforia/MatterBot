@@ -3,6 +3,8 @@
 import json
 import re
 import requests
+import traceback
+
 from pathlib import Path
 try:
     from commands.asnwhois import defaults as settings
@@ -60,5 +62,5 @@ def process(command, channel, username, params, files, conn):
                             ]}
         except Exception as e:
             return {'messages': [
-                {'text': "An error occurred searching ASN WHOIS data for `%s`:\nError: `%s`" % (params, str(e))},
+                {'text': 'An error occurred in GTFOBins:\nError: ' + (str(e),traceback.format_exc())}
             ]}
