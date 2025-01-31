@@ -21,7 +21,7 @@ def process(command, channel, username, params, files, conn):
     if len(params)>0:
         try:
             headers = {
-                'User-Agent': 'MatterBot integration for Geolookup v0.1'
+                'User-Agent': 'MatterBot integration for Geolookup v0.1',
             }
             if len(params)<2:
                 message = 'Geolookup: specify a valid latitude/longitude!'
