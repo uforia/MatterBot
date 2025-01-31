@@ -45,7 +45,7 @@ def process(command, channel, username, params, files, conn):
         # API URL for fetching data
         headers = {
             'Content-Type': settings.CONTENTTYPE,
-            'User-Agent': 'MatterBot integration for ASNWHOIS v0.1'
+            'User-Agent': 'MatterBot integration for crtsh v0.1'
         }
         api_url = f"{settings.APIURL['crtsh']['url']}{param}"
 

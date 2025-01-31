@@ -49,7 +49,7 @@ def process(command, channel, username, params, files, conn):
     headers = {
         'Accept-Encoding': settings.CONTENTTYPE,
         'Content-Type': settings.CONTENTTYPE,
-        'User-Agent': 'MatterBot integration for ASNWHOIS v0.1',
+        'User-Agent': 'MatterBot integration for HaveIBeenPwned v0.1',
         'hibp-api-key': settings.APIURL['hibp']['key'],
     }
     
