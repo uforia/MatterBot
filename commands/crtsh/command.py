@@ -86,7 +86,7 @@ def process(command, channel, username, params, files, conn):
 
     except Exception as e:
         # Append error message to the messages list
-        messages.append({'text': 'An error occurred in GTFOBins:\nError: ' + (str(e),traceback.format_exc())})
+        messages.append({'text': 'An error occurred in crtsh:\nError: ' + (str(e),traceback.format_exc())})
 
     finally:
         # Return the messages list
