@@ -67,7 +67,7 @@ def process(command, channel, username, params, files, conn):
                     reserved_str = r"""? & | ! { } [ ] ( ) ^ ~ * : \ " ' + -"""
                     esc_dict = { chr : f"\\{chr}" for chr in reserved_str}
                     res = [ ''.join(esc_dict.get(chr, chr) for chr in sub) for sub in params]
-                    query = f'content%3A%22{' '.join(res)}%22'
+                    query = f"content%3A%22{' '.join(res)}%22"
                     url = f"{settings.APIURL['docspell']['url']}/sec/item/search?q={query}&withDetails=True"
                     with requests.get(url=url, headers=headers) as response:
                         json_response = response.json()
