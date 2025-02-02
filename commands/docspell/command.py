@@ -187,7 +187,7 @@ def process(command, channel, username, params, files, conn):
                                 message += '| :- | :- | -: | :- |\n'
                                 for entry in entries:
                                     success = ':white_check_mark:' if entry['success'] else ':x:'
-                                    message += f"| {success} | {entry['filename']} | {entry['size']} | {entry['mime']} |\n"
+                                    message += f"| {success} | `{entry['filename']}` | `{entry['size']}` | `{entry['mime']}` |\n"
                                 message += '\n\n'
                             messages.append({'text': message})
             else:
