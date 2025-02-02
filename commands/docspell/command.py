@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import datetime
+import json
 import re
 import requests
 import traceback
@@ -55,15 +56,15 @@ def process(command, channel, username, params, files, conn):
                 params = params[1:]
             token = getToken()
             if token:
-                headers = {
-                    'Content-Type': settings.CONTENTTYPE,
-                    'Accept-Encoding': settings.CONTENTTYPE,
-                    'User-Agent': 'MatterBot integration for Docspell v0.1',
-                    'X-Docspell-Auth': f"{token}",
-                    'searchMode': 'Normal',
-                    'query': 'string',
-                }
                 if querytype in ('search',):
+                    headers = {
+                        'Content-Type': settings.CONTENTTYPE,
+                        'Accept-Encoding': settings.CONTENTTYPE,
+                        'User-Agent': 'MatterBot integration for Docspell v0.1',
+                        'X-Docspell-Auth': f"{token}",
+                        'searchMode': 'Normal',
+                        'query': 'string',
+                    }
                     reserved_str = r"""? & | ! { } [ ] ( ) ^ ~ * : \ " ' + -"""
                     esc_dict = { chr : f"\\{chr}" for chr in reserved_str}
                     res = [ ''.join(esc_dict.get(chr, chr) for chr in sub) for sub in params]
@@ -143,11 +144,52 @@ def process(command, channel, username, params, files, conn):
                                             messages.append({'text': message})
                                             if len(files)>0:
                                                 messages.append({'text': 'Related Downloads:', 'uploads': files})
-                                        else:
-                                            messages.append({'text': f"No results found for {params}"})
+                                    else:
+                                        messages.append({'text': f"No results found for {params}"})
                 if querytype in ('upload',):
-                    if len(files):
-                        print(files)
+                    if not len(files):
+                        messages.append({'text': "You need to include at least one (1) attachment to be uploaded to the collective."})
+                    else:
+                        collective = settings.APIURL['docspell']['username'].split('/')[0]
+                        if not collective:
+                            messages.append({'text': "There are problems with the credentials configuration, please resolve these first and then try again."})
+                        else:
+                            url = f"{settings.APIURL['docspell']['url']}/sec/upload/item"
+                            headers = {
+                                'X-Docspell-Auth': f"{token}",
+                            }
+                            entries = []
+                            for file in files:
+                                filename = file['name']
+                                id = file['id']
+                                content = conn.files.get_file(id).content
+                                mime_type = file['mime_type']
+                                filesize = file['size']
+                                contentfields = {'file': (filename, content, mime_type)}
+                                with requests.post(url=url, headers=headers, files=contentfields) as response:
+                                    if response.status_code in (200, 201):
+                                        entries.append({
+                                            'success': True,
+                                            'filename': filename,
+                                            'size': filesize,
+                                            'mime': mime_type,
+                                        })
+                                    else:
+                                        entries.append({
+                                            'success': False,
+                                            'filename': filename,
+                                            'size': filesize,
+                                            'mime': mime_type,
+                                        })
+                            if len(entries):
+                                message = '**Docspell Uploads**:\n\n'
+                                message += '| OK | Name | Size | MIME |\n'
+                                message += '| :- | :- | -: | :- |\n'
+                                for entry in entries:
+                                    success = ':white_check_mark:' if entry['success'] else ':x:'
+                                    message += f"| {success} | {entry['filename']} | {entry['size']} | {entry['mime']} |\n"
+                                message += '\n\n'
+                            messages.append({'text': message})
             else:
                 messages.append({'text': "An error occurred acquiring a Docspell auth token. Check your settings and try again."})
         except Exception as e:
