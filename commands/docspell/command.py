@@ -183,7 +183,7 @@ def process(command, channel, username, params, files, conn):
                                         })
                             if len(entries):
                                 message = '**Docspell Uploads**:\n\n'
-                                message += '| OK | Name | Size | MIME |\n'
+                                message += '| Status | Name | Size | MIME |\n'
                                 message += '| :- | :- | -: | :- |\n'
                                 for entry in entries:
                                     success = ':white_check_mark:' if entry['success'] else ':x:'
