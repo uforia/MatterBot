@@ -79,7 +79,7 @@ def process(command, channel, username, params, files, conn):
                                     if len(items):
                                         files = []
                                         count = 0
-                                        message = f"**Docspell Search Results for**: {' '.join(params)}\n\n"
+                                        message = f"**{settings.NAME} Search Results for**: {' '.join(params)}\n\n"
                                         message += "| Date             | Name | Pages | Highlights |\n"
                                         message += "| ---------------- | :- | -: | :- |\n"
                                         for item in sorted(items, key=lambda items: items['date'], reverse=True):

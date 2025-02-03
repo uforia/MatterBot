@@ -9,6 +9,7 @@ APIURL = {
         'password': '<your-docspell-automation-password>',
     },
 }
+NAME="Docspell"
 # Number of pre- and postamble characters in highlights
 PREAMBLE=200
 POSTAMBLE=200
