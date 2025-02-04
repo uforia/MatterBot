@@ -41,7 +41,7 @@ else:
 
 def query(MAX=settings.ENTRIES):
     announcements = []
-    stripchars = '`\t\n\r\'\"\|'
+    stripchars = r'`\t\n\r\'\"\|'
     regex = re.compile('[%s]' % stripchars)
     if settings.AUTH['username'] and settings.AUTH['password']:
         authentication = (settings.AUTH['username'],settings.AUTH['password'])

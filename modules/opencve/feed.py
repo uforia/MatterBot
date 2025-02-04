@@ -108,7 +108,8 @@ def query(MAX=settings.ENTRIES):
                                             vendors = cve_details['vendors']
                                             if len(vendors):
                                                 for vendor in vendors:
-                                                    productlist.add(vendor)
+                                                    vendoritems = vendor.split("$PRODUCT$")
+                                                    productlist.update(vendoritems)
                                             else:
                                                 productlist.add(f'N/A {title}')
                                         for productname in productlist:
