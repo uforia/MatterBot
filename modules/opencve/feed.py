@@ -35,7 +35,7 @@ else:
 def query(MAX=settings.ENTRIES):
     items = set()
     count = 0
-    stripchars = r'`\\[\\]\'\"'
+    stripchars = r'\_\+\=\/\"\'\\\/'
     regex = re.compile('[%s]' % stripchars)
     try:
         if Path(settings.HISTORY).is_file():
@@ -62,8 +62,8 @@ def query(MAX=settings.ENTRIES):
                 json_response = response.json()
     if json_response:
         filtered = False
-        productlist = set()
         while count < MAX:
+            productlist = set()
             try:
                 entry = json_response['results'][count]
                 cve = entry['cve_id']
@@ -108,7 +108,7 @@ def query(MAX=settings.ENTRIES):
                                             vendors = cve_details['vendors']
                                             if len(vendors):
                                                 for vendor in vendors:
-                                                    vendoritems = vendor.split("$PRODUCT$")
+                                                    vendoritems = regex.sub(" ", vendor, re.IGNORECASE).split("$PRODUCT$")
                                                     productlist.update(vendoritems)
                                             else:
                                                 productlist.add(f'N/A {title}')
