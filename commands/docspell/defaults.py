@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-BINDS = ['@ds', '@docspell']
+BINDS = ['@ds', '@docsearch']
 CHANS = ['debug']
 APIURL = {
     'docspell':   {
