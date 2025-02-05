@@ -370,7 +370,7 @@ class MattermostManager(object):
                     for bind in self.commands[module]['binds']:
                         commands.add('`' + bind + '`')
             text =  "I know about: `"+'`, `'.join(sorted(options.Matterbot['helpcmds']))+"`, " + ', '.join(sorted(commands)) + " here.\n"
-            text += "Every command has its own specific help. For example: `!help @dice` will show you how to use the @dice command.\n"
+            text += "Every command has its own specific help. For example: `!help @dice` will show you how to use the `@dice` command.\n"
             text += "*Remember: not every command works in every channel: this depends on a module's configuration*"
             await self.send_message(chanid, text, rootid)
         else:
@@ -483,11 +483,7 @@ class MattermostManager(object):
         messagelines = post['message'].splitlines()
         # We're probably handling a regular message; make sure to check we're allowed to respond our own messages too (see config file)
         # Additionally, check if we're not self-triggering on the display of the bind map
-        if options.Matterbot['recursion'] or \
-            userid != self.my_id and ( \
-            not '| **YES** |' in post['message'] and \
-            not '| **NO** |' in post['message'] and \
-            not 'I know about: `!help`' in post['message']):
+        if options.Matterbot['recursion'] or userid != self.my_id:
             messages = list()
             for mline in messagelines:
                 addparams = False
@@ -514,16 +510,17 @@ class MattermostManager(object):
                 else:
                     await self.log_message(userid, command, params, chaninfo, rootid)
                     tasks = []
-                    for module in self.commands:
-                        if command in self.commands[module]['binds']:
-                            if self.isallowed_module(userid, module, chaninfo):
-                                if not module in tasks:
-                                    files = []
-                                    if 'metadata' in post:
-                                        if 'files' in post['metadata']:
-                                            if len(post['metadata']['files']):
-                                                files = post['metadata']['files']
-                                    await self.call_module(module, command, channame, rootid, username, params, files, self.mmDriver)
+                    if not any(_ in post['message'] for _ in ('| **YES** |', '| **NO** |', 'I know about `!help')):
+                        for module in self.commands:
+                            if command in self.commands[module]['binds']:
+                                if self.isallowed_module(userid, module, chaninfo):
+                                    if not module in tasks:
+                                        files = []
+                                        if 'metadata' in post:
+                                            if 'files' in post['metadata']:
+                                                if len(post['metadata']['files']):
+                                                    files = post['metadata']['files']
+                                        await self.call_module(module, command, channame, rootid, username, params, files, self.mmDriver)
 
 if __name__ == '__main__' :
     '''
