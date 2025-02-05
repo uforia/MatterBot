@@ -10,6 +10,7 @@ import logging
 import os
 import pathlib
 import sys
+import traceback
 import configargparse
 from mattermostdriver import Driver
 
@@ -52,7 +53,7 @@ class MattermostManager(object):
         self.binds = []
         self.channelmapping = {'idtoname': {}, 'nametoid': {}}
         self.channels = self.mmDriver.channels.get_channels_for_user(self.my_id,self.my_team_id)
-        
+
         try:
             bindmap = pathlib.Path(options.Matterbot['bindmap'])
             if bindmap.is_file():
@@ -77,7 +78,7 @@ class MattermostManager(object):
                     if hasattr(defaults, 'CHANS'):
                         module.settings.CHANS = defaults.CHANS
                     if 'settings.py' in files:
-                        overridesettings = importlib.import_module(module_name + '.' + 'settings')    
+                        overridesettings = importlib.import_module(module_name + '.' + 'settings')
                         if hasattr(overridesettings, 'BINDS'):
                             module.settings.BINDS = overridesettings.BINDS
                         if hasattr(overridesettings, 'CHANS'):
@@ -98,13 +99,13 @@ class MattermostManager(object):
                 if hasattr(defaults, 'HELP'):
                     HELP = defaults.HELP
                 if 'settings.py' in files:
-                    overridesettings = importlib.import_module(module_name + '.' + 'settings')    
+                    overridesettings = importlib.import_module(module_name + '.' + 'settings')
                     if hasattr(overridesettings, 'HELP'):
                         HELP = overridesettings.HELP
                 self.commands[module_name]['process'] = getattr(module, 'process')
                 self.commands[module_name]['help'] = HELP
 
-                
+
         self.binds = sorted(list(set(self.binds)))
         # Start the websocket
         self.mmDriver.init_websocket(self.handle_raw_message)
@@ -261,6 +262,12 @@ class MattermostManager(object):
         except:
             return None
 
+    def is_in_channel(self, chanid, userid=None):
+        if not userid:
+            userid = self.my_id if not userid else userid
+            self.channels = self.mmDriver.channels.get_channels_for_user(userid,self.my_team_id)
+            return True if chanid in [_['id'] for _ in self.channels] else False
+
     def isallowed_module(self, userid, module, chaninfo):
         """
         Check if we are in a channel or in a private chat
@@ -284,9 +291,9 @@ class MattermostManager(object):
                     memberlist.extend([_['user_id'] for _ in self.mmDriver.channels.get_channel_members(self.channame_to_chanid(channame))])
                     if userid in memberlist:
                         return True
-                except:
+                except Exception as e:
                     # Apparently the channel does not exist; perhaps it is spelled incorrectly or otherwise a misconfiguration?
-                    log.error(f"There is a non-existent channel set up in the bot bindings or configuration: {channame}")
+                    log.error("An error occurred during channel parsing: %s" % (str(e),traceback.format_exc()))
         log.info(f"User {userid} is not allowed to use {module} in {channame}.")
         return False
 
@@ -326,7 +333,7 @@ class MattermostManager(object):
                 logging.warn("User %s attempted to use a bind command without proper authorization.") % (userid,)
                 text = "@" + username + ", you do not have permission to bind commands."
             else:
-                all_channel_types = [self.chanid_to_channame(_['id']) for _ in self.mmDriver.channels.get_channels_for_user(self.my_id,self.my_team_id)]
+                all_channel_types = [self.chanid_to_channame(_['id']) for _ in self.mmDriver.channels.get_channels_for_user(self.my_id,self.my_team_id) if self.is_in_channel(_['id'])]
                 my_channels = [_ for _ in all_channel_types if not self.my_id in _]
                 if not channame in my_channels:
                     text = "@" + username + ", you cannot bind commands to direct message windows."
@@ -365,7 +372,7 @@ class MattermostManager(object):
             text =  "I know about: `"+'`, `'.join(sorted(options.Matterbot['helpcmds']))+"`, " + ', '.join(sorted(commands)) + " here.\n"
             text += "Every command has its own specific help. For example: `!help @dice` will show you how to use the @dice command.\n"
             text += "*Remember: not every command works in every channel: this depends on a module's configuration*"
-            await self.send_message(chanid, text, rootid)        
+            await self.send_message(chanid, text, rootid)
         else:
             # User is asking for specific module help
             for module in self.commands:
