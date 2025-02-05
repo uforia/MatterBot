@@ -483,7 +483,11 @@ class MattermostManager(object):
         messagelines = post['message'].splitlines()
         # We're probably handling a regular message; make sure to check we're allowed to respond our own messages too (see config file)
         # Additionally, check if we're not self-triggering on the display of the bind map
-        if options.Matterbot['recursion'] or userid != self.my_id and (not '| **YES** |' in post['message'] and not '| **NO** |' in post['message']):
+        if options.Matterbot['recursion'] or \
+            userid != self.my_id and ( \
+            not '| **YES** |' in post['message'] and \
+            not '| **NO** |' in post['message'] and \
+            not 'I know about: `!help`' in post['message']):
             messages = list()
             for mline in messagelines:
                 addparams = False
