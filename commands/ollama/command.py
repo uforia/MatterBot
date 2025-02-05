@@ -23,7 +23,6 @@ def process(command, channel, username, params, files, conn):
             params = ' '.join(params)
             headers = {
                 "Content-Type": settings.CONTENTTYPE,
-                "Authorization": "Bearer %s" % (settings.APIKEY,),
             }
             data = {
                 "model": settings.MODEL,
