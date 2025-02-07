@@ -18,9 +18,13 @@ USERNAME = "<your-opencve-username>"
 PASSWORD = "<your-opencve-password>"
 # Number of entries to consider
 ENTRIES = 30
+# Lookback window: only consider CVEs that are less old than this setting (months)
+LOOKBACK = 3
 # What's the minimum CVSS score we should consider? Set to '0.0' to see
 # every single CVSS (noisy!).
 THRESHOLD = 6.0
+# Should we focus only on CVEs from this year?
+RECENTONLY = True
 # Should we display CVEs without a CVSS score?
 NOCVSS = False
 # Title filter: ignore all vulnerabilities with any of the following words

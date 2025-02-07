@@ -12,6 +12,7 @@
 # <channel>: basically the destination channel in Mattermost, e.g. 'Newsfeed', 'Incident', etc.
 # <content>: the content of the message, MD format possible
 
+import datetime
 import re
 import requests
 import shelve
@@ -67,6 +68,12 @@ def query(MAX=settings.ENTRIES):
             try:
                 entry = json_response['results'][count]
                 cve = entry['cve_id']
+                created_at = entry['created_at'].split('T')[0]
+                dt1 = datetime.datetime.strptime(created_at, "%Y-%m-%d")
+                dt2 = datetime.datetime.now()
+                if not abs((dt2-dt1).days/30) <= settings.LOOKBACK:
+                    count+=1
+                    continue
                 title = unicodedata.normalize('NFKD',entry['description'])
                 for product in settings.PRODUCTFILTER:
                     pfregex = re.compile('%s' % product)
