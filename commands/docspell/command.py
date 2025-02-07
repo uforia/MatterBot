@@ -145,7 +145,7 @@ def process(command, channel, username, params, files, conn):
                                             if len(files)>0:
                                                 messages.append({'text': 'Related Downloads:', 'uploads': files})
                                     else:
-                                        messages.append({'text': f"No results found for {params}"})
+                                        messages.append({'text': f"No results found for {' '.join(params)}"})
                 if querytype in ('upload',):
                     if not len(files):
                         messages.append({'text': "You need to include at least one (1) attachment to be uploaded to the collective."})
