@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import re
 import requests
 import traceback
 from pathlib import Path
@@ -19,8 +20,10 @@ else:
 def process(command, channel, username, params, files, conn):
     messages = []
     try:
+        stripchars = r'`\n\r\'\"'
+        regex = re.compile(stripchars)
         if len(params)>0:
-            params = ' '.join(params)
+            params = regex.sub('. ', ' '.join(params), re.IGNORECASE)
             headers = {
                 "Content-Type": settings.CONTENTTYPE,
             }
