@@ -50,8 +50,6 @@ def query(MAX=settings.ENTRIES):
                 match = re.search(pattern, str(translatedTitle))
                 if match:
                     title = match.group(1)
-                else:
-                    title = title
             link = feed.entries[count].link
             content = settings.NAME + ': [' + title + '](' + link + ')'
             for channel in settings.CHANNELS:
