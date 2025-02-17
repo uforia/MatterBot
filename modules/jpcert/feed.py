@@ -12,8 +12,10 @@
 # <channel>: basically the destination channel in Mattermost, e.g. 'Newsfeed', 'Incident', etc.
 # <content>: the content of the message, MD format possible
 
+import asyncio
 import bs4
 import feedparser
+import googletrans
 import re
 from pathlib import Path
 try:
@@ -29,6 +31,11 @@ else:
         except ModuleNotFoundError: # local test run
             import settings
 
+async def translateTitle(title):
+    translator = googletrans.Translator()
+    res = await translator.translate(title)
+    return str(res)
+
 def query(MAX=settings.ENTRIES):
     items = []
     feed = feedparser.parse(settings.URL, agent='MatterBot RSS Automation 1.0')
@@ -38,13 +45,7 @@ def query(MAX=settings.ENTRIES):
     while count < MAX:
         try:
             title = feed.entries[count].title
-            if settings.TRANSLATION:    
-                import asyncio
-                from googletrans import Translator # Google Translate automatically detects input language
-                async def translateTitle(title):
-                    translator = Translator() 
-                    res = await translator.translate(title)
-                    return str(res)
+            if settings.TRANSLATION:
                 translatedTitle = asyncio.run(translateTitle(title))
                 pattern = r'text=(.*?), pronunciation'
                 match = re.search(pattern, str(translatedTitle))
