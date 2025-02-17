@@ -33,6 +33,9 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | DIVD CSIRT                                                                                       | RSS            | No               | No                |
 | GBHackers News                                                                                   | RSS            | No               | No                |
 | Group-IB Blog                                                                                    | RSS            | No               | No                |
+| Internet Crime Complaint Center Industry Alerts                                                  | RSS            | No               | No                |
+| Internet Crime Complaint Center Press Releases                                                   | RSS            | No               | No                |
+| JPCERT/CC Warnings & Emergency Bulletins                                                         | RSS            | No               | No                |
 | Kitploit Tool Updates                                                                            | RSS            | No               | No                |
 | KnowBe4 News                                                                                     | RSS            | No               | No                |
 | KrebsOnSecurity Blog                                                                             | RSS            | No               | No                |
