@@ -344,9 +344,15 @@ def process(command, channel, username, params, files, conn):
                                     if ticfield in results:
                                         value = results[ticfield]
                                         if ticfield == 'threat_level':
-                                            value = threat_levels[str(value)]
+                                            if str(value) in threat_levels:
+                                                value = threat_levels[str(value)]
+                                            else:
+                                                value = 'Unknown'
                                         if ticfield == 'trust_factor':
-                                            value = trust_levels[str(value)]
+                                            if str(value) in trust_levels:
+                                                value = trust_levels[str(value)]
+                                            else:
+                                                value = 'Unknown'
                                         if ticfield == 'scanner_percent':
                                             value = str(round(value,2))+'%'
                                         message += f"| {ticfields[ticfield]} | `{value}` |\n"
