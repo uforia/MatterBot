@@ -12,12 +12,13 @@
 # <channel>: basically the destination channel in Mattermost, e.g. 'Newsfeed', 'Incident', etc.
 # <content>: the content of the message, MD format possible
 
-import asyncio
+import argostranslate.package
+import argostranslate.translate
 import bs4
 import feedparser
-import googletrans
 import re
 from pathlib import Path
+
 try:
     from modules.jpcert import defaults as settings
 except ModuleNotFoundError: # local test run
@@ -31,10 +32,18 @@ else:
         except ModuleNotFoundError: # local test run
             import settings
 
-async def translateTitle(title):
-    translator = googletrans.Translator()
-    res = await translator.translate(title)
-    return str(res)
+def translate(title):
+    from_lan = "ja"
+    to_lan = "en"
+
+    # Update and install defined language packages for local processing (optional after initial setup)
+    argostranslate.package.update_package_index()
+    updateIndex = argostranslate.package.get_available_packages()
+    packageSelection = next(filter(lambda x: x.from_code == from_lan and x.to_code == to_lan, updateIndex))
+    argostranslate.package.install_from_path(packageSelection.download())
+
+    translation = argostranslate.translate.translate(title, from_lan, to_lan)
+    return translation
 
 def query(MAX=settings.ENTRIES):
     items = []
@@ -46,11 +55,8 @@ def query(MAX=settings.ENTRIES):
         try:
             title = feed.entries[count].title
             if settings.TRANSLATION:
-                translatedTitle = asyncio.run(translateTitle(title))
-                pattern = r'text=(.*?), pronunciation'
-                match = re.search(pattern, str(translatedTitle))
-                if match:
-                    title = match.group(1)
+                translatedTitle = translate(title)
+                title = translatedTitle
             link = feed.entries[count].link
             content = settings.NAME + ': [' + title + '](' + link + ')'
             for channel in settings.CHANNELS:

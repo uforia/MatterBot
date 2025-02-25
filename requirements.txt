@@ -1,3 +1,4 @@
+argostranslate
 azure-search-documents
 azure-storage-blob
 beautifulsoup4
