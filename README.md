@@ -72,6 +72,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | US-CERT National Cyber Awareness System (Advisories, Alerts, Analysis Reports, Current Activity) | RSS            | No               | No                |
 | Velociraptor News/Updates                                                                        | RSS            | No               | No                |
 | Volexity Memory Forensics & Threat Intelligence Blog                                             | RSS            | No               | No                |
+| watchTowr Offensive Security Blog                                                                | RSS            | No               | No                |
 | WeLiveSecurity News                                                                              | RSS            | No               | No                |
 | WikiJS Page Updates                                                                              | WikiJS GraphQL | Yes              | No                |
 
