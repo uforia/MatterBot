@@ -39,13 +39,13 @@ def query(MAX=settings.ENTRIES):
     while count < MAX:
         try:
             title = feed.entries[count].title
-            link = feed.entries[count].link
-            content = settings.NAME + ': [' + title + '](' + link + ')'
+            content = settings.NAME + ': [' + title + ']'
             if len(feed.entries[count].description):
                 description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
                 link = re.findall(pattern, feed.entries[count].description)[0][0]
                 if len(description) > 400:
                     description = description[:396] + ' ...'
+                content += '(' + link + ')'
                 content += '\n>'+ description +'\n'
             count += 1
         except IndexError:
