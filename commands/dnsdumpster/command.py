@@ -58,13 +58,8 @@ def process(command, channel, username, params, files, conn):
 
         # Request data from the API
         response = requests.get(api_url, headers=headers)
-
-        if response.status_code == 429:
-            messages.append({'text': "Too many requests (Status 429)."})
-        else:
-            # Ensure we raise an error for bad status codes
-            response.raise_for_status()
-
+        # Ensure we raise an error for bad status codes
+        response.raise_for_status()
         # Assign response to variable
         json_response = response.json()
         
@@ -145,8 +140,13 @@ def process(command, channel, username, params, files, conn):
             messages.append({'text': f"No DNS data found for `{param}`."}) # No records are found at all.
 
     except requests.exceptions.RequestException as e:
-        # Handle HTTP request errors
-        messages.append({'text': f"An HTTP error occurred querying DNSDumpster:\nError: {str(e)}\n{traceback.format_exc()}"})
+        if response.status_code == 400:
+            messages.append({'text': f"Domain `{param}` is invalid."})
+        elif response.status_code == 429:
+            messages.append({'text': f"Rate limit exceeded."})
+        else:    
+            # Handle HTTP request errors
+            messages.append({'text': f"An HTTP error occurred querying DNSDumpster:\nError: {str(e)}\n{traceback.format_exc()}"})
     except Exception as e:
         # Catch other unexpected errors
         messages.append({'text': f"An error occurred querying DNSDumpster:\nError: {str(e)}\n{traceback.format_exc()}"})
