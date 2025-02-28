@@ -35,18 +35,18 @@ def query(MAX=settings.ENTRIES):
     count = 0
     stripchars = '`\\[\\]\'\"'
     regex = re.compile('[%s]' % stripchars)
+    pattern = r'<a\s[>]*href\s*=["](.*?)["][>]*>(.*)<\/a>' # Filter for external references
     while count < MAX:
         try:
             title = feed.entries[count].title
-            link = feed.entries[count].link
-            content = settings.NAME + ': [' + title + '](' + link + ')'
+            content = settings.NAME + ': [' + title + ']'
             if len(feed.entries[count].description):
                 description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
+                link = re.findall(pattern, feed.entries[count].description)[0][0]
                 if len(description) > 400:
                     description = description[:396] + ' ...'
+                content += '(' + link + ')'
                 content += '\n>'+ description +'\n'
-            for channel in settings.CHANNELS:
-                items.append([channel, content])
             count += 1
         except IndexError:
             return items # No more items

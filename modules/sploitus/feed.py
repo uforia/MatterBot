@@ -37,7 +37,8 @@ def query(MAX=settings.ENTRIES):
     regex = re.compile('[%s]' % stripchars)
     while count < MAX:
         try:
-            title = feed.entries[count].title
+            # Remove standard 'exploit' str from title
+            title = feed.entries[count].title[:-8]
             link = feed.entries[count].link
             content = settings.NAME + ': [' + title + '](' + link + ')'
             if 'description' in feed.entries[count]:
