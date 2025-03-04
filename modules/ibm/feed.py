@@ -47,6 +47,8 @@ def query(MAX=settings.ENTRIES):
                     description = description[:396] + ' ...'
                 content += '(' + link + ')'
                 content += '\n>'+ description +'\n'
+            for channel in settings.CHANNELS:
+                items.append([channel, content])
             count += 1
         except IndexError:
             return items # No more items
