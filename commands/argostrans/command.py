@@ -79,30 +79,33 @@ def process(command, channel, username, params, files, conn):
         content = params[2:]
 
         def translateString(content, sourceLan, prefLan, destLan=settings.DEFAULT_LAN):
-
-            package.update_package_index()
-            updateIndex = package.get_available_packages()
-
             if len(prefLan) != 2 or prefLan not in allowedFrom:
                 if len(prefLan) == 2:
                     messages.append({'text': f"`{prefLan}` is not a valid language code, choose from:"})
                     return messages.append({'text': translationTable()[0]})
                 messages.append({'text': f"Defaulting to `{destLan}`"})
-                prefLan=destLan
+                prefLan = destLan
                 content = params[1:]
             else:
-                destLan=prefLan
-                content = params[2:]
-            content=content[0]
+                destLan = prefLan
+            content = ' '.join(content[0:])
 
-            # Filter for correct language packages
+            # Check for new language packages to install
+            installed_packages = package.get_installed_packages()
+            messages.append({'text': f"Retrieving language packages"})
+            package.update_package_index()
+            updateIndex = package.get_available_packages()
+
             try:
+                # Filter for correct language packages
                 packageSelection = next(filter(lambda x: x.from_code == sourceLan and x.to_code == destLan, updateIndex))
+                if packageSelection not in installed_packages:
+                    messages.append({'text': f"New language pack detected, installing"})
+                    package.install_from_path(packageSelection.download())
             except:
                 messages.append({'text': f"{sourceLan} → {destLan} is not a valid translation pair."})
                 return messages.append({'text': translationTable()[0]})
-            
-            package.install_from_path(packageSelection.download())
+                    
             messages.append({'text': f"Attempting to translate {packageSelection}"})
             translation = translate.translate(content, sourceLan, destLan)
             return messages.append({'text': f"Translation\n`{translation}`"})
