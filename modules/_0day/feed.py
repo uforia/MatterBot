@@ -35,14 +35,15 @@ def query(MAX=settings.ENTRIES):
     count = 0
     stripchars = '`\\[\\]\'\"'
     regex = re.compile('[%s]' % stripchars)
+    pattern = r'(.*?)(#\w+)' # Filter hashtags
     while count < MAX:
         try:
-            title = regex.sub('',feed.entries[count].title)
+            title = re.findall(pattern, regex.sub('',feed.entries[count].title))[2][0].strip()
             link = feed.entries[count].link
             content = settings.NAME + ': [' + title + '](' + link + ')'
             if 'title_detail' in feed.entries[count]:
                 if 'value' in feed.entries[count]['title_detail']:
-                    description = regex.sub('',bs4.BeautifulSoup(feed.entries[count]['title_detail']['value'],'lxml').get_text("\n")).strip().replace('\n','. ')
+                    description = re.findall(pattern, regex.sub('',bs4.BeautifulSoup(feed.entries[count]['title_detail']['value'],'lxml').get_text("\n")).strip().replace('\n','. '))[2][0].strip()
                     if len(description) > 400:
                         description = description[:396] + ' ...'
                     content += '\n>'+ description +'\n'

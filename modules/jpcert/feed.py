@@ -12,9 +12,7 @@
 # <channel>: basically the destination channel in Mattermost, e.g. 'Newsfeed', 'Incident', etc.
 # <content>: the content of the message, MD format possible
 
-import argostranslate.package
-import argostranslate.translate
-import bs4
+from argostranslate import package, translate
 import feedparser
 import re
 from pathlib import Path
@@ -37,12 +35,11 @@ def translate(title):
     to_lan = "en"
 
     # Update and install defined language packages for local processing (optional after initial setup)
-    argostranslate.package.update_package_index()
-    updateIndex = argostranslate.package.get_available_packages()
+    package.update_package_index()
+    updateIndex = package.get_available_packages()
     packageSelection = next(filter(lambda x: x.from_code == from_lan and x.to_code == to_lan, updateIndex))
-    argostranslate.package.install_from_path(packageSelection.download())
-
-    translation = argostranslate.translate.translate(title, from_lan, to_lan)
+    package.install_from_path(packageSelection.download())
+    translation = translate.translate(title, from_lan, to_lan)
     return translation
 
 def query(MAX=settings.ENTRIES):
