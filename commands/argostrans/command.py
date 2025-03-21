@@ -98,7 +98,6 @@ def process(command, channel, username, params, files, conn):
                 # Filter for correct language packages
                 packageSelection = next(filter(lambda x: x.from_code == sourceLan and x.to_code == destLan, updateIndex))
                 if packageSelection not in installed_packages:
-                    messages.append({'text': f"New language pack detected, installing"})
                     package.install_from_path(packageSelection.download())
             except:
                 messages.append({'text': f"{sourceLan} → {destLan} is not a valid translation pair."})
