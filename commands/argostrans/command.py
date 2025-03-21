@@ -83,7 +83,6 @@ def process(command, channel, username, params, files, conn):
                 if len(prefLan) == 2:
                     messages.append({'text': f"`{prefLan}` is not a valid language code, choose from:"})
                     return messages.append({'text': translationTable()[0]})
-                messages.append({'text': f"Defaulting to `{destLan}`"})
                 prefLan = destLan
                 content = params[1:]
             else:
@@ -92,7 +91,6 @@ def process(command, channel, username, params, files, conn):
 
             # Check for new language packages to install
             installed_packages = package.get_installed_packages()
-            messages.append({'text': f"Retrieving language packages"})
             package.update_package_index()
             updateIndex = package.get_available_packages()
 
@@ -106,9 +104,8 @@ def process(command, channel, username, params, files, conn):
                 messages.append({'text': f"{sourceLan} → {destLan} is not a valid translation pair."})
                 return messages.append({'text': translationTable()[0]})
                     
-            messages.append({'text': f"Attempting to translate {packageSelection}"})
             translation = translate.translate(content, sourceLan, destLan)
-            return messages.append({'text': f"Translation\n`{translation}`"})
+            return messages.append({'text': f"**Argos Translation Results**:\n`{translation}`"})
         
         translateString(content, sourceLan, prefLan)
 
