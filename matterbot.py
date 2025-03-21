@@ -465,7 +465,7 @@ class MattermostManager(object):
                     else:
                         await self.send_message(chanid, text, rootid)
         except Exception as e:
-            text = 'A Python error occurred: '+str(type(e))+': '+str(e)
+            text = "An error occurred during the %s module call: %s" % (str(module),traceback.format_exc())
             await self.send_message(chanid, text, rootid)
 
     async def handle_post(self, data: dict):

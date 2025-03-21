@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
+import json
 import random
+import re
 import requests
 from pathlib import Path
 try:
@@ -17,8 +19,13 @@ else:
             import settings
 
 def process(command, channel, username, params, files, conn):
+    print(params)
     if len(params)>0:
         params = ' '.join(params)
+        stripchars = r'`\n\r\'\"'
+        regex = re.compile(stripchars)
+        params = json.dumps(regex.sub(' ', params, re.IGNORECASE))
+        print(params)
         headers = {
             "Content-Type": settings.CONTENTTYPE,
             "Authorization": "Bearer %s" % settings.APIURL['llm']['key'],
@@ -56,7 +63,8 @@ def process(command, channel, username, params, files, conn):
             "quiet": True,
             "genkey": "KCPP{:03d}".format(randkey)
         }
-        with requests.post(settings.APIURL['llm']['url'], json=data, headers=headers) as response:
+        with requests.post(settings.APIURL['llm']['url'], json=json.dumps(data), headers=headers) as response:
+            print(response.content)
             answers = response.json()
             if 'results' in answers:
                 num = 1
