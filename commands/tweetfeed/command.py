@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
 import datetime
+import json
 import math
 import random
 import re
 import requests
+import traceback
 import sys
 import urllib
 from pathlib import Path
@@ -72,6 +74,6 @@ def process(command, channel, username, params, files, conn):
                         {'filename': 'tweetfeed-'+params+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content}
                     ]}]
     except Exception as e:
-        messages.append({'text': 'A Python error occurred searching Tweetfeed:\nError:' + e})
+        messages.append({'text': 'A Python error occurred searching Tria.ge: %s\n%s' % (str(e),traceback.format_exc())})
     finally:
         return {'messages': messages}

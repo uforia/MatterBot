@@ -4,7 +4,7 @@ BINDS = ['@tweetfeed']
 CHANS = ['debug']
 # You can change the 'month' part of the APIURL to a different timeframe, if so desired.
 APIURL = {
-    'tweetfeed':   {'url': 'https://api.tweetfeed.live/v1/month',}
+    'tweetfeed':   {'url': 'https://api.tweetfeed.live/v1/week',}
 }
 CONTENTTYPE = 'application/json'
 LIMIT = 20
