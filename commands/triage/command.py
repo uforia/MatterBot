@@ -77,7 +77,7 @@ def process(command, channel, username, params, files, conn):
                         APIENDPOINT += '+and+%s' % (filters,)
                     else:
                         APIENDPOINT = APIENDPOINT.strip('/')+'/search?query=%s' % (filters,)
-                if APIENDPOINT:
+                if APIENDPOINT != settings.APIURL['triage']['url']:
                     if not querytype in ('sample',):
                         APIENDPOINT+='&limit=%d' % (settings.APIURL['triage']['apilimit'],)
                     headers = {
