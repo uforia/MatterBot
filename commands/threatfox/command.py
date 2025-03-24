@@ -3,6 +3,7 @@
 import json
 import re
 import requests
+import traceback
 from pathlib import Path
 try:
     from commands.threatfox import defaults as settings
@@ -44,7 +45,8 @@ def process(command, channel, username, params, files, conn):
                     'hash': params,
                 }
             if data:
-                with requests.post(settings.APIURL['threatfox']['url'], data=data, headers=headers) as response:
+                messages = []
+                with requests.post(settings.APIURL['threatfox']['url'], json=data, headers=headers) as response:
                     json_response = response.json()
                     if json_response['query_status'] == 'ok':
                         if 'data' in json_response:
@@ -64,10 +66,8 @@ def process(command, channel, username, params, files, conn):
                                 message += ' | Reference: [ThreatFox ID %s](%s)' % (id, threatfox_reference)
                                 message += '\n'
                             if len(data)>0:
-                                return {'messages': [
-                                    {'text': message.strip()},
-                                ]}
+                                messages.append({'text': message.strip()})
         except Exception as e:
-            return {'messages': [
-                {'text': 'An error occurred searching ThreatFox for `%s`:\nError: `%s`' % (params, e.message)},
-            ]}
+            messages.append({'text': 'A Python error occurred searching ThreatFox: %s\n%s' % (str(e),traceback.format_exc())})
+        finally:
+            return {'messages': messages}
