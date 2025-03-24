@@ -53,29 +53,31 @@ def process(command, channel, username, params, files, conn):
                 with requests.get(endpoint, headers=headers) as response:
                     json_response = response.json()
                     if len(json_response):
-                        message += '\n\n'
-                        for fieldName in fieldNames:
-                            message += '| '+fieldNames[fieldName]+' '
-                        message += '|\n'
-                        message += '| :- '*len(fieldNames)
-                        message += '|\n'
-                        for id in json_response:
-                            for fieldName in fieldNames:
-                                if fieldName in id:
-                                    if isinstance(id[fieldName], list):
-                                        fieldContents = ', '.join(id[fieldName])
-                                    else:
-                                        fieldContents = id[fieldName]
-                                    if fieldName == 'issuer':
-                                        fieldContents = id[fieldName]['friendly_name']
-                                    if fieldName == 'revoked':
-                                        fieldContents = '**Revoked**' if id[fieldName] else 'Not revoked'
-                                    message += '| %s ' % fieldContents
-                                else:
-                                    message += '| - '
-                            message += '|\n'
-                        message += '|\n\n'
-                        messages.append({'text': message})
+                        if 'code' in json_response:
+                            if json_response['code'] != 'service_outage':
+                                message += '\n\n'
+                                for fieldName in fieldNames:
+                                    message += '| '+fieldNames[fieldName]+' '
+                                message += '|\n'
+                                message += '| :- '*len(fieldNames)
+                                message += '|\n'
+                                for id in json_response:
+                                    for fieldName in fieldNames:
+                                        if fieldName in id:
+                                            if isinstance(id[fieldName], list):
+                                                fieldContents = ', '.join(id[fieldName])
+                                            else:
+                                                fieldContents = id[fieldName]
+                                            if fieldName == 'issuer':
+                                                fieldContents = id[fieldName]['friendly_name']
+                                            if fieldName == 'revoked':
+                                                fieldContents = '**Revoked**' if id[fieldName] else 'Not revoked'
+                                            message += '| %s ' % fieldContents
+                                        else:
+                                            message += '| - '
+                                    message += '|\n'
+                                message += '|\n\n'
+                                messages.append({'text': message})
         except Exception as e:
             messages.append({'text': "An error occurred querying the SSLMate Certificate Transparency API for `%s`:\nError: `%s`" % (params, str(e))})
         finally:
