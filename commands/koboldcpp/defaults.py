@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-BINDS = ['@ai', '@koboldcpp']
+BINDS = ['@koboldcpp']
 CHANS = ['debug']
 APIURL = {
     'llm':   {
