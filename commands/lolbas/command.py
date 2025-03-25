@@ -87,20 +87,23 @@ def process(command, channel, username, params, files, conn):
                         if 'Detection' in lolbas:
                             urls = set()
                             detections = set()
+                            iocs = set()
+                            print(lolbas['Detection'])
                             for detection in lolbas['Detection']:
                                 for type in detection:
-                                    if type.lower() != 'ioc':
-                                        detections.add(type)
-                                    urls.add(detection[type])
+                                    detections.add(type)
+                                    if 'http' in detection[type]:
+                                        urls.add(detection[type])
+                                    else:
+                                        iocs.add(detection[type])
                             try:
                                 for url in urls:
                                     with requests.get(url, headers=headers) as response:
                                         uploads.append({'filename': Path(url).name, 'bytes': response.content})
                             except:
-                                if type.lower() == 'ioc':
-                                    detections.add(url)
+                                pass
                         if len(detections):
-                            message += '\n| **Detections** | `%s` |' % ('`, `'.join(detections))
+                            message += '\n| **Detections** | `%s`, `%s` |' % ('`, `'.join(detections), '`, `'.join(iocs))
                         if len(uploads):
                             messages.append({'text': message, 'uploads': uploads})
                         else:
