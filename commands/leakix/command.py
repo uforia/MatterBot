@@ -197,7 +197,6 @@ def process(command, channel, username, params, files, conn):
                                         message += '\n\n'
                                         messages.append({'text': message})
     except Exception as e:
-        print(traceback.format_exc())
-        messages.append({'text': 'A Python error occurred searching LeakIX:\nError:' + str(e)})
+        messages.append({'text': 'A Python error occurred querying the LeakIX API: `%s`\n```%s```\n' % (str(e), traceback.format_exc())})
     finally:
         return {'messages': messages}
