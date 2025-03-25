@@ -117,7 +117,7 @@ def process(command, channel, username, params, files, conn):
                         messages.append({'text': message})
                 else:
                     if 'message' in answer:
-                        messages.append({'text': f'The MISP API returned an unexpected response {answer['message']}.'})
+                        messages.append({'text': f"The MISP API returned an unexpected response {answer['message']}."})
         else:
             messages.append({'text': 'At least ask me something, %s!' % (username,)})
     except Exception as e:
