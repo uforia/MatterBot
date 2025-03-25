@@ -20,6 +20,7 @@ else:
 
 def process(command, channel, username, params, files, conn):
     if len(params)>0:
+        messages = []
         params = params[0].replace('[', '').replace(']', '').replace('hxxp','http')
         headers = {
             'Content-Type': settings.CONTENTTYPE,
@@ -45,7 +46,6 @@ def process(command, channel, username, params, files, conn):
                     'hash': params,
                 }
             if data:
-                messages = []
                 with requests.post(settings.APIURL['threatfox']['url'], json=data, headers=headers) as response:
                     json_response = response.json()
                     if json_response['query_status'] == 'ok':
