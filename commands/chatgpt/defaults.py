@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-BINDS = ['@ai', '@openai', '@chatgpt', '@gpt', '@robot']
+BINDS = ['@openai', '@chatgpt']
 CHANS = ['debug']
 APIENDPOINT = 'https://api.openai.com/v1/completions'
 CONTENTTYPE = 'application/json'

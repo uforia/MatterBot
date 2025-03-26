@@ -52,10 +52,10 @@ def process(command, channel, username, params, files, conn):
         'User-Agent': 'MatterBot integration for HaveIBeenPwned v0.1',
         'hibp-api-key': settings.APIURL['hibp']['key'],
     }
-    
+
     try:
         messages = []
-        
+
         # Request data from the API
         response = requests.get(api_url, headers=headers)
 
@@ -78,18 +78,18 @@ def process(command, channel, username, params, files, conn):
                 if param_searchtype == "email":
 
                     breach_name = entry.get('Name', 'Unknown Breach Name')
-                        
+
                     # Append formatted information to the message
                     message += f"| {breach_name}         |\n"
 
                 elif param_searchtype == "domain":
 
                    #TODO
-                    message += f"COMMING SOON"
+                    message += f"COMING SOON"
 
 
         elif param_searchtype == "breach":
-            
+
             # Extract information from the JSON
             # Extract information from the JSON
             breach_name = json_response.get('Name', 'Unknown Breach Name')
