@@ -215,6 +215,10 @@ def process(command, channel, username, params, files, conn):
             elif subcommand in settings.LANGMAP:
                 language = subcommand
                 casenumber = params[1]
+                if len(params)>2:
+                    maxdepth = int(params[2])+1
+                else:
+                    maxdepth = 4
                 query = '{"query":"query { pages { list (orderBy: PATH) { id path title }}}"}'
                 with requests.post(settings.APIURL['docgen']['url'], headers=headers, data=query) as response:
                     pages = response.json()
@@ -304,7 +308,6 @@ def process(command, channel, username, params, files, conn):
                         format = 'markdown'
                         extra_args = ['--section-divs', '--number-offset=0']
                         html = templatefiles['header']+pypandoc.convert_text(skeletondocument, 'html', format=format, extra_args=extra_args)+templatefiles['footer']
-                        maxdepth = 3
                         while maxdepth < 11:
                             html = re.sub(r'<section id="([^"]+)"[\s\n]class="level'+str(maxdepth)+r'"[\s\n]data-number="([^\"]+)">','',html,flags=re.DOTALL)
                             maxdepth += 1
