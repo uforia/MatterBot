@@ -11,6 +11,7 @@ import pandas
 import pypandoc
 import re
 import requests
+import sys
 import textwrap
 import traceback
 import weasyprint
@@ -265,7 +266,8 @@ def process(command, channel, username, params, files, conn):
                                         pagecontent = response.json()
                                         if 'data' in pagecontent:
                                             langsplit = '<!---'+language+'--->'
-                                            content = pagecontent['data']['pages']['single']['content'].split(langsplit)[1]
+                                            content = pagecontent['data']['pages']['single']['content'].split(langsplit)
+                                            content = content[1] if len(content)>1 else content[0]
                                         if page['path'].lower().endswith('_cover') and pagecount == 0:
                                             coverpage = content
                                         else:
@@ -302,6 +304,10 @@ def process(command, channel, username, params, files, conn):
                         format = 'markdown'
                         extra_args = ['--section-divs', '--number-offset=0']
                         html = templatefiles['header']+pypandoc.convert_text(skeletondocument, 'html', format=format, extra_args=extra_args)+templatefiles['footer']
+                        maxdepth = 3
+                        while maxdepth < 11:
+                            html = re.sub(r'<section id="([^"]+)"[\s\n]class="level'+str(maxdepth)+r'"[\s\n]data-number="([^\"]+)">','',html,flags=re.DOTALL)
+                            maxdepth += 1
                         for template_variable in templatefiles:
                             source = '%'+template_variable+'%'
                             target = templatefiles[template_variable]

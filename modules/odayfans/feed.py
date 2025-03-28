@@ -23,7 +23,7 @@ except ModuleNotFoundError: # local test run
     if Path('settings.py').is_file():
         import settings
 else:
-    if Path('modules/dayfans/settings.py').is_file():
+    if Path('modules/odayfans/settings.py').is_file():
         try:
             from modules.odayfans import settings
         except ModuleNotFoundError: # local test run
