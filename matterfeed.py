@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 
 import ast
+import asyncio
 import configargparse
 import fnmatch
 import importlib.util
 import logging
 import requests
 import os
-import queue
 import shelve
 import sys
-import threading
 import time
 import traceback
 from mattermostdriver import Driver
@@ -24,8 +23,9 @@ class TokenAuth():
 
 
 class MattermostManager(object):
-    def __init__(self):
-        logQueue.put(('INFO', "Going to set up driver for connection to %s " % (options.Matterbot['host'],) ))
+    def __init__(self, log):
+        self.log = log
+        self.log.info("Going to set up driver for connection to %s " % (options.Matterbot['host'],))
         self.mmDriver = Driver(options={
             'url'       : options.Matterbot['host'],
             'port'      : options.Matterbot['port'],
@@ -47,8 +47,9 @@ class MattermostManager(object):
         for userchannel in userchannels:
             channel_info = self.mmDriver.channels.get_channel(userchannel['id'])
             self.channels[channel_info['name']] = channel_info['id']
-
-    def createPost(self, channel, text, uploads = []):
+        self.modules = self.loadModules()
+    
+    async def createPost(self, channel, text, uploads = []):
         try:
             if len(text) > options.Matterbot['msglength']: # Mattermost message limit
                 blocks = []
@@ -88,209 +89,107 @@ class MattermostManager(object):
                     self.mmDriver.posts.create_post(options={'channel_id': channel,
                                                             'message': block,
                                                             })
-        except:
-            raise
+        except Exception as e:
+            self.log.error(f"An error posting a channel message:\nError: {str(e)}\n{traceback.format_exc()}")
 
-
-class MsgWorker(threading.Thread):
-    def __init__(self, mm, logQueue, msgQueue):
-        threading.Thread.__init__(self)
-        self.terminate = False
-        self.mm = mm
-        self.logQueue = logQueue
-        self.msgQueue = msgQueue
-
-    def HandleMsg(self):
-        self.logQueue.put(('INFO', 'Starting PostMsg Worker ...'))
-        while True:
-            newsItem = self.msgQueue.get()
-            uploads = None
-            try:
-                channel, module, content, uploads = newsItem
-            except:
-                channel, module, content = newsItem
-            self.logQueue.put(('INFO', 'Message  : ' + module.lower() + ' => ' + channel + ' => ' + content[:20] + '...'))
-            if uploads:
-                self.mm.createPost(self.mm.channels[channel], content, uploads)
-            else:
-                self.mm.createPost(self.mm.channels[channel], content)
-            self.msgQueue.task_done()
-
-    def run(self):
-        while not self.terminate:
-            self.HandleMsg()
-
-
-class LogWorker(threading.Thread):
-    def __init__(self, logQueue):
-        threading.Thread.__init__(self)
-        self.terminate = False
-        self.logQueue = logQueue
-
-    def HandleLog(self):
-        if not options.debug:
-            logging.basicConfig(filename=options.Matterbot['logfile'], format='%(levelname)s - %(name)s - %(asctime)s - %(message)s')
+    async def handleMsg(self, channel, modulename, content, uploads = None):
+        self.log.info('Message  : ' + modulename.lower() + ' => ' + channel + ' => ' + content[:20] + '...')
+        if uploads:
+            await self.createPost(self.channels[channel], content, uploads)
         else:
-            logging.basicConfig(format='%(levelname)s - %(name)s - %(asctime)s - %(message)s')
-        log = logging.getLogger( 'MatterBot' )
-        if options.debug:
-            log.setLevel(logging.DEBUG)
-        else:
-            log.setLevel(logging.INFO)
-        log.info('Starting up log thread ...')
-        while True:
-            logItem = self.logQueue.get()
-            uploads = None
-            try:
-                logLevel, logText, uploads = logItem
-            except:
-                logLevel, logText = logItem
-            if logLevel.upper() == 'INFO':
-                log.info(logText)
-            elif logLevel.upper() == 'ERROR':
-                log.error(logText)
-            elif logLevel.upper() == 'DEBUG':
-                log.debug(logText)
-            else:
-                log.info('Unhandled log entry: ' + logText)
-            self.logQueue.task_done()
+            await self.createPost(self.channels[channel], content)
 
-    def run(self):
-        while not self.terminate:
-            self.HandleLog()
-
-
-def loadModules():
-    modules = {}
-    modulepath = options.Modules['moduledir'].strip('/')
-    sys.path.append(modulepath)
-    for root, dirs, files in os.walk(modulepath):
-        for module in fnmatch.filter(files, "feed.py"):
-            module_name = root.split('/')[-1]
-            logQueue.put(('INFO', 'Attempting to load the ' + module_name + ' module...'))
-            module = importlib.import_module(module_name + '.' + 'feed')
-            modules[module_name] = getattr(module, 'query')
-    return modules
-
-
-class ModuleWorker(threading.Thread):
-    def __init__(self, mm, module, logQueue, msgQueue):
-        threading.Thread.__init__(self)
-        self.terminate = False
-        self.mm = mm
-        self.module = module
-        self.logQueue = logQueue
-        self.msgQueue = msgQueue
-
-    def runModule(self):
-        logQueue.put(('INFO', 'Starting : ' + self.module))
+    async def runModules(self):
         try:
-            items = modules[self.module]()
-            modulepath = options.Modules['moduledir']+'/'+self.module+'/'+self.module+'.cache'
+            while True:
+                for module_name in self.modules:
+                    self.log.info(f"Attempting to start the {module_name} module...")
+                    await self.runModule(module_name)
+                self.log.info(f"Run complete, sleeping for {options.Modules['timer']} seconds...")
+                time.sleep(options.Modules['timer'])
+        except Exception as e:
+            self.log.error(f"An error occurred during module runs:\nError: {str(e)}\n{traceback.format_exc()}")
+
+    def loadModules(self):
+        modules = {}
+        modulepath = options.Modules['moduledir'].strip('/')
+        sys.path.append(modulepath)
+        for root, dirs, files in os.walk(modulepath):
+            for module in fnmatch.filter(files, "feed.py"):
+                module_name = root.split('/')[-1]
+                self.log.info(f"Attempting to load the {module_name} module...")
+                module = importlib.import_module(module_name + '.' + 'feed')
+                modules[module_name] = getattr(module, 'query')
+        return modules
+
+    async def runModule(self, modulename):
+        try:
+            items = self.modules[modulename]()
+            modulepath = options.Modules['moduledir']+'/'+modulename+'/'+modulename+'.cache'
             if os.path.isfile(modulepath):
                 if options.debug:
-                    logQueue.put(('DEBUG', 'Found   : ' + self.module + ' database at ' + modulepath + ' location...'))
+                    self.log.debug('Found   : ' + modulename + ' database at ' + modulepath + ' location...')
             with shelve.open(modulepath,writeback=True) as history:
-                if not self.module in history:
-                    history[self.module] = []
+                if not modulename in history:
+                    history[modulename] = []
                     first_run = True
                 else:
                     first_run = False
                 if len(items):
-                    for item in items:
+                    for newspost in items:
                         try:
-                            channel, content, uploads = item
+                            channel, content, uploads = newspost
                         except:
-                            channel, content = item
+                            channel, content = newspost
                             uploads = []
-                        # Deal with self-referential calls. They should always trigger and not once.
+                        # Deal with self-calls...
                         if content.startswith('@') or content.startswith('!'):
                             if not first_run:
                                 if options.debug:
-                                    self.logQueue.put(('DEBUG', 'Posting  : ' + self.module + ' => ' + channel + ' => ' + content + '...'))
+                                    self.log.debug('Posting  : ' + modulename + ' => ' + channel + ' => ' + content + '...')
                                 else:
-                                    self.logQueue.put(('INFO', 'Posting  : ' + self.module + ' => ' + channel + ' => ' + content[:80] + '...'))
-                                    self.msgQueue.put((channel, self.module, content, uploads))
-                        elif not item in history[self.module]:
-                            history[self.module].append(item)
+                                    self.log.info('Posting  : ' + modulename + ' => ' + channel + ' => ' + content[:80] + '...')
+                                    await self.handleMsg(channel, modulename, content, uploads)
+                        elif not newspost in history[modulename]:
+                            history[modulename].append(newspost)
                             if not first_run:
                                 if options.debug:
-                                    self.logQueue.put(('DEBUG', 'Posting  : ' + self.module + ' => ' + channel + ' => ' + content + '...'))
+                                    self.log.debug('Posting  : ' + modulename + ' => ' + channel + ' => ' + content + '...')
                                 else:
-                                    self.logQueue.put(('INFO', 'Posting  : ' + self.module + ' => ' + channel + ' => ' + content[:80] + '...'))
-                                    self.msgQueue.put((channel, self.module, content, uploads))
+                                    self.log.info('Posting  : ' + modulename + ' => ' + channel + ' => ' + content[:80] + '...')
+                                    await self.handleMsg(channel, modulename, content, uploads)
                 if options.debug:
-                    logQueue.put(('DEBUG', 'Summary : ' + self.module + ' => '+ str(len(items)) + ' messages ...'))
+                    self.log.debug('Summary : ' + modulename + ' => '+ str(len(items)) + ' messages ...')
                 history.sync()
                 history.close()
-            logQueue.put(('INFO', 'Completed: ' + self.module + ' => sleeping for ' + str(options.Modules['timer']) + ' seconds ...'))
-        except:
-            logQueue.put(('ERROR', 'Error    : ' + self.module + ' => sleeping for ' + str(options.Modules['timer']) + ' seconds ...'))
-        time.sleep(options.Modules['timer'])
+            self.log.info('Completed: ' + modulename + ' => sleeping ...')
+        except Exception as e:
+            self.log.error('Error    : ' + modulename + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
 
-    def run(self):
-        while not self.terminate:
-            self.runModule()
 
+async def main(log):
+    mm = MattermostManager(log)
+    await mm.runModules()
 
 if __name__ == '__main__' :
     '''
     Interactive run from the command-line
     '''
     parser = configargparse.ArgParser(config_file_parser_class=configargparse.YAMLConfigFileParser,
-                                      description='Matterbot loads modules '
+                                      description='Matterfeed loads modules '
                                                   'and sends their output '
                                                   'to Mattermost.',
                                                   default_config_files=['config.yaml'])
-    parser.add('--Matterbot', type=str, help='MatterBot configuration, as a dictionary (see YAML config)')
+    parser.add('--Matterbot', type=str, help='Matterfeed configuration, as a dictionary (see YAML config)')
     parser.add('--Modules', type=str, help='Modules configuration, as a dictionary (see YAML config)')
     parser.add('--debug', default=False, action='store_true', help='Enable debug mode and log to foreground')
     options, unknown = parser.parse_known_args()
     options.Matterbot = ast.literal_eval(options.Matterbot)
     options.Modules = ast.literal_eval(options.Modules)
-    threads = []
-
-    # Start the Mattermost connection
-    try:
-        # Start the logging thread
-        logQueue = queue.Queue()
-        thread = LogWorker(logQueue)
-        threads.append(thread)
-        thread.start()
-        logQueue.put(('INFO', 'Logging thread started ...'))
-
-        # Fire up the Mattermost connection
-        mm = MattermostManager()
-        if mm:
-            # Start the message handler
-            msgQueue = queue.Queue()
-            thread = MsgWorker(mm, logQueue, msgQueue)
-            threads.append(thread)
-            thread.start()
-            logQueue.put(('INFO', 'Message thread started ...'))
-
-            # Find and load all modules concurrently, and build a lookback history
-            modules = loadModules()
-            if len(modules):
-                # Schedule the modules and run forever
-                for module in modules:
-                    thread = ModuleWorker(mm, module, logQueue, msgQueue)
-                    threads.append(thread)
-                    thread.start()
-
-                while len(threads)>0:
-                    try:
-                        threads = [t.join(1) for t in threads if t is not None and t.is_alive()]
-                    except KeyboardInterrupt:
-                        logQueue.put(('INFO', 'Shutting down all workers and exiting ...'))
-                        for thread in threads:
-                            thread.terminate = True
-            else:
-                logQueue.put(('ERROR', 'No modules found - exiting!'))
-        else:
-            logQueue.put(('ERROR', 'Could not connect to Mattermost - exiting!'))
-    except Exception as e:
-        logQueue.put(('ERROR', 'Error occurred:\n%s' % (traceback.format_exc(),)))
-    finally:
-        logQueue.put(('INFO', 'Matterfeed main loop running ...'))
-        sys.exit(0)
+    if not options.debug:
+        logging.basicConfig(level=logging.INFO, filename=options.Matterbot['logfile'], format='%(levelname)s - %(name)s - %(asctime)s - %(message)s')
+    else:
+        logging.basicConfig(level=logging.DEBUG,format='%(levelname)s - %(name)s - %(asctime)s - %(message)s')
+    log = logging.getLogger('MatterAPI')
+    log.info('Starting MatterFeed')
+    asyncio.run(main(log))

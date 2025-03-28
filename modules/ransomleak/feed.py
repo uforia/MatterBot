@@ -40,6 +40,7 @@ else:
             import settings
 
 def query(MAX=settings.ENTRIES):
+    messages = []
     announcements = []
     stripchars = r'`\t\n\r\'\"\|'
     regex = re.compile('[%s]' % stripchars)
@@ -59,7 +60,6 @@ def query(MAX=settings.ENTRIES):
             'size': 'Size',
         })
         items = []
-        messages = []
         try:
             if Path(settings.HISTORY).is_file():
                 history = shelve.open(settings.HISTORY,writeback=True)
@@ -75,8 +75,7 @@ def query(MAX=settings.ENTRIES):
             if not 'ransomleak' in history:
                 history['ransomleak'] = []
         except Exception as e:
-            print(traceback.format_exc())
-            raise
+            messages.append({'text': f"An error occurred in the RansomLeak module:\nError: {e}\n{traceback.format_exc()}"})
         if history:
             for group in groups:
                 ENDPOINT = settings.URL+group
@@ -171,7 +170,6 @@ def query(MAX=settings.ENTRIES):
                 if count>0:
                     messages.append(table)
     except Exception as e:
-        print(traceback.format_exc())
         message = "An error occurred during the Ransomleaks feed parsing:\n%s" % str(traceback.format_exc())
     finally:
         for message in messages:

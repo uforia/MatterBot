@@ -30,17 +30,6 @@ else:
         except ModuleNotFoundError: # local test run
             import settings
 
-def translate(title):
-    from_lan = "ja"
-    to_lan = "en"
-
-    # Update and install defined language packages for local processing (optional after initial setup)
-    package.update_package_index()
-    updateIndex = package.get_available_packages()
-    packageSelection = next(filter(lambda x: x.from_code == from_lan and x.to_code == to_lan, updateIndex))
-    package.install_from_path(packageSelection.download())
-    translation = translate.translate(title, from_lan, to_lan)
-    return translation
 
 def query(MAX=settings.ENTRIES):
     items = []
@@ -52,8 +41,14 @@ def query(MAX=settings.ENTRIES):
         try:
             title = feed.entries[count].title
             if settings.TRANSLATION:
-                translatedTitle = translate(title)
-                title = translatedTitle
+                from_lan = "ja"
+                to_lan = "en"
+                # Update and install defined language packages for local processing (optional after initial setup)
+                package.update_package_index()
+                updateIndex = package.get_available_packages()
+                packageSelection = next(filter(lambda x: x.from_code == from_lan and x.to_code == to_lan, updateIndex))
+                package.install_from_path(packageSelection.download())
+                title = translate.translate(title, from_lan, to_lan)
             link = feed.entries[count].link
             content = settings.NAME + ': [' + title + '](' + link + ')'
             for channel in settings.CHANNELS:
