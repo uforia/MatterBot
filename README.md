@@ -132,7 +132,7 @@ The Matterbot component listens in a given set of channels (configurable per mod
 | VirusTotal                              | Threat Intel               | Search VirusTotal for IP addresses, MD5/SHA1/SHA256 hashes, URLs and domains. Returned results will include maliciousness, TTP sets, malware family names, etc., if available                                                                                                                                                                                      | Yes                                                                      | No: basic functionality<br />Yes: paid VT features, throttling limit removal, etc.                                                                                              |
 | WikiJS                                  | Information Retrieval      | Search through WikiJS pages' contents for the given search terms. Returns links to the pages where the contents were found                                                                                                                                                                                                                                         | Yes                                                                      | Yes: currently requires a Microsoft Azure Search instance that indexes the WikiJS instance (*Note: this is a WikiJS limitation!*)                                               |
 
-*(1) It is not possible to for the author(s) to share access to their own Docspell instances. Please do not ask and be understanding of this*
+*(1) It is not possible to for the author(s) to share access to their own Docspell instances or any paid online resources. Please do not ask for this and be understanding, thank you!*
 
 New Matterbot modules can be created. A boilerplate example can be found in the `commands` directory.
 
@@ -146,15 +146,15 @@ New Matterbot modules can be created. A boilerplate example can be found in the 
 
 ### Mattermost
 
-- A Mattermost instance.
-- A 'bot account' on that Mattermost instance. NOTE: Currently the bot requires an admin account (see open issues) on your Mattermost instance!
-- Remember to invite the bot to the correct channels, both for outputting the results from its feed parsing and so it can listen to commands!
+- A Mattermost instance, preferably a recent version.
+- A 'bot account' on that Mattermost instance. The bot should no longer need an 'admin' account on Mattermost to operate.
+- Inviting the bot to the correct channels, both for outputting the results from its feed parsing and so it can listen to commands!
 
 ## matterfeed.py
 
 ### General information
 
-`matterfeed.py` goes through the `modules` directory and will run all detected modules every (by default) 5 minutes, outputting the results to the specified channels. Every module has its own custom configuration: you'll need to check the individual directories for more information. For example, the WikiJS module requires you to have a WikiJS instance with GraphQL API access, as well as a Microsoft Azure Search instance. You'll need to put the API key etc. in its configuration for it to work properly.
+`matterfeed.py` goes through the `modules` directory and will run all detected modules every (by default) 10 minutes, outputting the results to the specified channels. Every module has its own custom configuration: you'll need to check the individual directories for more information. For example, the WikiJS module requires you to have a WikiJS instance with GraphQL API access, as well as a Microsoft Azure Search instance. You'll need to put the API key etc. in its configuration for it to work properly.
 
 ### Getting started
 
@@ -166,7 +166,7 @@ New Matterbot modules can be created. A boilerplate example can be found in the 
 
 ### General information
 
-`matterbot.py` goes through the `commands` directory and will start listening in every specified channel for every specified bind (command). Every module has its own custom configuration: you'll need to check the individual directories for more information. For example, the ChatGPT module requires you to have an OpenAI account with API access, and you'll need to put the API key etc. in the configuration for it to work. After starting up the bot, you can use the `@bind`, `@unbind` and `@map` commands to get an overview of, and enable/disable commands in other channels.
+`matterbot.py` goes through the `commands` directory and will start listening in every specified channel for every specified bind (command). Every module has its own custom configuration: you'll need to check the individual directories for more information. For example, the ChatGPT module requires you to have an OpenAI account with API access, and you'll need to enter the API key etc. into the configuration for it to work. After starting up the bot, you can use the `@bind`, `@unbind` and `@map` commands to get an overview of, and enable/disable commands in other channels.
 
 ### Getting started
 
@@ -240,8 +240,9 @@ MatterBot would not be possible without the amazing work and/or generous help of
 - MISP: For being an absolutely amazing open-source platform for TI exchange https://misp-project.org
 - ReversingLabs: For providing an API key to Spectra Analyze and TICloud to develop the integration (particular thank you to D.H.!)
 - ThreatFox: The author(s), for helping me iron out some bugs https://threatfox.abuse.ch
+- Tria.ge: For providing an API key to build the MatterBot integration;
 - Tycho van Marle: for his countless suggestions and contributions to the project
 - Unprotect.it: The author(s), for being receptive, kind and open to me including default (download) support for their project https://unprotect.it
 - URLhaus: The author(s), for helping me iron out some bugs https://urlhaus.abuse.ch
 
-Additional thanks to AlienVault, Censys, Shodan, Tweetfeed, VirusTotal for providing good API documentation, letting me easily write plugins for their services.
+Additional thanks to AlienVault, Censys, RecordedFuture, Shodan, Tweetfeed, VirusTotal for providing good API documentation, letting me easily write plugins for their services.
