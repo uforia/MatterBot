@@ -35,22 +35,19 @@ def query(MAX=settings.ENTRIES):
     count = 0
     stripchars = '`\\[\\]\'\"'
     regex = re.compile('[%s]' % stripchars)
-    category = 'malware analysis'
+    # category = 'malware analysis'
     while count < MAX:
         try:
-            tags = feed.entries[count].tags
-            for tag in tags:
-                if tag['term'] == category:
-                    title = feed.entries[count].title
-                    link = 'https://any.run/' + feed.entries[count].link[29:]
-                    content = settings.NAME + ': [' + title + '](' + link + ')'  
-                    if len(feed.entries[count].description):
-                        description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
-                        if len(description)>400:
-                            description = description[:396]+' ...'
-                        content += '\n>'+description+'\n'
-                    for channel in settings.CHANNELS:
-                        items.append([channel, content])
+            title = feed.entries[count].title
+            link = feed.entries[count].link
+            content = settings.NAME + ': [' + title + '](' + link + ')'  
+            if len(feed.entries[count].description):
+                description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
+                if len(description)>400:
+                    description = description[:396]+' ...'
+                content += '\n>'+description+'\n'
+            for channel in settings.CHANNELS:
+                items.append([channel, content])
             count+=1
         except IndexError:
             return items # No more items

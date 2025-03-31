@@ -4,5 +4,5 @@ NAME = "Any.run Cybersecurity Blog"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://feeds.feedburner.com/anyrun"
+URL = "https://any.run/cybersecurity-blog/category/malware-analysis/feed/"
 ENTRIES = 10
