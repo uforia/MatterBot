@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-BINDS = ['@ai', 'llm', '@ol', '@ollama', '@robot']
+BINDS = ['@ol', '@ollama']
 CHANS = ['debug']
 APIENDPOINT = '<your-ollama-instance>'
 CONTENTTYPE = 'application/json'
