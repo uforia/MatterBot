@@ -35,7 +35,6 @@ def query(MAX=settings.ENTRIES):
     count = 0
     stripchars = '`\\[\\]\'\"'
     regex = re.compile('[%s]' % stripchars)
-    # category = 'malware analysis'
     while count < MAX:
         try:
             title = feed.entries[count].title
