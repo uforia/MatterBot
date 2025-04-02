@@ -95,20 +95,27 @@ class MattermostManager(object):
     async def handleMsg(self, channel, modulename, content, uploads = None):
         self.log.info('Message  : ' + modulename.lower() + ' => ' + channel + ' => ' + content[:20] + '...')
         if uploads:
-            await self.createPost(self.channels[channel], content, uploads)
+            try:
+                await self.createPost(self.channels[channel], content, uploads)
+            except:
+                self.log.error('Error    : ' + modulename + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
+
         else:
-            await self.createPost(self.channels[channel], content)
+            try:
+                await self.createPost(self.channels[channel], content)
+            except:
+                self.log.error('Error    : ' + modulename + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
 
     async def runModules(self):
-        try:
-            while True:
+        while True:
+            try:
                 for module_name in self.modules:
                     self.log.info(f"Attempting to start the {module_name} module...")
                     await self.runModule(module_name)
                 self.log.info(f"Run complete, sleeping for {options.Modules['timer']} seconds...")
                 time.sleep(options.Modules['timer'])
-        except Exception as e:
-            self.log.error(f"An error occurred during module runs:\nError: {str(e)}\n{traceback.format_exc()}")
+            except Exception as e:
+                self.log.error(f"An error occurred during module runs:\nError: {str(e)}\n{traceback.format_exc()}")
 
     def loadModules(self):
         modules = {}
@@ -149,7 +156,10 @@ class MattermostManager(object):
                                     self.log.debug('Posting  : ' + modulename + ' => ' + channel + ' => ' + content + '...')
                                 else:
                                     self.log.info('Posting  : ' + modulename + ' => ' + channel + ' => ' + content[:80] + '...')
-                                    await self.handleMsg(channel, modulename, content, uploads)
+                                    try:
+                                        await self.handleMsg(channel, modulename, content, uploads)
+                                    except:
+                                        self.log.error('Error    : ' + modulename + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
                         elif not newspost in history[modulename]:
                             history[modulename].append(newspost)
                             if not first_run:
@@ -157,7 +167,10 @@ class MattermostManager(object):
                                     self.log.debug('Posting  : ' + modulename + ' => ' + channel + ' => ' + content + '...')
                                 else:
                                     self.log.info('Posting  : ' + modulename + ' => ' + channel + ' => ' + content[:80] + '...')
-                                    await self.handleMsg(channel, modulename, content, uploads)
+                                    try:
+                                        await self.handleMsg(channel, modulename, content, uploads)
+                                    except:
+                                        self.log.error('Error    : ' + modulename + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
                 if options.debug:
                     self.log.debug('Summary : ' + modulename + ' => '+ str(len(items)) + ' messages ...')
                 history.sync()
@@ -169,7 +182,10 @@ class MattermostManager(object):
 
 async def main(log):
     mm = MattermostManager(log)
-    await mm.runModules()
+    try:
+        await mm.runModules()
+    except:
+        self.log.error('Error    : ' + modulename + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
 
 if __name__ == '__main__' :
     '''
