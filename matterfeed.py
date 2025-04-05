@@ -109,9 +109,10 @@ class MattermostManager(object):
     async def runModules(self):
         while True:
             try:
-                for module_name in self.modules:
-                    self.log.info(f"Attempting to start the {module_name} module...")
-                    await self.runModule(module_name)
+                async with asyncio.timeout(30):
+                    for module_name in self.modules:
+                        self.log.info(f"Attempting to start the {module_name} module...")
+                        await self.runModule(module_name)
                 self.log.info(f"Run complete, sleeping for {options.Modules['timer']} seconds...")
                 time.sleep(options.Modules['timer'])
             except Exception as e:
@@ -185,7 +186,7 @@ async def main(log):
     try:
         await mm.runModules()
     except:
-        self.log.error('Error    : ' + modulename + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
+        log.error('Error    : ' + modulename + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
 
 if __name__ == '__main__' :
     '''
@@ -208,4 +209,9 @@ if __name__ == '__main__' :
         logging.basicConfig(level=logging.DEBUG,format='%(levelname)s - %(name)s - %(asctime)s - %(message)s')
     log = logging.getLogger('MatterAPI')
     log.info('Starting MatterFeed')
-    asyncio.run(main(log))
+    try:
+        while True:
+            asyncio.run(main(log))
+    except KeyboardInterrupt:
+        log.info('Stopping MatterFeed')
+        sys.exit(0)
