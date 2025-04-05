@@ -185,8 +185,8 @@ async def main(log):
     mm = MattermostManager(log)
     try:
         await mm.runModules()
-    except:
-        log.error('Error    : ' + modulename + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
+    except Exception as e:
+        log.error(f"Traceback: {str(e)}\n{traceback.format_exc()}")
 
 if __name__ == '__main__' :
     '''
