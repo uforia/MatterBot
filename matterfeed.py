@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
 import ast
-import asyncio
 import configargparse
 import fnmatch
 import importlib.util
 import logging
+import multiprocessing
 import requests
 import os
 import shelve
@@ -49,7 +49,7 @@ class MattermostManager(object):
             self.channels[channel_info['name']] = channel_info['id']
         self.modules = self.loadModules()
     
-    async def createPost(self, channel, text, uploads = []):
+    def createPost(self, channel, text, uploads = []):
         try:
             if len(text) > options.Matterbot['msglength']: # Mattermost message limit
                 blocks = []
@@ -92,31 +92,36 @@ class MattermostManager(object):
         except Exception as e:
             self.log.error(f"An error posting a channel message:\nError: {str(e)}\n{traceback.format_exc()}")
 
-    async def handleMsg(self, channel, modulename, content, uploads = None):
+    def handleMsg(self, channel, modulename, content, uploads = None):
         self.log.info('Message  : ' + modulename.lower() + ' => ' + channel + ' => ' + content[:20] + '...')
         if uploads:
             try:
-                await self.createPost(self.channels[channel], content, uploads)
+                self.createPost(self.channels[channel], content, uploads)
             except:
                 self.log.error('Error    : ' + modulename + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
 
         else:
             try:
-                await self.createPost(self.channels[channel], content)
+                self.createPost(self.channels[channel], content)
             except:
                 self.log.error('Error    : ' + modulename + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
 
-    async def runModules(self):
+    def runModules(self):
         while True:
-            try:
-                async with asyncio.timeout(30):
-                    for module_name in self.modules:
-                        self.log.info(f"Attempting to start the {module_name} module...")
-                        await self.runModule(module_name)
-                self.log.info(f"Run complete, sleeping for {options.Modules['timer']} seconds...")
-                time.sleep(options.Modules['timer'])
-            except Exception as e:
-                self.log.error(f"An error occurred during module runs:\nError: {str(e)}\n{traceback.format_exc()}")
+            with multiprocessing.Pool(len(self.modules)) as pool:
+                modulelist = []
+                for module_name in self.modules:
+                    self.log.info(f"Attempting to start the {module_name} module...")
+                    m = pool.apply_async(self.runModule, [module_name, self.log])
+                    modulelist.append(m)
+                results = []
+                for m in modulelist:
+                    result = m.get(timeout=30)
+                    results.append(result)
+                pool.close()
+                pool.terminate()
+            self.log.info(f"Run complete, sleeping for {options.Modules['timer']} seconds...")
+            time.sleep(options.Modules['timer'])
 
     def loadModules(self):
         modules = {}
@@ -130,7 +135,8 @@ class MattermostManager(object):
                 modules[module_name] = getattr(module, 'query')
         return modules
 
-    async def runModule(self, modulename):
+    def runModule(self, modulename, log):
+        self.log = log
         try:
             items = self.modules[modulename]()
             modulepath = options.Modules['moduledir']+'/'+modulename+'/'+modulename+'.cache'
@@ -158,7 +164,7 @@ class MattermostManager(object):
                                 else:
                                     self.log.info('Posting  : ' + modulename + ' => ' + channel + ' => ' + content[:80] + '...')
                                     try:
-                                        await self.handleMsg(channel, modulename, content, uploads)
+                                        self.handleMsg(channel, modulename, content, uploads)
                                     except:
                                         self.log.error('Error    : ' + modulename + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
                         elif not newspost in history[modulename]:
@@ -169,7 +175,7 @@ class MattermostManager(object):
                                 else:
                                     self.log.info('Posting  : ' + modulename + ' => ' + channel + ' => ' + content[:80] + '...')
                                     try:
-                                        await self.handleMsg(channel, modulename, content, uploads)
+                                        self.handleMsg(channel, modulename, content, uploads)
                                     except:
                                         self.log.error('Error    : ' + modulename + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
                 if options.debug:
@@ -181,10 +187,10 @@ class MattermostManager(object):
             self.log.error('Error    : ' + modulename + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
 
 
-async def main(log):
+def main(log):
     mm = MattermostManager(log)
     try:
-        await mm.runModules()
+        mm.runModules()
     except Exception as e:
         log.error(f"Traceback: {str(e)}\n{traceback.format_exc()}")
 
@@ -210,8 +216,7 @@ if __name__ == '__main__' :
     log = logging.getLogger('MatterAPI')
     log.info('Starting MatterFeed')
     try:
-        while True:
-            asyncio.run(main(log))
+        main(log)
     except KeyboardInterrupt:
         log.info('Stopping MatterFeed')
         sys.exit(0)

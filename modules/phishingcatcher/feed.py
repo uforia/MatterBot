@@ -87,11 +87,15 @@ def query(MAX=settings.ENTRIES):
             content = ""
             while count < len(suspicious_domains):
                 domain, score = suspicious_domains[count]
+                score = score.replace(')','')
                 if not domain in history['phishingcatcher']:
                     history['phishingcatcher'].append(domain)
-                    if int(score) > int(settings.THRESHOLD):
-                        content += '\n| `%s` | `%s` |' % (score, domain)
-                        entries += 1
+                    try:
+                        if int(score) > int(settings.THRESHOLD):
+                            content += '\n| `%s` | `%s` |' % (score, domain)
+                            entries += 1
+                    except:
+                        print(score,domain)
                 count += 1        
             if entries > 0:
                 message = "\n**PhishingCatcher** found `%d` new potential phishing domain(s):\n" % (entries,)

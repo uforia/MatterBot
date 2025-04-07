@@ -45,7 +45,7 @@ def query(MAX=settings.ENTRIES):
                     description = regex.sub('. ',post['description'])
                     description = re.sub(r'(\. ){2,}', '. ', description)
                     timestamp = post['discovered'].split(".")[0]
-                    screen = post['screen'] if post['screen'] else None
+                    screen = post['screen'] if 'screen' in post else None
                     upload = None
                     content = settings.NAME + f": `{group}` has posted/claimed `{title}` at `{timestamp}`"
                     if screen:

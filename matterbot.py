@@ -436,7 +436,8 @@ class MattermostManager(object):
     async def call_module(self, module, command, channame, rootid, username, params, files, conn):
         try:
             chanid = self.channame_to_chanid(channame)
-            result = self.commands[module]['process'](command, channame, username, params, files, conn)
+            async with asyncio.timeout(30):
+                result = self.commands[module]['process'](command, channame, username, params, files, conn)
             # Command logging: see config.defaults.yaml for clarification
             if result and 'messages' in result:
                 for message in result['messages']:
