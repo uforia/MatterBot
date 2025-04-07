@@ -118,7 +118,7 @@ class MattermostManager(object):
                 results = []
                 for m in modulelist:
                     try:
-                        result = m.get(timeout=30)
+                        result = m.get(timeout=options.Modules['timeout'])
                     except multiprocessing.context.TimeoutError as e:
                         self.log.error('Error    : ' + modulename + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
                     results.append(result)
