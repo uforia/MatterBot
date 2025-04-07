@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import ast
+import multiprocessing.context
 import configargparse
 import fnmatch
 import importlib.util
@@ -110,13 +111,16 @@ class MattermostManager(object):
         while True:
             with multiprocessing.Pool(len(self.modules)) as pool:
                 modulelist = []
-                for module_name in self.modules:
-                    self.log.info(f"Attempting to start the {module_name} module...")
-                    m = pool.apply_async(self.runModule, [module_name, self.log])
+                for modulename in self.modules:
+                    self.log.info(f"Attempting to start the {modulename} module...")
+                    m = pool.apply_async(self.runModule, [modulename, self.log])
                     modulelist.append(m)
                 results = []
                 for m in modulelist:
-                    result = m.get(timeout=30)
+                    try:
+                        result = m.get(timeout=30)
+                    except multiprocessing.context.TimeoutError as e:
+                        self.log.error('Error    : ' + modulename + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
                     results.append(result)
                 pool.close()
                 pool.terminate()
