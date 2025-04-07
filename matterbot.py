@@ -520,7 +520,12 @@ class MattermostManager(object):
                                             if 'files' in post['metadata']:
                                                 if len(post['metadata']['files']):
                                                     files = post['metadata']['files']
-                                        await self.call_module(module, command, channame, rootid, username, params, files, self.mmDriver)
+                                        try:
+                                            async with asyncio.timeout(30):
+                                                await self.call_module(module, command, channame, rootid, username, params, files, self.mmDriver)
+                                        except asyncio.TimeoutError:
+                                            text = f"Error: the command to the {module} module timed out while processing/waiting for a response."
+                                            await self.send_message(chanid, text, rootid)
 
 if __name__ == '__main__' :
     '''
