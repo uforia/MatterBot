@@ -109,19 +109,25 @@ class MattermostManager(object):
 
     def runModules(self):
         while True:
-            with multiprocessing.Pool(len(self.modules)) as pool:
-                modulelist = []
-                for modulename in self.modules:
-                    self.log.info(f"Attempting to start the {modulename} module...")
-                    m = pool.apply_async(self.runModule, [modulename, self.log])
-                    modulelist.append(m)
-                results = []
-                for m in modulelist:
-                    try:
-                        result = m.get(timeout=options.Modules['timeout'])
-                    except multiprocessing.context.TimeoutError as e:
-                        self.log.error('Error    : ' + modulename + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
-                    results.append(result)
+            try:
+                with multiprocessing.Pool(len(self.modules)) as pool:
+                    modulelist = []
+                    for modulename in self.modules:
+                        self.log.info(f"Attempting to start the {modulename} module...")
+                        m = pool.apply_async(self.runModule, [modulename, self.log])
+                        modulelist.append(m)
+                    results = []
+                    for m in modulelist:
+                        result = None
+                        try:
+                            result = m.get(timeout=options.Modules['timeout'])
+                        except multiprocessing.context.TimeoutError as e:
+                            self.log.error('Error    : ' + modulename + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
+                        if result:
+                            results.append(result)
+            except Exception as e:
+                self.log.error(f"Error    :\nTraceback: {str(e)}\n{traceback.format_exc()}")
+            finally:
                 pool.close()
                 pool.terminate()
             self.log.info(f"Run complete, sleeping for {options.Modules['timer']} seconds...")
