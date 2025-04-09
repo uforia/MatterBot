@@ -122,7 +122,7 @@ class MattermostManager(object):
                         try:
                             result = m.get(timeout=options.Modules['timeout'])
                         except multiprocessing.context.TimeoutError as e:
-                            self.log.error('Error    : ' + modulename + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
+                            self.log.error(f"Error   : {modulename} timed out during execution ...")
                         if result:
                             results.append(result)
             except Exception as e:
