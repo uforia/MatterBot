@@ -44,11 +44,11 @@ class MattermostManager(object):
         self.my_team_id = self.mmDriver.teams.get_team_by_name(options.Matterbot['teamname'])['id']
         self.channels = {}
         self.test = {}
+        self.modules = self.findModules()
         userchannels = self.mmDriver.channels.get_channels_for_user(self.me['id'],self.my_team_id)
         for userchannel in userchannels:
             channel_info = self.mmDriver.channels.get_channel(userchannel['id'])
             self.channels[channel_info['name']] = channel_info['id']
-        self.modules = self.loadModules()
     
     def createPost(self, channel, text, uploads = []):
         try:
@@ -107,6 +107,21 @@ class MattermostManager(object):
             except:
                 self.log.error('Error    : ' + modulename + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
 
+    def findModules(self):
+        try:
+            sys.path.append(module_path)
+            modules = set()
+            for root, dirs, files in os.walk(module_path):
+                for module in fnmatch.filter(files, "feed.py"):
+                    module_name = root.split('/')[-1]
+                    self.log.info(f"Discovered the {module_name} module...")
+                    modules.add(module_name)
+            return modules
+        except Exception as e:
+            self.log.error(f"Error    :\nTraceback: {str(e)}\n{traceback.format_exc()}")
+        finally:
+            sys.path.remove(module_path)
+
     def runModules(self):
         while True:
             try:
@@ -133,66 +148,73 @@ class MattermostManager(object):
             self.log.info(f"Run complete, sleeping for {options.Modules['timer']} seconds...")
             time.sleep(options.Modules['timer'])
 
-    def loadModules(self):
-        modules = {}
-        modulepath = options.Modules['moduledir'].strip('/')
-        sys.path.append(modulepath)
-        for root, dirs, files in os.walk(modulepath):
-            for module in fnmatch.filter(files, "feed.py"):
-                module_name = root.split('/')[-1]
-                self.log.info(f"Attempting to load the {module_name} module...")
-                module = importlib.import_module(module_name + '.' + 'feed')
-                modules[module_name] = getattr(module, 'query')
-        return modules
+    def callModule(self, module_name, function_name = 'query', *args, **kwargs):
+        try:
+            importlib.invalidate_caches()
+            sys.path.append(f"{module_path}/{module_name}")
+            module = importlib.import_module("feed")
+            func = getattr(module, function_name)
+            return func(*args, **kwargs)
+        except (ModuleNotFoundError, AttributeError) as e:
+            self.log.error(f"Error    :\nTraceback: {str(e)}\n{traceback.format_exc()}")
+            return None
+        finally:
+            sys.path.remove(f"{module_path}/{module_name}")
+            if module_name in sys.modules:
+                del sys.modules[module_name]
 
     def runModule(self, modulename, log):
         self.log = log
         try:
-            items = self.modules[modulename]()
+            items = self.callModule(modulename)
             modulepath = options.Modules['moduledir']+'/'+modulename+'/'+modulename+'.cache'
             if os.path.isfile(modulepath):
                 if options.debug:
                     self.log.debug('Found   : ' + modulename + ' database at ' + modulepath + ' location...')
-            with shelve.open(modulepath,writeback=True) as history:
-                if not modulename in history:
-                    history[modulename] = []
-                    first_run = True
-                else:
-                    first_run = False
-                if len(items):
-                    for newspost in items:
-                        try:
-                            channel, content, uploads = newspost
-                        except:
-                            channel, content = newspost
-                            uploads = []
-                        # Deal with self-calls...
-                        if content.startswith('@') or content.startswith('!'):
-                            if not first_run:
-                                if options.debug:
-                                    self.log.debug('Posting  : ' + modulename + ' => ' + channel + ' => ' + content + '...')
-                                else:
-                                    self.log.info('Posting  : ' + modulename + ' => ' + channel + ' => ' + content[:80] + '...')
-                                    try:
-                                        self.handleMsg(channel, modulename, content, uploads)
-                                    except:
-                                        self.log.error('Error    : ' + modulename + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
-                        elif not newspost in history[modulename]:
-                            history[modulename].append(newspost)
-                            if not first_run:
-                                if options.debug:
-                                    self.log.debug('Posting  : ' + modulename + ' => ' + channel + ' => ' + content + '...')
-                                else:
-                                    self.log.info('Posting  : ' + modulename + ' => ' + channel + ' => ' + content[:80] + '...')
-                                    try:
-                                        self.handleMsg(channel, modulename, content, uploads)
-                                    except:
-                                        self.log.error('Error    : ' + modulename + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
-                if options.debug:
-                    self.log.debug('Summary : ' + modulename + ' => '+ str(len(items)) + ' messages ...')
+            try:
+                with shelve.open(modulepath, writeback=True) as history:
+                    if not modulename in history:
+                        history[modulename] = []
+                        first_run = True
+                    else:
+                        first_run = False
+                    if len(items):
+                        for newspost in items:
+                            try:
+                                channel, content, uploads = newspost
+                            except:
+                                channel, content = newspost
+                                uploads = []
+                            # Deal with self-calls...
+                            if content.startswith('@') or content.startswith('!'):
+                                if not first_run:
+                                    if options.debug:
+                                        self.log.debug('Posting  : ' + modulename + ' => ' + channel + ' => ' + content + '...')
+                                    else:
+                                        self.log.info('Posting  : ' + modulename + ' => ' + channel + ' => ' + content[:80] + '...')
+                                        try:
+                                            self.handleMsg(channel, modulename, content, uploads)
+                                        except:
+                                            self.log.error('Error    : ' + modulename + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
+                            elif not newspost in history[modulename]:
+                                history[modulename].append(newspost)
+                                if not first_run:
+                                    if options.debug:
+                                        self.log.debug('Posting  : ' + modulename + ' => ' + channel + ' => ' + content + '...')
+                                    else:
+                                        self.log.info('Posting  : ' + modulename + ' => ' + channel + ' => ' + content[:80] + '...')
+                                        try:
+                                            self.handleMsg(channel, modulename, content, uploads)
+                                        except:
+                                            self.log.error('Error    : ' + modulename + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
+                    if options.debug:
+                        self.log.debug('Summary : ' + modulename + ' => '+ str(len(items)) + ' messages ...')
+                self.log.info('Completed: ' + modulename + ' => sleeping ...')
+            except Exception as e:
+                self.log.error('Error    : ' + modulename + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
+            finally:
                 history.sync()
                 history.close()
-            self.log.info('Completed: ' + modulename + ' => sleeping ...')
         except Exception as e:
             self.log.error('Error    : ' + modulename + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
 
@@ -226,6 +248,8 @@ if __name__ == '__main__' :
     log = logging.getLogger('MatterAPI')
     log.info('Starting MatterFeed')
     try:
+        current_dir = os.path.dirname(__file__)
+        module_path = options.Modules['moduledir'].strip('/')
         main(log)
     except KeyboardInterrupt:
         log.info('Stopping MatterFeed')
