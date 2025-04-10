@@ -191,8 +191,7 @@ class MattermostManager(object):
                                 if not newspost in self.history[self.module_name]:
                                     self.log.info('Posting  : ' + self.module_name + ' => ' + channel + ' => ' + content[:80] + '...')
                                 try:
-                                    #self.handleMsg(channel, self.module_name, content, uploads)
-                                    pass
+                                    self.handleMsg(channel, self.module_name, content, uploads)
                                 except Exception as e:
                                     self.log.error('Error    : ' + self.module_name + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
                             if not newspost in self.history[self.module_name]:
