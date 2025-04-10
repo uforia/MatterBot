@@ -215,8 +215,9 @@ class MattermostManager(object):
             except Exception as e:
                 self.log.error('Error    : ' + modulename + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
             finally:
-                history.sync()
-                history.close()
+                if history:
+                    history.sync()
+                    history.close()
         except Exception as e:
             self.log.error('Error    : ' + modulename + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
 
