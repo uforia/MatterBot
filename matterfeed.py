@@ -167,12 +167,12 @@ class MattermostManager(object):
         self.log = log
         try:
             items = self.callModule(modulename)
-            modulepath = options.Modules['moduledir']+'/'+modulename+'/'+modulename+'.cache'
-            if os.path.isfile(modulepath):
+            self.historypath = options.Modules['moduledir']+'/'+modulename+'/'+modulename+'.cache'
+            if os.path.isfile(self.historypath):
                 if options.debug:
-                    self.log.debug('Found   : ' + modulename + ' database at ' + modulepath + ' location...')
+                    self.log.debug('Found   : ' + modulename + ' database at ' + self.historypath + ' location...')
             try:
-                with shelve.open(modulepath, writeback=True) as history:
+                with shelve.open(self.historypath, writeback=True) as history:
                     if not modulename in history:
                         history[modulename] = []
                         first_run = True
@@ -198,6 +198,8 @@ class MattermostManager(object):
                                             self.log.error('Error    : ' + modulename + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
                             elif not newspost in history[modulename]:
                                 history[modulename].append(newspost)
+                                history.sync()
+                                history.close()
                                 if not first_run:
                                     if options.debug:
                                         self.log.debug('Posting  : ' + modulename + ' => ' + channel + ' => ' + content + '...')
