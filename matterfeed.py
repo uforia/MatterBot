@@ -127,20 +127,9 @@ class MattermostManager(object):
         while True:
             try:
                 with multiprocessing.Pool(len(self.modules)) as pool:
-                    results = []
-                    modulelist = []
                     for module_name in self.modules:
-                        self.log.info(f"Attempting to start the {module_name} module...")
+                        self.log.info(f"Starting: {module_name} module...")
                         m = pool.apply(self.runModule, [module_name, self.log])
-                        modulelist.append(m)
-                    for m in modulelist:
-                        result = None
-                        try:
-                            result = m.get(timeout=options.Modules['timeout'])
-                        except multiprocessing.context.TimeoutError as e:
-                            self.log.error(f"Error   : {module_name} timed out during execution ...")
-                        if result:
-                            results.append(result)
             except Exception as e:
                 self.log.error(f"Error    :\nTraceback: {str(e)}\n{traceback.format_exc()}")
             finally:
