@@ -127,12 +127,12 @@ class MattermostManager(object):
         while True:
             try:
                 with multiprocessing.Pool(len(self.modules)) as pool:
+                    results = []
                     modulelist = []
                     for module_name in self.modules:
                         self.log.info(f"Attempting to start the {module_name} module...")
-                        m = pool.apply_async(self.runModule, [module_name, self.log])
+                        m = pool.apply(self.runModule, [module_name, self.log])
                         modulelist.append(m)
-                    results = []
                     for m in modulelist:
                         result = None
                         try:
