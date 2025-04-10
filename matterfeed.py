@@ -128,7 +128,7 @@ class MattermostManager(object):
             try:
                 with multiprocessing.Pool(len(self.modules)) as pool:
                     for module_name in self.modules:
-                        self.log.info(f"Starting: {module_name} module...")
+                        self.log.info(f"Starting : {module_name} module...")
                         m = pool.apply(self.runModule, [module_name, self.log])
             except Exception as e:
                 self.log.error(f"Error    :\nTraceback: {str(e)}\n{traceback.format_exc()}")
