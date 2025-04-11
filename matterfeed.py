@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 
 import ast
-import multiprocessing.context
+from concurrent.futures import TimeoutError
 import configargparse
 import fnmatch
 import importlib.util
 import logging
 import multiprocessing
-import requests
+import pebble
 import os
 import shelve
 import sys
 import time
 import traceback
+import uuid
 from mattermostdriver import Driver
 
 
@@ -99,12 +100,12 @@ class MattermostManager(object):
             try:
                 self.createPost(self.channels[channel], content, uploads)
             except Exception as e:
-                self.log.error('Error    : ' + module_name + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
+                self.log.error('Error   : ' + module_name + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
         else:
             try:
                 self.createPost(self.channels[channel], content)
             except Exception as e:
-                self.log.error('Error    : ' + module_name + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
+                self.log.error('Error   : ' + module_name + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
 
     def findModules(self):
         try:
@@ -113,83 +114,105 @@ class MattermostManager(object):
             for root, dirs, files in os.walk(module_path):
                 for module in fnmatch.filter(files, "feed.py"):
                     module_name = root.split('/')[-1]
-                    self.log.info(f"Discovered the {module_name} module...")
+                    self.log.info(f"Found    : {module_name} module...")
                     if not module_name in modules:
                         modules[module_name] = {}
                     modules[module_name]['cache'] = f"{root}/{module_name}.cache"
             return modules
         except Exception as e:
-            self.log.error(f"Error    :\nTraceback: {str(e)}\n{traceback.format_exc()}")
+            self.log.error(f"Error   :\nTraceback: {str(e)}\n{traceback.format_exc()}")
         finally:
             sys.path.remove(module_path)
+
+    def onComplete(self, future):
+        try:
+            result = future.result()
+        except Exception as e:
+            self.log.error(f"Error   :\nTraceback: {str(e)}\n{traceback.format_exc()}")
 
     def runModules(self):
         while True:
             try:
-                with multiprocessing.Pool(len(self.modules)) as pool:
+                self.modules = self.findModules()
+                with pebble.ThreadPool(max_workers=8) as pool:
+                    history = None
+                    futures = []
                     for module_name in self.modules:
                         self.log.info(f"Starting : {module_name} module...")
-                        m = pool.apply(self.runModule, [module_name, self.log])
+                        history = shelve.open(self.modules[module_name]['cache'], writeback=True)
+                        future = pool.submit(self.runModule, module_name, history)
+                        future.add_done_callback(self.onComplete)
+                        futures.append([module_name, future])
+                    for module_name, future in futures:
+                        try:
+                            result = future.result(timeout=30)
+                        except Exception as e:
+                            self.log.error(f"Timeout : {module_name}\nTraceback: {str(e)}\n{traceback.format_exc()}")
             except Exception as e:
-                self.log.error(f"Error    :\nTraceback: {str(e)}\n{traceback.format_exc()}")
+                self.log.error(f"Error   :\nTraceback: {str(e)}\n{traceback.format_exc()}")
             finally:
-                pool.close()
-                pool.terminate()
+                if history:
+                    history.sync()
+                    history.close()
+                pool.stop()
+                pool.join()
             self.log.info(f"Run complete, sleeping for {options.Modules['timer']} seconds...")
             time.sleep(options.Modules['timer'])
 
+    def runModule(self, module_name, history):
+        try:
+            if not module_name in history:
+                history[module_name] = []
+                first_run = True
+            else:
+                first_run = False
+            self.log.info('Found    : ' + module_name + ' cache ...')
+            items = self.callModule(module_name)
+            if items:
+                for newspost in items:
+                    try:
+                        channel, content, uploads = newspost
+                    except:
+                        channel, content = newspost
+                        uploads = []
+                    # Make sure we're not triggering self-calls...
+                    if not content.startswith('@') and not content.startswith('!'):
+                        if not first_run:
+                            if not newspost in history[module_name]:
+                                try:
+                                    self.log.info('Posting  : ' + module_name + ' => ' + channel + ' => ' + content[:80] + '...')
+                                    #self.handleMsg(channel, module_name, content, uploads)
+                                except Exception as e:
+                                    self.log.error('Error   : ' + module_name + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
+                        if not newspost in history[module_name]:
+                            #self.history[module_name].append(newspost)
+                            self.log.info('Storing  : ' + module_name + ' => ' + channel + ' => ' + content[:80] + '...')
+            self.log.info('Complete : ' + module_name + ' => sleeping ...')
+        except Exception as e:
+            self.log.error(f"Error   : {module_name}\nTraceback: {str(e)}\n{traceback.format_exc()}")
+
     def callModule(self, module_name, function_name = 'query', *args, **kwargs):
-        self.module_name = module_name
         try:
             importlib.invalidate_caches()
-            sys.path.append(f"{module_path}/{self.module_name}")
-            self.module = importlib.import_module("feed")
-            func = getattr(self.module, function_name)
+            module_file = os.path.join(module_path, module_name, "feed.py")
+            if not os.path.exists(module_file):
+                raise ImportError(f"No feed.py found for {module_name} ...")
+            unique_module_name = f"feed_{uuid.uuid4().hex}"
+            spec = importlib.util.spec_from_file_location(unique_module_name, module_file)
+            if not spec or spec.loader is None:
+                raise ImportError(f"Could not load spec for {module_file} ...")
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[spec.name] = module
+            spec.loader.exec_module(module)
+            func = getattr(module, function_name)
             return func(*args, **kwargs)
         except (ModuleNotFoundError, AttributeError) as e:
-            self.log.error(f"Error    :\nTraceback: {str(e)}\n{traceback.format_exc()}")
+            self.log.error(f"Error   :\nTraceback: {str(e)}\n{traceback.format_exc()}")
             return None
         finally:
-            sys.path.remove(f"{module_path}/{module_name}")
-            if module_name in sys.modules:
-                del sys.modules[module_name]
-
-    def runModule(self, module_name, log):
-        self.module_name = module_name
-        self.log = log
-        try:
-            self.historypath = self.modules[self.module_name]['cache']
-            with shelve.open(self.historypath, writeback=True) as self.history:
-                if not self.module_name in self.history:
-                    self.history[self.module_name] = []
-                    first_run = True
-                else:
-                    first_run = False
-                self.log.info('Found    : ' + self.module_name + ' cache at location ' + self.historypath + ' ...')
-                self.items = self.callModule(self.module_name)
-                if self.items:
-                    for newspost in self.items:
-                        try:
-                            channel, content, uploads = newspost
-                        except:
-                            channel, content = newspost
-                            uploads = []
-                        # Make sure we're not triggering self-calls...
-                        if not content.startswith('@') and not content.startswith('!'):
-                            if not first_run:
-                                if not newspost in self.history[self.module_name]:
-                                    self.log.info('Posting  : ' + self.module_name + ' => ' + channel + ' => ' + content[:80] + '...')
-                                    try:
-                                        self.handleMsg(channel, self.module_name, content, uploads)
-                                    except Exception as e:
-                                        self.log.error('Error    : ' + self.module_name + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
-                            if not newspost in self.history[self.module_name]:
-                                self.history[self.module_name].append(newspost)
-                                self.log.info('Storing  : ' + self.module_name + ' => ' + channel + ' => ' + content[:80] + '...')
-            self.history.sync()
-            self.log.info('Completed: ' + self.module_name + ' => sleeping ...')
-        except Exception as e:
-            self.log.error(f"Error    : {self.module_name}\nTraceback: {str(e)}\n{traceback.format_exc()}")
+            if spec.name in sys.modules:
+                del sys.modules[spec.name]
+                self.log.info(f"Unloaded : {module_name} ({spec.name}) module ...")
 
 
 def main(log):

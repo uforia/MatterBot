@@ -12,6 +12,7 @@ mattermostdriver
 mwdblib
 numpy
 pandas
+pebble
 pyOpenSSL
 pypandoc
 pytz
