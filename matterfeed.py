@@ -185,7 +185,7 @@ class MattermostManager(object):
                                 except Exception as e:
                                     self.log.error('Error   : ' + module_name + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
                         if not newspost in history[module_name]:
-                            self.history[module_name].append(newspost)
+                            history[module_name].append(newspost)
                             self.log.info('Storing  : ' + module_name + ' => ' + channel + ' => ' + content[:80] + '...')
             self.log.info('Complete : ' + module_name + ' => sleeping ...')
         except Exception as e:
