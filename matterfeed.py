@@ -134,7 +134,7 @@ class MattermostManager(object):
         while True:
             try:
                 self.modules = self.findModules()
-                with pebble.ThreadPool(max_workers=8) as pool:
+                with pebble.ThreadPool(max_workers=options.Modules['threads']) as pool:
                     history = None
                     futures = []
                     for module_name in self.modules:
