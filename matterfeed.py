@@ -95,7 +95,7 @@ class MattermostManager(object):
             self.log.error(f"An error posting a channel message:\nError: {str(e)}\n{traceback.format_exc()}")
 
     def handleMsg(self, channel, module_name, content, uploads = None):
-        self.log.info('Message  : ' + module_name.lower() + ' => ' + channel + ' => ' + content[:20] + '...')
+        self.log.info('Message  : ' + module_name.lower() + ' => ' + channel + ' => ' + content[:40] + '...')
         if uploads:
             try:
                 self.createPost(self.channels[channel], content, uploads)
@@ -180,13 +180,13 @@ class MattermostManager(object):
                         if not first_run:
                             if not newspost in history[module_name]:
                                 try:
-                                    self.log.info('Posting  : ' + module_name + ' => ' + channel + ' => ' + content[:80] + '...')
+                                    self.log.info('Posting  : ' + module_name + ' => ' + channel + ' => ' + content[:40] + '...')
                                     self.handleMsg(channel, module_name, content, uploads)
                                 except Exception as e:
                                     self.log.error('Error   : ' + module_name + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
                         if not newspost in history[module_name]:
                             history[module_name].append(newspost)
-                            self.log.info('Storing  : ' + module_name + ' => ' + channel + ' => ' + content[:80] + '...')
+                            self.log.info('Storing  : ' + module_name + ' => ' + channel + ' => ' + content[:40] + '...')
             self.log.info('Complete : ' + module_name + ' => sleeping ...')
         except Exception as e:
             self.log.error(f"Error   : {module_name}\nTraceback: {str(e)}\n{traceback.format_exc()}")
