@@ -6,7 +6,6 @@ chardet
 ConfigArgParse
 feedparser
 graphviz
-googletrans
 lxml
 mattermostdriver
 mwdblib
