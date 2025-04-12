@@ -39,6 +39,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | DIVD CSIRT                                                                                       | RSS            | No               | No                |
 | Fortinet PSIRT/Threat Research Blogs                                                             | RSS            | No               | No                |
 | GBHackers News                                                                                   | RSS            | No               | No                |
+| Google Cloud Threat Intelligence                                                                 | RSS            | No               | No                |
 | Group-IB Blog                                                                                    | RSS            | No               | No                |
 | IBM X-Force Threat Reports                                                                       | RSS            | No               | No                |
 | Internet Crime Complaint Center Industry Alerts                                                  | RSS            | No               | No                |
