@@ -28,6 +28,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | Any.run Cybersecurity Blog                                                                       | RSS            | No               | No                |
 | Aqua Security Blog                                                                               | RSS            | No               | No                |
 | Bruce Schneier's Blog                                                                            | RSS            | No               | No                |
+| CERT Bund (BSI)                                                                                  | RSS            | No               | No                |
 | CERT République Française                                                                        | RSS            | No               | No                |
 | Checkpoint Threat Research                                                                       | RSS            | No               | No                |
 | CISecurity                                                                                       | RSS            | No               | No                |
