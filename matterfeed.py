@@ -97,7 +97,7 @@ class MattermostManager(object):
 
     def handleMsg(self, channel, module_name, content, uploads = None):
         if options.debug:
-            self.log.info('Message  : ' + module_name.lower() + ' => ' + channel + ' => ' + content[:40] + '...')
+            self.log.info('Message  : ' + module_name.lower() + ' => ' + channel + ' => ' + content[:40] + ' ...')
         if uploads:
             try:
                 self.createPost(self.channels[channel], content, uploads)
@@ -117,10 +117,11 @@ class MattermostManager(object):
                 for module in fnmatch.filter(files, "feed.py"):
                     module_name = root.split('/')[-1]
                     if options.debug:
-                        self.log.info(f"Found    : {module_name} module...")
+                        self.log.info(f"Found    : {module_name} module ...")
                     if not module_name in modules:
                         modules[module_name] = {}
                     modules[module_name]['cache'] = f"{root}/{module_name}.cache"
+            self.log.info(f"Starting : {len(modules)} module(s) ...")
             return modules
         except Exception as e:
             self.log.error(f"Error   :\nTraceback: {str(e)}\n{traceback.format_exc()}")
@@ -136,13 +137,15 @@ class MattermostManager(object):
     def runModules(self):
         while True:
             try:
+                success = 0
+                failed = 0
                 self.modules = self.findModules()
                 with pebble.ThreadPool(max_workers=options.Modules['threads']) as pool:
                     history = None
                     futures = []
                     for module_name in self.modules:
                         if options.debug:
-                            self.log.info(f"Starting : {module_name} module...")
+                            self.log.info(f"Starting : {module_name} module ...")
                         history = shelve.open(self.modules[module_name]['cache'], writeback=True)
                         future = pool.submit(self.runModule, module_name, history)
                         future.add_done_callback(self.onComplete)
@@ -150,9 +153,11 @@ class MattermostManager(object):
                     for module_name, future in futures:
                         try:
                             result = future.result(timeout=30)
+                            success += 1
                         except Exception as e:
                             self.log.error(f"Error   : {module_name}\nTraceback: {str(e)}\n{traceback.format_exc()}")
                             future.cancel()
+                            failed += 1
             except Exception as e:
                 self.log.error(f"Error   :\nTraceback: {str(e)}\n{traceback.format_exc()}")
             finally:
@@ -161,8 +166,7 @@ class MattermostManager(object):
                     history.close()
                 pool.stop()
                 pool.join()
-            if options.debug:
-                self.log.info(f"Run complete, sleeping for {options.Modules['timer']} seconds...")
+            self.log.info(f"Stats    : {success}/{failed+success} modules succeeded, sleeping {options.Modules['timer']} seconds ... ")
             time.sleep(options.Modules['timer'])
 
     def runModule(self, module_name, history):
@@ -182,19 +186,19 @@ class MattermostManager(object):
                     except:
                         channel, content = newspost
                         uploads = []
-                    # Make sure we're not triggering self-calls...
+                    # Make sure we're not triggering self-calls
                     if not content.startswith('@') and not content.startswith('!'):
                         if not first_run:
                             if not newspost in history[module_name]:
                                 try:
-                                    self.log.info('Posting  : ' + module_name + ' => ' + channel + ' => ' + content[:40] + '...')
+                                    self.log.info('Posting  : ' + module_name + ' => ' + channel + ' => ' + content[:40] + ' ...')
                                     self.handleMsg(channel, module_name, content, uploads)
                                 except Exception as e:
                                     self.log.error('Error   : ' + module_name + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
                         if not newspost in history[module_name]:
                             history[module_name].append(newspost)
                             if options.debug:
-                                self.log.info('Storing  : ' + module_name + ' => ' + channel + ' => ' + content[:40] + '...')
+                                self.log.info('Storing  : ' + module_name + ' => ' + channel + ' => ' + content[:40] + ' ...')
             if options.debug:
                 self.log.info('Complete : ' + module_name + ' module ...')
         except Exception as e:
