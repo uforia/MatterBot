@@ -27,7 +27,8 @@ class TokenAuth():
 class MattermostManager(object):
     def __init__(self, log):
         self.log = log
-        self.log.info("Going to set up driver for connection to %s " % (options.Matterbot['host'],))
+        if options.debug:
+            self.log.info("Going to set up driver for connection to %s " % (options.Matterbot['host'],))
         self.mmDriver = Driver(options={
             'url'       : options.Matterbot['host'],
             'port'      : options.Matterbot['port'],
@@ -95,7 +96,8 @@ class MattermostManager(object):
             self.log.error(f"An error posting a channel message:\nError: {str(e)}\n{traceback.format_exc()}")
 
     def handleMsg(self, channel, module_name, content, uploads = None):
-        self.log.info('Message  : ' + module_name.lower() + ' => ' + channel + ' => ' + content[:40] + '...')
+        if options.debug:
+            self.log.info('Message  : ' + module_name.lower() + ' => ' + channel + ' => ' + content[:40] + '...')
         if uploads:
             try:
                 self.createPost(self.channels[channel], content, uploads)
@@ -114,7 +116,8 @@ class MattermostManager(object):
             for root, dirs, files in os.walk(module_path):
                 for module in fnmatch.filter(files, "feed.py"):
                     module_name = root.split('/')[-1]
-                    self.log.info(f"Found    : {module_name} module...")
+                    if options.debug:
+                        self.log.info(f"Found    : {module_name} module...")
                     if not module_name in modules:
                         modules[module_name] = {}
                     modules[module_name]['cache'] = f"{root}/{module_name}.cache"
@@ -138,7 +141,8 @@ class MattermostManager(object):
                     history = None
                     futures = []
                     for module_name in self.modules:
-                        self.log.info(f"Starting : {module_name} module...")
+                        if options.debug:
+                            self.log.info(f"Starting : {module_name} module...")
                         history = shelve.open(self.modules[module_name]['cache'], writeback=True)
                         future = pool.submit(self.runModule, module_name, history)
                         future.add_done_callback(self.onComplete)
@@ -157,7 +161,8 @@ class MattermostManager(object):
                     history.close()
                 pool.stop()
                 pool.join()
-            self.log.info(f"Run complete, sleeping for {options.Modules['timer']} seconds...")
+            if options.debug:
+                self.log.info(f"Run complete, sleeping for {options.Modules['timer']} seconds...")
             time.sleep(options.Modules['timer'])
 
     def runModule(self, module_name, history):
@@ -167,7 +172,8 @@ class MattermostManager(object):
                 first_run = True
             else:
                 first_run = False
-            self.log.info('Found    : ' + module_name + ' cache ...')
+            if options.debug:
+                self.log.info('Found    : ' + module_name + ' cache ...')
             items = self.callModule(module_name)
             if items:
                 for newspost in items:
@@ -187,8 +193,10 @@ class MattermostManager(object):
                                     self.log.error('Error   : ' + module_name + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
                         if not newspost in history[module_name]:
                             history[module_name].append(newspost)
-                            self.log.info('Storing  : ' + module_name + ' => ' + channel + ' => ' + content[:40] + '...')
-            self.log.info('Complete : ' + module_name + ' => sleeping ...')
+                            if options.debug:
+                                self.log.info('Storing  : ' + module_name + ' => ' + channel + ' => ' + content[:40] + '...')
+            if options.debug:
+                self.log.info('Complete : ' + module_name + ' module ...')
         except Exception as e:
             self.log.error(f"Error   : {module_name}\nTraceback: {str(e)}\n{traceback.format_exc()}")
 
@@ -213,7 +221,8 @@ class MattermostManager(object):
         finally:
             if spec.name in sys.modules:
                 del sys.modules[spec.name]
-                self.log.info(f"Unloaded : {module_name} ({spec.name}) module ...")
+                if options.debug:
+                    self.log.info(f"Unloaded : {module_name} ({spec.name}) module ...")
 
 
 def main(log):
