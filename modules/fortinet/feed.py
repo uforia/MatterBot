@@ -14,7 +14,11 @@
 
 import bs4
 import feedparser
+import os
 import re
+import requests
+import sys
+
 from pathlib import Path
 try:
     from modules.fortinet import defaults as settings
@@ -29,6 +33,15 @@ else:
         except ModuleNotFoundError: # local test run
             import settings
 
+def importScore():
+    # Import dynamic threshold score from opencve module
+    running = os.path.abspath(__file__)
+    cwd = os.path.abspath(os.path.join(os.path.dirname(running), '..'))
+    if cwd not in sys.path:
+        sys.path.insert(0, cwd)
+    from opencve.defaults import ADVISORYTHRESHOLD
+    return ADVISORYTHRESHOLD
+
 def query(MAX=settings.ENTRIES):
     items = []
     for URL in settings.URLS:
@@ -39,16 +52,33 @@ def query(MAX=settings.ENTRIES):
         while count < MAX:
             try:
                 title = feed.entries[count].title
-                link = feed.entries[count].link
-                content = settings.NAME + ': [' + title + '](' + link + ')'
-                if len(feed.entries[count].description):
-                    description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
-                    if len(description) > 400:
-                        description = description[:396] + ' ...'
-                    content += '\n>'+ description +'\n'
-                for channel in settings.CHANNELS:
-                    items.append([channel, content])
-                count += 1
+                link = feed.entries[count].link               
+                # Check if feed contains CVSS scores
+                THRESHOLD = importScore()
+                response = requests.get(link)
+                response.raise_for_status()
+                data = bs4.BeautifulSoup(response.content, "html.parser")
+                matches = data.select('td a[href^=" https://nvd.nist.gov/"]')
+
+                filtered = False
+                # Check if feed url contains CVSS property on page
+                if not matches:
+                    filtered = True
+                else:
+                    for score in matches:
+                        # Check if CVSS score meets threshold
+                        if float(score.text.strip()) > THRESHOLD:
+                            filtered = True
+                if filtered:
+                    content = settings.NAME + ': [' + title + '](' + link + ')'
+                    if len(feed.entries[count].description):
+                        description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
+                        if len(description)>400:
+                            description = description[:396]+' ...'
+                        content += '\n>'+description+'\n'
+                    for channel in settings.CHANNELS:
+                        items.append([channel, content])
+                count+=1
             except IndexError:
                 return items # No more items
     return items
