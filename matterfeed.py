@@ -46,7 +46,6 @@ class MattermostManager(object):
         self.my_team_id = self.mmDriver.teams.get_team_by_name(options.Matterbot['teamname'])['id']
         self.channels = {}
         self.test = {}
-        self.modules = self.findModules()
         userchannels = self.mmDriver.channels.get_channels_for_user(self.me['id'],self.my_team_id)
         for userchannel in userchannels:
             channel_info = self.mmDriver.channels.get_channel(userchannel['id'])
