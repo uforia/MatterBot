@@ -159,6 +159,7 @@ class MattermostManager(object):
                             failed += 1
             except Exception as e:
                 self.log.error(f"Error   :\nTraceback: {str(e)}\n{traceback.format_exc()}")
+                failed += 1
             finally:
                 if history:
                     history.sync()
