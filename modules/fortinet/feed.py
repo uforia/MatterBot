@@ -14,10 +14,10 @@
 
 import bs4
 import feedparser
-import re
-import sys
 import os
+import re
 import requests
+import sys
 
 from pathlib import Path
 try:
@@ -39,8 +39,8 @@ def importScore():
     cwd = os.path.abspath(os.path.join(os.path.dirname(running), '..'))
     if cwd not in sys.path:
         sys.path.insert(0, cwd)
-    from opencve.defaults import AUTOADVISORY
-    return AUTOADVISORY
+    from opencve.defaults import ADVISORYTHRESHOLD
+    return ADVISORYTHRESHOLD
 
 def query(MAX=settings.ENTRIES):
     items = []

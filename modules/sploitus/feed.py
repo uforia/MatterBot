@@ -14,8 +14,13 @@
 
 import bs4
 import feedparser
+import os
 import re
+import requests
+import sys
 from pathlib import Path
+
+
 try:
     from modules.sploitus import defaults as settings
 except ModuleNotFoundError: # local test run
@@ -29,6 +34,15 @@ else:
         except ModuleNotFoundError: # local test run
             import settings
 
+def importScore():
+    # Import dynamic threshold score from opencve module
+    running = os.path.abspath(__file__)
+    cwd = os.path.abspath(os.path.join(os.path.dirname(running), '..'))
+    if cwd not in sys.path:
+        sys.path.insert(0, cwd)
+    from opencve.defaults import ADVISORYTHRESHOLD
+    return ADVISORYTHRESHOLD
+
 def query(MAX=settings.ENTRIES):
     items = []
     feed = feedparser.parse(settings.URL, agent='MatterBot RSS Automation 1.0')
@@ -40,15 +54,25 @@ def query(MAX=settings.ENTRIES):
             # Remove standard 'exploit' str from title
             title = feed.entries[count].title[:-8]
             link = feed.entries[count].link
+
+            # Check if feed url contains CVSS property on page 
             content = settings.NAME + ': [' + title + '](' + link + ')'
-            if 'description' in feed.entries[count]:
-                if len(feed.entries[count].description):
-                    description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
-                    if len(description) > 400:
-                        description = description[:396] + ' ...'
-                    content += '\n>'+ description +'\n'
-            for channel in settings.CHANNELS:
-                items.append([channel, content])
+            THRESHOLD = importScore()
+            response = requests.get(link)
+            response.raise_for_status()
+            data = bs4.BeautifulSoup(response.content, "html.parser")
+            matches = data.select('div.tile-subtitle.text-gray')
+            filtered = False
+                
+            for score in matches:
+                # Check if CVSS score meets threshold
+                if float(score.text.strip()[-3:]) > THRESHOLD:
+                    filtered = True
+            
+            if filtered:
+            # TODO: query opencve api and get description.
+                for channel in settings.CHANNELS:
+                    items.append([channel, content])
             count += 1
         except IndexError:
             return items # No more items
