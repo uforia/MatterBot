@@ -92,21 +92,22 @@ class MattermostManager(object):
                                                             'message': block,
                                                             })
         except Exception as e:
-            self.log.error(f"An error posting a channel message:\nError: {str(e)}\n{traceback.format_exc()}")
+            if options.debug:
+                self.log.error(f"Error   : Cannot post channel message: {str(e)}\nTraceback: {traceback.format_exc()}")
 
     def handleMsg(self, channel, module_name, content, uploads = None):
         if options.debug:
-            self.log.info('Message  : ' + module_name.lower() + ' => ' + channel + ' => ' + content[:40] + ' ...')
+            self.log.info(f"Message  : {module_name.lower()} => {channel} => {content[:40]} ...")
         if uploads:
             try:
                 self.createPost(self.channels[channel], content, uploads)
             except Exception as e:
-                self.log.error('Error   : ' + module_name + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
+                self.log.error(f"Error   : Cannot handle {module_name} message: {str(e)}\nTraceback: {traceback.format_exc()}")
         else:
             try:
                 self.createPost(self.channels[channel], content)
             except Exception as e:
-                self.log.error('Error   : ' + module_name + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
+                self.log.error(f"Error   : Cannot handle {module_name} message: {str(e)}\nTraceback: {traceback.format_exc()}")
 
     def findModules(self):
         try:
@@ -123,7 +124,8 @@ class MattermostManager(object):
             self.log.info(f"Starting : {len(modules)} module(s) ...")
             return modules
         except Exception as e:
-            self.log.error(f"Error   :\nTraceback: {str(e)}\n{traceback.format_exc()}")
+            if options.debug:
+                self.log.error(f"Error   : {str(e)}\nTraceback: {traceback.format_exc()}")
         finally:
             sys.path.remove(module_path)
 
@@ -131,7 +133,8 @@ class MattermostManager(object):
         try:
             result = future.result()
         except Exception as e:
-            self.log.error(f"Error   :\nTraceback: {str(e)}\n{traceback.format_exc()}")
+            if options.debug:
+                self.log.error(f"Error   : {str(e)}\nTraceback: {traceback.format_exc()}")
 
     def runModules(self):
         while True:
@@ -154,11 +157,17 @@ class MattermostManager(object):
                             result = future.result(timeout=30)
                             success += 1
                         except Exception as e:
-                            self.log.error(f"Error   : {module_name}\nTraceback: {str(e)}\n{traceback.format_exc()}")
+                            if options.debug:
+                                self.log.error(f"Failure : {module_name} module ...\nTraceback: {str(e)}\n{traceback.format_exc()}")
+                            else:
+                                self.log.error(f"Failure : {module_name} module ...")
                             future.cancel()
                             failed += 1
             except Exception as e:
-                self.log.error(f"Error   :\nTraceback: {str(e)}\n{traceback.format_exc()}")
+                if options.debug:
+                    self.log.error(f"Error   :{str(e)}\nTraceback: {traceback.format_exc()}")
+                else:
+                    self.log.error(f"Error   :{str(e)}")
                 failed += 1
             finally:
                 if history:
@@ -177,7 +186,7 @@ class MattermostManager(object):
             else:
                 first_run = False
             if options.debug:
-                self.log.info('Found    : ' + module_name + ' cache ...')
+                self.log.info(f"Found    : {module_name} post history cache ...")
             items = self.callModule(module_name)
             if items:
                 for newspost in items:
@@ -191,18 +200,20 @@ class MattermostManager(object):
                         if not first_run:
                             if not newspost in history[module_name]:
                                 try:
-                                    self.log.info('Posting  : ' + module_name + ' => ' + channel + ' => ' + content[:40] + ' ...')
+                                    self.log.info(f"Posting  : {module_name} => {channel} => {content[:40]} ...")
                                     self.handleMsg(channel, module_name, content, uploads)
                                 except Exception as e:
-                                    self.log.error('Error   : ' + module_name + f"\nTraceback: {str(e)}\n{traceback.format_exc()}")
+                                    if options.debug:
+                                        self.log.error(f"Error   : {module_name}\nTraceback: {str(e)}\n{traceback.format_exc()}")
                         if not newspost in history[module_name]:
                             history[module_name].append(newspost)
                             if options.debug:
-                                self.log.info('Storing  : ' + module_name + ' => ' + channel + ' => ' + content[:40] + ' ...')
+                                self.log.info(f"Storing  : {module_name} => {channel} => {content[:40]} ...")
             if options.debug:
-                self.log.info('Complete : ' + module_name + ' module ...')
+                self.log.info(f"Complete : {module_name} module ...")
         except Exception as e:
-            self.log.error(f"Error   : {module_name}\nTraceback: {str(e)}\n{traceback.format_exc()}")
+            if options.debug:
+                self.log.error(f"Error   : {module_name} ...\nTraceback: {traceback.format_exc()}")
 
     def callModule(self, module_name, function_name = 'query', *args, **kwargs):
         try:
@@ -220,7 +231,8 @@ class MattermostManager(object):
             func = getattr(module, function_name)
             return func(*args, **kwargs)
         except (ModuleNotFoundError, AttributeError) as e:
-            self.log.error(f"Error   :\nTraceback: {str(e)}\n{traceback.format_exc()}")
+            if options.debug:
+                self.log.error(f"Error   :{str(e)}\nTraceback: {traceback.format_exc()}")
             return None
         finally:
             if spec.name in sys.modules:
@@ -234,7 +246,8 @@ def main(log):
     try:
         mm.runModules()
     except Exception as e:
-        log.error(f"Traceback: {str(e)}\n{traceback.format_exc()}")
+        if options.debug:
+            self.log.error(f"Error   :{str(e)}\nTraceback: {traceback.format_exc()}")
 
 if __name__ == '__main__' :
     '''
