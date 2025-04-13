@@ -160,7 +160,7 @@ class MattermostManager(object):
                             if options.debug:
                                 self.log.error(f"Failure : {module_name} module ...\nTraceback: {str(e)}\n{traceback.format_exc()}")
                             else:
-                                self.log.error(f"Failure : {module_name} module ...")
+                                self.log.info(f"Failure  : {module_name} module ...")
                             future.cancel()
                             failed += 1
             except Exception as e:
@@ -269,11 +269,15 @@ if __name__ == '__main__' :
     else:
         logging.basicConfig(level=logging.DEBUG,format='%(levelname)s - %(name)s - %(asctime)s - %(message)s')
     log = logging.getLogger('MatterAPI')
-    log.info('Starting MatterFeed')
+    log.info('>>> Starting matterfeed')
+    if options.debug:
+        log.info('>>> WARNING: debug logging enabled ...')
+    else:
+        log.info('>>> Debug logging disabled ...')
     try:
         current_dir = os.path.dirname(__file__)
         module_path = options.Modules['moduledir'].strip('/')
         main(log)
     except KeyboardInterrupt:
-        log.info('Stopping MatterFeed')
+        log.info('<<< Stopping matterfeed')
         sys.exit(0)
