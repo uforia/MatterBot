@@ -147,7 +147,8 @@ class MattermostManager(object):
                         try:
                             result = future.result(timeout=30)
                         except Exception as e:
-                            self.log.error(f"Timeout : {module_name}\nTraceback: {str(e)}\n{traceback.format_exc()}")
+                            self.log.error(f"Error   : {module_name}\nTraceback: {str(e)}\n{traceback.format_exc()}")
+                            future.cancel()
             except Exception as e:
                 self.log.error(f"Error   :\nTraceback: {str(e)}\n{traceback.format_exc()}")
             finally:
