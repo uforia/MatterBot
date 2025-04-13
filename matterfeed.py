@@ -165,7 +165,7 @@ class MattermostManager(object):
                     history.close()
                 pool.stop()
                 pool.join()
-            self.log.info(f"Stats    : {success}/{failed+success} modules succeeded, sleeping {options.Modules['timer']} seconds ... ")
+            self.log.info(f"Finished : {success}/{failed+success} modules ran successfully, sleeping {options.Modules['timer']} seconds ... ")
             time.sleep(options.Modules['timer'])
 
     def runModule(self, module_name, history):
