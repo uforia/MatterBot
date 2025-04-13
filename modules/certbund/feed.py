@@ -14,19 +14,20 @@
 
 from argostranslate import package, translate
 import feedparser
+import requests
 import re
 from pathlib import Path
 
 try:
-    from modules.jpcert import defaults as settings
+    from modules.certbund import defaults as settings
 except ModuleNotFoundError: # local test run
     import defaults as settings
     if Path('settings.py').is_file():
         import settings
 else:
-    if Path('modules/jpcert/settings.py').is_file():
+    if Path('modules/bsi/settings.py').is_file():
         try:
-            from modules.jpcert import settings
+            from modules.certbund import settings
         except ModuleNotFoundError: # local test run
             import settings
 
@@ -41,15 +42,15 @@ def query(MAX=settings.ENTRIES):
         try:
             title = feed.entries[count].title
             if settings.TRANSLATION:
-                from_lan = "ja"
+                from_lan = "de"
                 to_lan = "en"
-                # Check for new language packages to install (initial setup)
                 installed_packages = package.get_installed_packages()
                 package.update_package_index()
                 updateIndex = package.get_available_packages()
                 # Filter for correct language packages
                 packageSelection = next(filter(lambda x: x.from_code == from_lan and x.to_code == to_lan, updateIndex))
                 if packageSelection not in installed_packages:
+                    # Check for new language packages to install (initial setup)
                     package.install_from_path(packageSelection.download())
                 title = translate.translate(title, from_lan, to_lan)
             link = feed.entries[count].link
@@ -60,8 +61,6 @@ def query(MAX=settings.ENTRIES):
         except IndexError:
             return items # No more items
     return items
-
-
 
 if __name__ == "__main__":
     print(query())

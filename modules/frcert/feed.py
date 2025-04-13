@@ -18,15 +18,15 @@ import re
 from pathlib import Path
 
 try:
-    from modules.jpcert import defaults as settings
+    from modules.frcert import defaults as settings
 except ModuleNotFoundError: # local test run
     import defaults as settings
     if Path('settings.py').is_file():
         import settings
 else:
-    if Path('modules/jpcert/settings.py').is_file():
+    if Path('modules/frcert/settings.py').is_file():
         try:
-            from modules.jpcert import settings
+            from modules.frcert import settings
         except ModuleNotFoundError: # local test run
             import settings
 
@@ -41,7 +41,7 @@ def query(MAX=settings.ENTRIES):
         try:
             title = feed.entries[count].title
             if settings.TRANSLATION:
-                from_lan = "ja"
+                from_lan = "fr"
                 to_lan = "en"
                 # Check for new language packages to install (initial setup)
                 installed_packages = package.get_installed_packages()
@@ -60,8 +60,6 @@ def query(MAX=settings.ENTRIES):
         except IndexError:
             return items # No more items
     return items
-
-
 
 if __name__ == "__main__":
     print(query())

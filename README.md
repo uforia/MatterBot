@@ -25,17 +25,23 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | ------------------------------------------------------------------------------------------------ |:--------------:|:----------------:|:-----------------:|
 | 0day Exploits                                                                                    | RSS            | No               | No                |
 | 0dayfans Security News                                                                           | RSS            | No               | No                |
+| Any.run Cybersecurity Blog                                                                       | RSS            | No               | No                |
 | Aqua Security Blog                                                                               | RSS            | No               | No                |
 | Bruce Schneier's Blog                                                                            | RSS            | No               | No                |
+| CERT Bund (BSI)                                                                                  | RSS            | No               | No                |
+| CERT République Française                                                                        | RSS            | No               | No                |
 | Checkpoint Threat Research                                                                       | RSS            | No               | No                |
 | CISecurity                                                                                       | RSS            | No               | No                |
 | Cqure Blog                                                                                       | RSS            | No               | No                |
 | CSHub (configurable list of CSHub feeds)                                                         | RSS            | No               | No                |
+| Cyble Threat Intelligence                                                                        | RSS            | No               | No                |
 | DarkNet Blog                                                                                     | RSS            | No               | No                |
-| DataBreachSecurity News                                                                          | RSS            | No               | No                |
+| DataBreaches.Net News                                                                            | RSS            | No               | No                |
+| DataBreachToday News                                                                             | RSS            | No               | No                |
 | DIVD CSIRT                                                                                       | RSS            | No               | No                |
 | Fortinet PSIRT/Threat Research Blogs                                                             | RSS            | No               | No                |
 | GBHackers News                                                                                   | RSS            | No               | No                |
+| Google Cloud Threat Intelligence                                                                 | RSS            | No               | No                |
 | Group-IB Blog                                                                                    | RSS            | No               | No                |
 | IBM X-Force Threat Reports                                                                       | RSS            | No               | No                |
 | Internet Crime Complaint Center Industry Alerts                                                  | RSS            | No               | No                |
@@ -54,6 +60,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | OpenCVE feed of CVEs                                                                             | RSS            | Yes              | No                |
 | Osint10x Blog / News                                                                             | RSS            | No               | No                |
 | PacketStorm Security                                                                             | RSS            | No               | No                |
+| Patchstack Wordpress Security                                                                    | RSS            | No               | No                |
 | RansomLook (with support for detection of keywords/regex)                                        | JSON           | No               | No                |
 | Ransomwatch                                                                                      | JSON           | No               | No                |
 | Reddit (configurable list of subreddits)                                                         | RSS            | No               | No                |
@@ -61,6 +68,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | SebDraven                                                                                        | RSS            | No               | No                |
 | Kaspersky SecureList News                                                                        | RSS            | No               | No                |
 | SecurityAffairs News                                                                             | RSS            | No               | No                |
+| SOC Prime Threat Intelligence                                                                    | RSS            | No               | No                |
 | Spiceworks Tech News                                                                             | RSS            | No               | No                |
 | Sploitus Exploits                                                                                | RSS            | No               | No                |
 | TheHackerNews News                                                                               | RSS            | No               | No                |
@@ -72,6 +80,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | US-CERT National Cyber Awareness System (Advisories, Alerts, Analysis Reports, Current Activity) | RSS            | No               | No                |
 | Velociraptor News/Updates                                                                        | RSS            | No               | No                |
 | Volexity Memory Forensics & Threat Intelligence Blog                                             | RSS            | No               | No                |
+| Wallarm API Security                                                                             | RSS            | No               | No                |
 | watchTowr Offensive Security Blog                                                                | RSS            | No               | No                |
 | WeLiveSecurity News                                                                              | RSS            | No               | No                |
 | WikiJS Page Updates                                                                              | WikiJS GraphQL | Yes              | No                |
