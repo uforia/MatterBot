@@ -84,7 +84,7 @@ def query(MAX=settings.ENTRIES):
                 if filtered:
                     content = settings.NAME + ': [' + title
                     try:
-                        content += f' (CVSS: `{cvss}`)'
+                        content += f' - CVSS: `{cvss}`'
                     except NameError:
                         cvss = 'N/A'
                     content += ']' + '(' + link + ')'

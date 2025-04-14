@@ -76,7 +76,7 @@ def query(MAX=settings.ENTRIES):
                 if float(score.text.strip()[-3:]) > THRESHOLD: # Check if CVSS score meets threshold
                     filtered = True
             if filtered:
-                content = settings.NAME + ': [' + title + f' (CVSS `{cvss}`)' + '](' + link + ')'                
+                content = settings.NAME + ': [' + title + f' - CVSS: `{cvss}`' + '](' + link + ')'                
             # TODO: query opencve api and get description.
                 for channel in settings.CHANNELS:
                     items.append([channel, content])
