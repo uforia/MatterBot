@@ -19,6 +19,7 @@ import re
 import requests
 import sys
 import traceback
+import time
 
 from pathlib import Path
 
@@ -44,6 +45,19 @@ def importScore():
     from opencve.defaults import ADVISORYTHRESHOLD
     return ADVISORYTHRESHOLD
 
+def checkPage(link):
+    try: # Check if feed url contains CVSS property on page
+        with requests.Session() as session:
+            response = session.get(link, headers={'User-Agent': 'MatterBot RSS Automation 1.0'})
+            response.raise_for_status()
+            data = bs4.BeautifulSoup(response.content, "html.parser")
+            matches = data.select('td a[href^=" https://nvd.nist.gov/"]')
+    except requests.exceptions.RequestException as e:
+        matches = False
+        print({f"An HTTP error occurred querying Fortinet PSIRT Advisories:\nError: {str(e)}\n{traceback.format_exc()}"}) 
+        time.sleep(5)
+    return matches
+
 def query(MAX=settings.ENTRIES):
     items = []
     for URL in settings.URLS:
@@ -57,25 +71,8 @@ def query(MAX=settings.ENTRIES):
                 link = feed.entries[count].link               
                 # Check if feed contains CVSS scores
                 THRESHOLD = importScore()
-                try:
-                    with requests.Session() as session:
-                        # Try with regular user agent
-                        response = session.get(link, headers={
-                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-                        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-                        })
-                        # 'User-Agent': 'MatterBot RSS Automation 1.0'
-                        response.raise_for_status()
-                        if response.status_code != 200:
-                            print(f"Failed to fetch {link}", response.status_code)
-                            break
-                        data = bs4.BeautifulSoup(response.content, "html.parser")
-                        matches = data.select('td a[href^=" https://nvd.nist.gov/"]')
-                except requests.exceptions.RequestException as e:
-                    return ({f"An HTTP error occurred querying Fortinet PSIRT Advisories:\nError: {str(e)}\n{traceback.format_exc()}"})             
-
+                matches = checkPage(link)
                 filtered = False
-                # Check if feed url contains CVSS property on page
                 if not matches:
                     filtered = True
                 else:
@@ -89,7 +86,7 @@ def query(MAX=settings.ENTRIES):
                     try:
                         content += f' (CVSS {cvss})'
                     except NameError:
-                        continue
+                        pass
                     content += ']' + '(' + link + ')'
                     if len(feed.entries[count].description):
                         description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
