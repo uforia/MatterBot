@@ -18,6 +18,7 @@ import os
 import re
 import requests
 import sys
+import traceback
 from pathlib import Path
 
 
@@ -54,22 +55,29 @@ def query(MAX=settings.ENTRIES):
             # Remove standard 'exploit' str from title
             title = feed.entries[count].title[:-8]
             link = feed.entries[count].link
-
             # Check if feed url contains CVSS property on page 
-            content = settings.NAME + ': [' + title + '](' + link + ')'
             THRESHOLD = importScore()
-            response = requests.get(link)
-            response.raise_for_status()
-            data = bs4.BeautifulSoup(response.content, "html.parser")
-            matches = data.select('div.tile-subtitle.text-gray')
+            try:
+                with requests.Session() as session: 
+                    response = session.get(link, headers={'User-Agent': 'MatterBot RSS Automation 1.0'})
+                    response.raise_for_status()
+                    data = bs4.BeautifulSoup(response.content, "html.parser")
+                    matches = data.select('div.tile-subtitle.text-gray')
+            except requests.exceptions.RequestException as e:
+                print({f"An HTTP error occurred querying Sploitus:\nError: {str(e)}\n{traceback.format_exc()}"})
+                continue
+
             filtered = False
-                
+            try:
+                cvss = ''.join([score.text.strip()[-3:] for score in matches])
+            except NameError:
+                cvss = 'N/A'
             for score in matches:
                 # Check if CVSS score meets threshold
                 if float(score.text.strip()[-3:]) > THRESHOLD:
                     filtered = True
-            
             if filtered:
+                content = settings.NAME + ': [' + title + f' (CVSS {cvss})' + '](' + link + ')'                
             # TODO: query opencve api and get description.
                 for channel in settings.CHANNELS:
                     items.append([channel, content])
