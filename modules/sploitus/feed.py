@@ -15,7 +15,6 @@
 import bs4
 import feedparser
 import os
-import re
 import requests
 import sys
 import traceback
@@ -44,40 +43,40 @@ def importScore():
     from opencve.defaults import ADVISORYTHRESHOLD
     return ADVISORYTHRESHOLD
 
+def checkPage(link):
+    try:
+        with requests.Session() as session: 
+            response = session.get(link, headers={'User-Agent': 'MatterBot RSS Automation 1.0'})
+            response.raise_for_status()
+            data = bs4.BeautifulSoup(response.content, "html.parser")
+            matches = data.select('div.tile-subtitle.text-gray') # Check if feed url contains CVSS property on page 
+    except requests.exceptions.RequestException as e:
+        matches = False
+        print({f"An HTTP error occurred querying Sploitus:\nError: {str(e)}\n{traceback.format_exc()}"})
+    return matches
+
+
 def query(MAX=settings.ENTRIES):
     items = []
     feed = feedparser.parse(settings.URL, agent='MatterBot RSS Automation 1.0')
     count = 0
     stripchars = '`\\[\\]\'\"'
-    regex = re.compile('[%s]' % stripchars)
     while count < MAX:
         try:
-            # Remove standard 'exploit' str from title
-            title = feed.entries[count].title[:-8]
+            title = feed.entries[count].title[:-8] # Remove standard 'exploit' str from title
             link = feed.entries[count].link
-            # Check if feed url contains CVSS property on page 
             THRESHOLD = importScore()
-            try:
-                with requests.Session() as session: 
-                    response = session.get(link, headers={'User-Agent': 'MatterBot RSS Automation 1.0'})
-                    response.raise_for_status()
-                    data = bs4.BeautifulSoup(response.content, "html.parser")
-                    matches = data.select('div.tile-subtitle.text-gray')
-            except requests.exceptions.RequestException as e:
-                print({f"An HTTP error occurred querying Sploitus:\nError: {str(e)}\n{traceback.format_exc()}"})
-                continue
-
+            matches = checkPage(link)
             filtered = False
             try:
                 cvss = ''.join([score.text.strip()[-3:] for score in matches])
             except NameError:
                 cvss = 'N/A'
             for score in matches:
-                # Check if CVSS score meets threshold
-                if float(score.text.strip()[-3:]) > THRESHOLD:
+                if float(score.text.strip()[-3:]) > THRESHOLD: # Check if CVSS score meets threshold
                     filtered = True
             if filtered:
-                content = settings.NAME + ': [' + title + f' (CVSS {cvss})' + '](' + link + ')'                
+                content = settings.NAME + ': [' + title + f' - CVSS: `{cvss}`' + '](' + link + ')'                
             # TODO: query opencve api and get description.
                 for channel in settings.CHANNELS:
                     items.append([channel, content])
