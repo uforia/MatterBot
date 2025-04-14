@@ -18,9 +18,6 @@ import os
 import re
 import requests
 import sys
-import traceback
-import time
-
 from pathlib import Path
 
 try:
@@ -37,12 +34,11 @@ else:
             import settings
 
 def importScore():
-    # Import dynamic threshold score from opencve module
     running = os.path.abspath(__file__)
     cwd = os.path.abspath(os.path.join(os.path.dirname(running), '..'))
     if cwd not in sys.path:
         sys.path.insert(0, cwd)
-    from opencve.defaults import ADVISORYTHRESHOLD
+    from opencve.defaults import ADVISORYTHRESHOLD # Import threshold score from opencve module
     return ADVISORYTHRESHOLD
 
 def checkPage(link):
@@ -51,12 +47,23 @@ def checkPage(link):
             response = session.get(link, headers={'User-Agent': 'MatterBot RSS Automation 1.0'})
             response.raise_for_status()
             data = bs4.BeautifulSoup(response.content, "html.parser")
-            matches = data.select('td a[href^=" https://nvd.nist.gov/"]')
-    except requests.exceptions.RequestException as e:
+            selection = [ # Check if feed url contains CVSS property on page, based on feeds
+                'table.outbreak-alert-table tr',
+                'td a[href^=" https://nvd.nist.gov/"]'
+            ]
+            for page in selection:
+                matches = data.select(page)
+                if page[0]: # Get seperate value from table using filter
+                    for row in matches:
+                        columns = row.find_all("td")
+                        if len(columns) >= 3 and "CVSS Rating" in columns[1].text:
+                            tableScore = columns[2].text.strip()
+    except requests.exceptions.RequestException:
         matches = False
-        print({f"An HTTP error occurred querying Fortinet PSIRT Advisories:\nError: {str(e)}\n{traceback.format_exc()}"}) 
-        time.sleep(5)
-    return matches
+    try: # Return dynamic values
+        return matches, tableScore
+    except NameError:
+        return matches
 
 def query(MAX=settings.ENTRIES):
     items = []
@@ -68,26 +75,25 @@ def query(MAX=settings.ENTRIES):
         while count < MAX:
             try:
                 title = feed.entries[count].title
-                link = feed.entries[count].link               
-                # Check if feed contains CVSS scores
+                link = feed.entries[count].link
                 THRESHOLD = importScore()
                 matches = checkPage(link)
                 filtered = False
                 if not matches:
+                    cvss = 'N/A'
                     filtered = True
                 else:
-                    for score in matches:
-                        # Check if CVSS score meets threshold
-                        if float(score.text.strip()) > THRESHOLD:
-                            cvss = float(score.text.strip())
+                    if isinstance(matches, tuple): # Filter for return values from checkPage()
+                        cvss = matches[1]
+                        if float(cvss) >= THRESHOLD:
                             filtered = True
+                    else:
+                        for score in matches:
+                            if float(score.text.strip()) >= THRESHOLD: # Check if CVSS score meets threshold
+                                cvss = float(score.text.strip())
+                                filtered = True
                 if filtered:
-                    content = settings.NAME + ': [' + title
-                    try:
-                        content += f' - CVSS: `{cvss}`'
-                    except NameError:
-                        cvss = 'N/A'
-                    content += ']' + '(' + link + ')'
+                    content = settings.NAME + ': [' + title + f' - CVSS: `{cvss}`' + ']' + '(' + link + ')'
                     if len(feed.entries[count].description):
                         description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
                         if len(description)>400:
