@@ -84,9 +84,9 @@ def query(MAX=settings.ENTRIES):
                 if filtered:
                     content = settings.NAME + ': [' + title
                     try:
-                        content += f' (CVSS {cvss})'
+                        content += f' (CVSS: `{cvss}`)'
                     except NameError:
-                        pass
+                        cvss = 'N/A'
                     content += ']' + '(' + link + ')'
                     if len(feed.entries[count].description):
                         description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
