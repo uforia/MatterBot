@@ -269,7 +269,7 @@ if __name__ == '__main__' :
     else:
         logging.basicConfig(level=logging.DEBUG,format='%(levelname)s - %(name)s - %(asctime)s - %(message)s')
     log = logging.getLogger('MatterAPI')
-    log.info('>>> Starting matterfeed')
+    log.info('>>> Starting matterfeed ...')
     if options.debug:
         log.info('>>> WARNING: debug logging enabled ...')
     else:
@@ -279,5 +279,5 @@ if __name__ == '__main__' :
         module_path = options.Modules['moduledir'].strip('/')
         main(log)
     except KeyboardInterrupt:
-        log.info('<<< Stopping matterfeed')
+        log.info('<<< Stopping matterfeed ...')
         sys.exit(0)
