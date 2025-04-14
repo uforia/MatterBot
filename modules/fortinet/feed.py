@@ -18,8 +18,11 @@ import os
 import re
 import requests
 import sys
+import traceback
+import time
 
 from pathlib import Path
+
 try:
     from modules.fortinet import defaults as settings
 except ModuleNotFoundError: # local test run
@@ -42,6 +45,19 @@ def importScore():
     from opencve.defaults import ADVISORYTHRESHOLD
     return ADVISORYTHRESHOLD
 
+def checkPage(link):
+    try: # Check if feed url contains CVSS property on page
+        with requests.Session() as session:
+            response = session.get(link, headers={'User-Agent': 'MatterBot RSS Automation 1.0'})
+            response.raise_for_status()
+            data = bs4.BeautifulSoup(response.content, "html.parser")
+            matches = data.select('td a[href^=" https://nvd.nist.gov/"]')
+    except requests.exceptions.RequestException as e:
+        matches = False
+        print({f"An HTTP error occurred querying Fortinet PSIRT Advisories:\nError: {str(e)}\n{traceback.format_exc()}"}) 
+        time.sleep(5)
+    return matches
+
 def query(MAX=settings.ENTRIES):
     items = []
     for URL in settings.URLS:
@@ -55,22 +71,23 @@ def query(MAX=settings.ENTRIES):
                 link = feed.entries[count].link               
                 # Check if feed contains CVSS scores
                 THRESHOLD = importScore()
-                response = requests.get(link)
-                response.raise_for_status()
-                data = bs4.BeautifulSoup(response.content, "html.parser")
-                matches = data.select('td a[href^=" https://nvd.nist.gov/"]')
-
+                matches = checkPage(link)
                 filtered = False
-                # Check if feed url contains CVSS property on page
                 if not matches:
                     filtered = True
                 else:
                     for score in matches:
                         # Check if CVSS score meets threshold
                         if float(score.text.strip()) > THRESHOLD:
+                            cvss = float(score.text.strip())
                             filtered = True
                 if filtered:
-                    content = settings.NAME + ': [' + title + '](' + link + ')'
+                    content = settings.NAME + ': [' + title
+                    try:
+                        content += f' (CVSS {cvss})'
+                    except NameError:
+                        pass
+                    content += ']' + '(' + link + ')'
                     if len(feed.entries[count].description):
                         description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
                         if len(description)>400:
