@@ -59,6 +59,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | NCSC United Kingdom Advisories                                                                   | RSS            | No               | No                |
 | Netskope Threat Labs                                                                             | RSS            | No               | No                |
 | OpenCVE feed of CVEs                                                                             | RSS            | Yes              | No                |
+| Orange Cyberdefense SensePost                                                                    | RSS            | No               | No                |
 | Osint10x Blog / News                                                                             | RSS            | No               | No                |
 | Outpost24 Threat Intelligence                                                                    | RSS            | No               | No                |
 | PacketStorm Security                                                                             | RSS            | No               | No                |
