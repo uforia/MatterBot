@@ -80,7 +80,7 @@ def query(MAX=settings.ENTRIES):
                 matches = checkPage(link)
                 filtered = False
                 if not matches:
-                    cvss = 'N/A'
+                    cvss = False
                     filtered = True
                 else:
                     if isinstance(matches, tuple): # Filter for return values from checkPage()
@@ -93,7 +93,10 @@ def query(MAX=settings.ENTRIES):
                                 cvss = float(score.text.strip())
                                 filtered = True
                 if filtered:
-                    content = settings.NAME + ': [' + title + f' - CVSS: `{cvss}`' + ']' + '(' + link + ')'
+                    content = settings.NAME + ': [' + title
+                    if cvss:
+                        content += f' - CVSS: `{cvss}`'
+                    content += '](' + link + ')'
                     if len(feed.entries[count].description):
                         description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
                         if len(description)>400:

@@ -67,7 +67,7 @@ def query(MAX=settings.ENTRIES):
             matches = checkPage(link)
             filtered = False
             if not matches:
-                cvss = 'N/A'
+                cvss = False
                 filtered = True
             else:
                 cvss = ''.join([score.text.strip()[-3:] for score in matches])
@@ -75,7 +75,10 @@ def query(MAX=settings.ENTRIES):
                     if float(score.text.strip()[-3:]) >= THRESHOLD: # Check if CVSS score meets threshold
                         filtered = True
             if filtered:
-                content = settings.NAME + ': [' + title + f' - CVSS: `{cvss}`' + '](' + link + ')'                
+                content = settings.NAME + ': [' + title
+                if cvss:
+                    content += f' - CVSS: `{cvss}`'
+                content += '](' + link + ')'
             # TODO: query opencve api and get description.
                 for channel in settings.CHANNELS:
                     items.append([channel, content])

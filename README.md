@@ -43,6 +43,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | GBHackers News                                                                                   | RSS            | No               | No                |
 | Google Cloud Threat Intelligence                                                                 | RSS            | No               | No                |
 | Group-IB Blog                                                                                    | RSS            | No               | No                |
+| Hudson Rock Infostealers                                                                         | RSS            | No               | No                |
 | IBM X-Force Threat Reports                                                                       | RSS            | No               | No                |
 | Internet Crime Complaint Center Industry Alerts                                                  | RSS            | No               | No                |
 | Internet Crime Complaint Center Press Releases                                                   | RSS            | No               | No                |
@@ -53,37 +54,48 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | KrebsOnSecurity Blog                                                                             | RSS            | No               | No                |
 | MajorLeagueHacking News                                                                          | RSS            | No               | No                |
 | MatterBot Github                                                                                 | RSS            | No               | No                |
-| Microsoft Vulnerability Reports                                                                  | RSS            | No               | No                |
+| Microsoft Vulnerability & Threat Reports                                                         | RSS            | No               | No                |
 | NCSC Netherlands Advisories                                                                      | RSS            | No               | No                |
 | NCSC United Kingdom Advisories                                                                   | RSS            | No               | No                |
 | Netskope Threat Labs                                                                             | RSS            | No               | No                |
 | OpenCVE feed of CVEs                                                                             | RSS            | Yes              | No                |
+| Orange Cyberdefense SensePost                                                                    | RSS            | No               | No                |
 | Osint10x Blog / News                                                                             | RSS            | No               | No                |
+| Outpost24 Threat Intelligence                                                                    | RSS            | No               | No                |
 | PacketStorm Security                                                                             | RSS            | No               | No                |
+| Palo Alto Unit 42 Threat Research                                                                | RSS            | No               | No                |
 | Patchstack Wordpress Security                                                                    | RSS            | No               | No                |
+| Pulsedive Threat Intelligence                                                                    | RSS            | No               | No                |
+| Qualys Threat Research                                                                           | RSS            | No               | No                |
 | RansomLook (with support for detection of keywords/regex)                                        | JSON           | No               | No                |
 | Ransomwatch                                                                                      | JSON           | No               | No                |
 | Reddit (configurable list of subreddits)                                                         | RSS            | No               | No                |
+| RST Cloud Intelligence                                                                           | RSS            | No               | No                |
 | SANS Internet Storm Center                                                                       | RSS            | No               | No                |
 | SebDraven                                                                                        | RSS            | No               | No                |
 | Kaspersky SecureList News                                                                        | RSS            | No               | No                |
 | SecurityAffairs News                                                                             | RSS            | No               | No                |
+| Sekoia Threat Intelligence                                                                       | RSS            | No               | No                |
 | SOC Prime Threat Intelligence                                                                    | RSS            | No               | No                |
 | Spiceworks Tech News                                                                             | RSS            | No               | No                |
 | Sploitus Exploits                                                                                | RSS            | No               | No                |
 | TheHackerNews News                                                                               | RSS            | No               | No                |
 | The Record Media                                                                                 | RSS            | No               | No                |
+| Threatmon Threat Intelligence                                                                    | RSS            | No               | No                |
 | Threatpost News                                                                                  | RSS            | No               | No                |
 | TrendMicro Research                                                                              | RSS            | No               | No                |
 | Tripwire State of Security                                                                       | RSS            | No               | No                |
-| Palo Alto Unit 42 Threat Research                                                                | RSS            | No               | No                |
+| Trustwave SpiderLabs                                                                             | RSS            | No               | No                |
 | US-CERT National Cyber Awareness System (Advisories, Alerts, Analysis Reports, Current Activity) | RSS            | No               | No                |
+| Validin Threat Intelligence                                                                      | RSS            | No               | No                |
 | Velociraptor News/Updates                                                                        | RSS            | No               | No                |
 | Volexity Memory Forensics & Threat Intelligence Blog                                             | RSS            | No               | No                |
 | Wallarm API Security                                                                             | RSS            | No               | No                |
 | watchTowr Offensive Security Blog                                                                | RSS            | No               | No                |
-| WeLiveSecurity News                                                                              | RSS            | No               | No                |
+| ESET WeLiveSecurity News                                                                         | RSS            | No               | No                |
 | WikiJS Page Updates                                                                              | WikiJS GraphQL | Yes              | No                |
+| Wiz.io Cloud Research                                                                            | RSS            | No               | No                |
+| Zero Day Initiative Upcoming Advisories                                                          | RSS            | No               | No                |
 
 New Matterfeed modules can be created. A boilerplate example can be found in the `modules` directory.
 
