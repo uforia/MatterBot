@@ -11,6 +11,7 @@ Matterbot:
     - "system_admin"
   logfile: "matterfeed.log"
   bindmap: "bindmap.json"
+  feedmap: "feedmap.json"
   helpcmds: # Do not change these, or things might break
     - "!help"
     - "@help"
@@ -29,6 +30,7 @@ Matterbot:
 Modules:
   moduledir: "modules"
   commanddir: "commands"
+  feedmap: "feedmap.json"
   window: 20
   timer: 600
   timeout: 60

@@ -53,7 +53,6 @@ class MattermostManager(object):
         self.binds = []
         self.channelmapping = {'idtoname': {}, 'nametoid': {}}
         self.channels = self.mmDriver.channels.get_channels_for_user(self.my_id,self.my_team_id)
-
         try:
             bindmap = pathlib.Path(options.Matterbot['bindmap'])
             if bindmap.is_file():
@@ -110,6 +109,12 @@ class MattermostManager(object):
         # Start the websocket
         self.mmDriver.init_websocket(self.handle_raw_message)
 
+    async def update_feedmap(self):
+        try:
+            with open(options.Matterbot['feedmap'],'w') as f:
+                json.dump(self.feedmap,f)
+        except:
+            log.error(f"An error occurred updating the `%s` feedmap file; config changes were not successfully saved!" % (options.Matterbot['feedmap'],))
 
     async def update_bindmap(self):
         try:
@@ -330,7 +335,7 @@ class MattermostManager(object):
                 messages.append(text)
         else:
             if not self.isadmin(userid):
-                logging.warn("User %s attempted to use a bind command without proper authorization.") % (userid,)
+                logging.warning("User %s attempted to use a bind command without proper authorization.") % (userid,)
                 text = "@" + username + ", you do not have permission to bind commands."
             else:
                 all_channel_types = [self.chanid_to_channame(_['id']) for _ in self.mmDriver.channels.get_channels_for_user(self.my_id,self.my_team_id) if self.is_in_channel(_['id'])]
@@ -547,6 +552,6 @@ if __name__ == '__main__' :
         logging.basicConfig(level=logging.INFO, filename=options.Matterbot['logfile'], format='%(levelname)s - %(name)s - %(asctime)s - %(message)s')
     else:
         logging.basicConfig(level=logging.DEBUG,format='%(levelname)s - %(name)s - %(asctime)s - %(message)s')
-    log = logging.getLogger('MatterAPI')
+    log = logging.getLogger('MatterBot')
     log.info('Starting MatterBot')
     mm = MattermostManager()

@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
 import ast
-from concurrent.futures import TimeoutError
+from concurrent.futures import TimeoutError, CancelledError
 import configargparse
 import fnmatch
 import importlib.util
+import json
 import logging
-import multiprocessing
 import pebble
 import os
 import shelve
@@ -46,11 +46,20 @@ class MattermostManager(object):
         self.my_team_id = self.mmDriver.teams.get_team_by_name(options.Matterbot['teamname'])['id']
         self.channels = {}
         self.test = {}
+        self.feedmap = self.update_feedmap()
         userchannels = self.mmDriver.channels.get_channels_for_user(self.me['id'],self.my_team_id)
         for userchannel in userchannels:
             channel_info = self.mmDriver.channels.get_channel(userchannel['id'])
             self.channels[channel_info['name']] = channel_info['id']
-    
+
+    def update_feedmap(self):
+        try:
+            with open(options.Modules['feedmap'],'r') as f:
+                return json.load(f)
+        except:
+            log.error(f"Error   : Cannot read {options.Modules['feedmap']} file. Announcements in additional channels might not work!")
+            return {}
+
     def createPost(self, channel, text, uploads = []):
         try:
             if len(text) > options.Matterbot['msglength']: # Mattermost message limit
@@ -97,7 +106,7 @@ class MattermostManager(object):
 
     def handleMsg(self, channel, module_name, content, uploads = None):
         if options.debug:
-            self.log.info(f"Message  : {module_name.lower()} => {channel} => {content[:40]} ...")
+            self.log.info(f"Message  : {module_name.lower()} => {channel} => {content.replace('\n','. ')[:40]} ...")
         if uploads:
             try:
                 self.createPost(self.channels[channel], content, uploads)
@@ -138,12 +147,13 @@ class MattermostManager(object):
 
     def runModules(self):
         while True:
+            history = None
             try:
                 success = 0
                 failed = 0
                 self.modules = self.findModules()
+                self.feedmap = self.update_feedmap()
                 with pebble.ThreadPool(max_workers=options.Modules['threads']) as pool:
-                    history = None
                     futures = []
                     for module_name in self.modules:
                         if options.debug:
@@ -152,17 +162,34 @@ class MattermostManager(object):
                         future = pool.submit(self.runModule, module_name, history)
                         future.add_done_callback(self.onComplete)
                         futures.append([module_name, future])
+                        if history:
+                            history.sync()
+                            history.close()
                     for module_name, future in futures:
                         try:
-                            result = future.result(timeout=30)
+                            result = future.result(timeout=options.Modules['timeout'])
                             success += 1
+                        except TimeoutError as e:
+                            if options.debug:
+                                self.log.error(f"Timeout : {module_name} module ...\nTraceback: {str(e)}\n{traceback.format_exc()}")
+                            else:
+                                self.log.info(f"Timeout  : {module_name} module ...")
+                            failed += 1
+                        except CancelledError as e:
+                            if options.debug:
+                                self.log.error(f"Canceled: {module_name} module ...\nTraceback: {str(e)}\n{traceback.format_exc()}")
+                            else:
+                                self.log.info(f"Canceled : {module_name} module ...")
+                            failed += 1
                         except Exception as e:
                             if options.debug:
-                                self.log.error(f"Failure : {module_name} module ...\nTraceback: {str(e)}\n{traceback.format_exc()}")
+                                self.log.error(f"Error   : {module_name} module ...\nTraceback: {str(e)}\n{traceback.format_exc()}")
                             else:
-                                self.log.info(f"Failure  : {module_name} module ...")
-                            future.cancel()
+                                self.log.info(f"Error    : {module_name} module ...")
                             failed += 1
+                        finally:
+                            if not future.done():
+                                future.cancel()
             except Exception as e:
                 if options.debug:
                     self.log.error(f"Error   :{str(e)}\nTraceback: {traceback.format_exc()}")
@@ -175,7 +202,7 @@ class MattermostManager(object):
                     history.close()
                 pool.stop()
                 pool.join()
-            self.log.info(f"Finished : {success}/{failed+success} modules ran successfully, sleeping {options.Modules['timer']} seconds ... ")
+            self.log.info(f"Finished : {success}/{failed+success} modules ran successfully, sleeping {options.Modules['timer']} seconds ...")
             time.sleep(options.Modules['timer'])
 
     def runModule(self, module_name, history):
@@ -189,26 +216,38 @@ class MattermostManager(object):
                 self.log.info(f"Found    : {module_name} post history cache ...")
             items = self.callModule(module_name)
             if items:
+                posts = []
                 for newspost in items:
                     try:
                         channel, content, uploads = newspost
                     except:
                         channel, content = newspost
                         uploads = []
+                    if not [channel, content, uploads] in posts:
+                        posts.append([channel, content, uploads])
+                    for extrachannel in self.feedmap[module_name]:
+                        if not [extrachannel, content, uploads] in posts:
+                            posts.append([extrachannel, content, uploads])
+                for post in posts:
+                    channel, content, uploads = post
                     # Make sure we're not triggering self-calls
                     if not content.startswith('@') and not content.startswith('!'):
                         if not first_run:
-                            if not newspost in history[module_name]:
+                            if not post in history[module_name]:
                                 try:
-                                    self.log.info(f"Posting  : {module_name} => {channel} => {content[:40]} ...")
-                                    self.handleMsg(channel, module_name, content, uploads)
+                                    if not options.debug:
+                                        self.log.info(f"Posting  : {module_name} => {channel} => {content.replace('\n','. ')[:40]} ...")
+                                        self.handleMsg(channel, module_name, content, uploads)
+                                    else:
+                                        self.log.info(f"DbgMsg   : {module_name} => {channel} => {content.replace('\n','. ')[:40]} ...")
                                 except Exception as e:
                                     if options.debug:
                                         self.log.error(f"Error   : {module_name}\nTraceback: {str(e)}\n{traceback.format_exc()}")
-                        if not newspost in history[module_name]:
-                            history[module_name].append(newspost)
-                            if options.debug:
-                                self.log.info(f"Storing  : {module_name} => {channel} => {content[:40]} ...")
+                        if not post in history[module_name]:
+                            if not options.debug:
+                                history[module_name].append(post)
+                            else:
+                                self.log.info(f"DbgCache : {module_name} => {channel} => {content.replace('\n','. ')[:40]} ...")
             if options.debug:
                 self.log.info(f"Complete : {module_name} module ...")
         except Exception as e:
@@ -216,6 +255,7 @@ class MattermostManager(object):
                 self.log.error(f"Error   : {module_name} ...\nTraceback: {traceback.format_exc()}")
 
     def callModule(self, module_name, function_name = 'query', *args, **kwargs):
+        spec = None
         try:
             importlib.invalidate_caches()
             module_file = os.path.join(module_path, module_name, "feed.py")
@@ -227,15 +267,20 @@ class MattermostManager(object):
                 raise ImportError(f"Could not load spec for {module_file} ...")
             module = importlib.util.module_from_spec(spec)
             sys.modules[spec.name] = module
-            spec.loader.exec_module(module)
+            try:
+                spec.loader.exec_module(module)
+            except Exception as e:
+                raise ImportError(f"Module {module_name} could not be executed...")
             func = getattr(module, function_name)
+            if not callable(func):
+                raise AttributeError(f"{function_name} is not callable in {module_name} ...")
             return func(*args, **kwargs)
-        except (ModuleNotFoundError, AttributeError) as e:
+        except Exception as e:
             if options.debug:
                 self.log.error(f"Error   :{str(e)}\nTraceback: {traceback.format_exc()}")
             return None
         finally:
-            if spec.name in sys.modules:
+            if spec and spec.name in sys.modules:
                 del sys.modules[spec.name]
                 if options.debug:
                     self.log.info(f"Unloaded : {module_name} ({spec.name}) module ...")
@@ -268,7 +313,7 @@ if __name__ == '__main__' :
         logging.basicConfig(level=logging.INFO, filename=options.Matterbot['logfile'], format='%(levelname)s - %(name)s - %(asctime)s - %(message)s')
     else:
         logging.basicConfig(level=logging.DEBUG,format='%(levelname)s - %(name)s - %(asctime)s - %(message)s')
-    log = logging.getLogger('MatterAPI')
+    log = logging.getLogger('MatterFeed')
     log.info('>>> Starting matterfeed ...')
     if options.debug:
         log.info('>>> WARNING: debug logging enabled ...')
