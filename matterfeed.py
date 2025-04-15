@@ -105,8 +105,9 @@ class MattermostManager(object):
                 self.log.error(f"Error   : Cannot post channel message: {str(e)}\nTraceback: {traceback.format_exc()}")
 
     def handleMsg(self, channel, module_name, content, uploads = None):
+        logcontent = content.replace('\n', '. ')[:40]
         if options.debug:
-            self.log.info(f"Message  : {module_name.lower()} => {channel} => {content.replace('\n','. ')[:40]} ...")
+            self.log.info(f"Message  : {module_name.lower()} => {channel} => {logcontent} ...")
         if uploads:
             try:
                 self.createPost(self.channels[channel], content, uploads)
@@ -232,14 +233,15 @@ class MattermostManager(object):
                     channel, content, uploads = post
                     # Make sure we're not triggering self-calls
                     if not content.startswith('@') and not content.startswith('!'):
+                        logcontent = content.replace('\n', '. ')[:40]
                         if not first_run:
                             if not post in history[module_name]:
                                 try:
                                     if not options.debug:
-                                        self.log.info(f"Posting  : {module_name} => {channel} => {content.replace('\n','. ')[:40]} ...")
+                                        self.log.info(f"Posting  : {module_name} => {channel} => {logcontent} ...")
                                         self.handleMsg(channel, module_name, content, uploads)
                                     else:
-                                        self.log.info(f"DbgMsg   : {module_name} => {channel} => {content.replace('\n','. ')[:40]} ...")
+                                        self.log.info(f"DbgMsg   : {module_name} => {channel} => {logcontent} ...")
                                 except Exception as e:
                                     if options.debug:
                                         self.log.error(f"Error   : {module_name}\nTraceback: {str(e)}\n{traceback.format_exc()}")
@@ -247,7 +249,7 @@ class MattermostManager(object):
                             if not options.debug:
                                 history[module_name].append(post)
                             else:
-                                self.log.info(f"DbgCache : {module_name} => {channel} => {content.replace('\n','. ')[:40]} ...")
+                                self.log.info(f"DbgCache : {module_name} => {channel} => {logcontent} ...")
             if options.debug:
                 self.log.info(f"Complete : {module_name} module ...")
         except Exception as e:
