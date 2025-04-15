@@ -57,7 +57,8 @@ class MattermostManager(object):
             with open(options.Modules['feedmap'],'r') as f:
                 return json.load(f)
         except:
-            log.error(f"Error   : Cannot read {options.Modules['feedmap']} file. Announcements in additional channels might not work!")
+            if options.debug:
+                log.error(f"Error   : Cannot read {options.Modules['feedmap']} file. Announcements in additional channels might not work!")
             return {}
 
     def createPost(self, channel, text, uploads = []):
