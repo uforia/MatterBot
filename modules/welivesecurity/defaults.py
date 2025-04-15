@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-NAME = "ESET WeLiveSecurity news"
+NAME = "ESET WeLiveSecurity News"
 CHANNELS = (
     "newsfeed",
 )

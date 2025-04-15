@@ -4,5 +4,9 @@ NAME = "Microsoft Research Center"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://api.msrc.microsoft.com/update-guide/rss"
+URLS = (
+    "https://api.msrc.microsoft.com/update-guide/rss",
+    "https://www.microsoft.com/en-us/security/blog/feed"
+)
+
 ENTRIES = 30
