@@ -163,9 +163,6 @@ class MattermostManager(object):
                         future = pool.submit(self.runModule, module_name, history)
                         future.add_done_callback(self.onComplete)
                         futures.append([module_name, future])
-                        if history:
-                            history.sync()
-                            history.close()
                     for module_name, future in futures:
                         try:
                             result = future.result(timeout=options.Modules['timeout'])
@@ -226,9 +223,10 @@ class MattermostManager(object):
                         uploads = []
                     if not [channel, content, uploads] in posts:
                         posts.append([channel, content, uploads])
-                    for extrachannel in self.feedmap[module_name]:
-                        if not [extrachannel, content, uploads] in posts:
-                            posts.append([extrachannel, content, uploads])
+                    if module_name in self.feedmap:
+                        for extrachannel in self.feedmap[module_name]:
+                            if not [extrachannel, content, uploads] in posts:
+                                posts.append([extrachannel, content, uploads])
                 for post in posts:
                     channel, content, uploads = post
                     # Make sure we're not triggering self-calls
