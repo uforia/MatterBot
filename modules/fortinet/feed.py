@@ -76,34 +76,37 @@ def query(MAX=settings.ENTRIES):
             try:
                 title = feed.entries[count].title
                 link = feed.entries[count].link
-                THRESHOLD = importScore()
-                matches = checkPage(link)
-                filtered = False
-                if not matches:
-                    cvss = False
-                    filtered = True
-                else:
-                    if isinstance(matches, tuple): # Filter for return values from checkPage()
-                        cvss = matches[1]
-                        if float(cvss) >= THRESHOLD:
-                            filtered = True
+                if settings.FILTER:
+                    THRESHOLD = importScore()
+                    matches = checkPage(link)
+                    filtered = False
+                    if not matches:
+                        cvss = False
+                        filtered = True
                     else:
-                        for score in matches:
-                            if float(score.text.strip()) >= THRESHOLD: # Check if CVSS score meets threshold
-                                cvss = float(score.text.strip())
+                        if isinstance(matches, tuple): # Filter for return values from checkPage()
+                            cvss = matches[1]
+                            if float(cvss) >= THRESHOLD:
                                 filtered = True
-                if filtered:
-                    content = settings.NAME + ': [' + title
-                    if cvss:
-                        content += f' - CVSS: `{cvss}`'
-                    content += '](' + link + ')'
-                    if len(feed.entries[count].description):
-                        description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
-                        if len(description)>400:
-                            description = description[:396]+' ...'
-                        content += '\n>'+description+'\n'
-                    for channel in settings.CHANNELS:
-                        items.append([channel, content])
+                        else:
+                            for score in matches:
+                                if float(score.text.strip()) >= THRESHOLD: # Check if CVSS score meets threshold
+                                    cvss = float(score.text.strip())
+                                    filtered = True
+                    if filtered:
+                        content = settings.NAME + ': [' + title
+                        if cvss:
+                            content += f' - CVSS: `{cvss}`'
+                        content += '](' + link + ')'
+                else:
+                    content = settings.NAME + ': [' + title + '](' + link + ')'
+                if len(feed.entries[count].description):
+                    description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
+                    if len(description)>400:
+                        description = description[:396]+' ...'
+                    content += '\n>'+description+'\n'
+                for channel in settings.CHANNELS:
+                    items.append([channel, content])
                 count+=1
             except IndexError:
                 return items # No more items

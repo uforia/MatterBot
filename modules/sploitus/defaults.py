@@ -6,3 +6,4 @@ CHANNELS = (
 )
 URL = "https://sploitus.com/rss"
 ENTRIES = 10
+FILTER = True # Filter entries for cvss scores

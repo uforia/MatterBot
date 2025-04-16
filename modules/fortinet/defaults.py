@@ -13,3 +13,4 @@ URLS = (
 )
 
 ENTRIES = 10
+FILTER = False # Filter entries for cvss scores (pretty noisy)
