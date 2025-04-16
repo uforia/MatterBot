@@ -14,7 +14,10 @@
 
 import bs4
 import feedparser
+import os
 import re
+import sys
+
 from pathlib import Path
 try:
     from modules.zerodayinitiative import defaults as settings
@@ -29,6 +32,14 @@ else:
         except ModuleNotFoundError: # local test run
             import settings
 
+def importScore():
+    running = os.path.abspath(__file__)
+    cwd = os.path.abspath(os.path.join(os.path.dirname(running), '..'))
+    if cwd not in sys.path:
+        sys.path.insert(0, cwd)
+    from opencve.defaults import ADVISORYTHRESHOLD # Import threshold score from opencve module
+    return ADVISORYTHRESHOLD
+
 def query(MAX=settings.ENTRIES):
     items = []
     feed = feedparser.parse(settings.URL, agent='MatterBot RSS Automation 1.0')
@@ -39,9 +50,12 @@ def query(MAX=settings.ENTRIES):
         try:
             title = feed.entries[count].title
             link = feed.entries[count].link
-            content = settings.NAME + ': [' + title + '](' + link + ')'
+            threshold = importScore()
             if len(feed.entries[count].description):
                 description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
+                cvss = description[13:16]
+            if float(cvss) >= threshold:
+                content = settings.NAME + ': [' + title + f' - CVSS: `{cvss}`' + '](' + link + ')'                    
                 if len(description)>400:
                     description = description[:396]+' ...'
                 content += '\n>'+description+'\n'

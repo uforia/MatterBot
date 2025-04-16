@@ -63,25 +63,28 @@ def query(MAX=settings.ENTRIES):
         try:
             title = feed.entries[count].title[:-8] # Remove standard 'exploit' str from title
             link = feed.entries[count].link
-            THRESHOLD = importScore()
-            matches = checkPage(link)
-            filtered = False
-            if not matches:
-                cvss = False
-                filtered = True
+            if settings.FILTER:
+                THRESHOLD = importScore()
+                matches = checkPage(link)
+                filtered = False
+                if not matches:
+                    cvss = False
+                    filtered = True
+                else:
+                    cvss = ''.join([score.text.strip()[-3:] for score in matches])
+                    for score in matches:
+                        if float(score.text.strip()[-3:]) >= THRESHOLD: # Check if CVSS score meets threshold
+                            filtered = True
+                if filtered:
+                    content = settings.NAME + ': [' + title
+                    if cvss:
+                        content += f' - CVSS: `{cvss}`'
+                    content += '](' + link + ')'
             else:
-                cvss = ''.join([score.text.strip()[-3:] for score in matches])
-                for score in matches:
-                    if float(score.text.strip()[-3:]) >= THRESHOLD: # Check if CVSS score meets threshold
-                        filtered = True
-            if filtered:
-                content = settings.NAME + ': [' + title
-                if cvss:
-                    content += f' - CVSS: `{cvss}`'
-                content += '](' + link + ')'
-            # TODO: query opencve api and get description.
-                for channel in settings.CHANNELS:
-                    items.append([channel, content])
+                content = settings.NAME + ': [' + title + '](' + link + ')'
+            # TODO: query opencve api and get description?
+            for channel in settings.CHANNELS:
+                items.append([channel, content])
             count += 1
         except IndexError:
             return items # No more items
