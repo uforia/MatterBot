@@ -155,7 +155,7 @@ class MattermostManager(object):
                 failed = 0
                 self.modules = self.findModules()
                 self.feedmap = self.update_feedmap()
-                with pebble.ThreadPool(max_workers=options.Modules['threads']) as pool:
+                with pebble.ThreadPool(max_workers=len(self.modules)) as pool:
                     futures = []
                     for module_name in self.modules:
                         self.log.info(f"Starting : {module_name} module ...")
@@ -166,7 +166,7 @@ class MattermostManager(object):
                     for module_name, future in futures:
                         try:
                             result = future.result(timeout=options.Modules['timeout'])
-                            self.log.info(f"Completed : {module_name} module ...")
+                            self.log.info(f"Complete : {module_name} module ...")
                             success += 1
                         except TimeoutError as e:
                             if options.debug:
