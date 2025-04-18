@@ -158,8 +158,7 @@ class MattermostManager(object):
                 with pebble.ThreadPool(max_workers=options.Modules['threads']) as pool:
                     futures = []
                     for module_name in self.modules:
-                        if options.debug:
-                            self.log.info(f"Starting : {module_name} module ...")
+                        self.log.info(f"Starting : {module_name} module ...")
                         history = shelve.open(self.modules[module_name]['cache'], writeback=True)
                         future = pool.submit(self.runModule, module_name, history)
                         future.add_done_callback(self.onComplete)
