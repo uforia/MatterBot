@@ -166,6 +166,7 @@ class MattermostManager(object):
                     for module_name, future in futures:
                         try:
                             result = future.result(timeout=options.Modules['timeout'])
+                            self.log.info(f"Completed : {module_name} module ...")
                             success += 1
                         except TimeoutError as e:
                             if options.debug:
