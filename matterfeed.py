@@ -155,17 +155,16 @@ class MattermostManager(object):
                 failed = 0
                 self.modules = self.findModules()
                 self.feedmap = self.update_feedmap()
-                with pebble.ThreadPool(max_workers=len(self.modules)) as pool:
+                with pebble.ProcessPool(max_workers=len(self.modules)) as pool:
                     futures = []
                     for module_name in self.modules:
                         self.log.info(f"Starting : {module_name} module ...")
-                        history = shelve.open(self.modules[module_name]['cache'], writeback=True)
-                        future = pool.submit(self.runModule, module_name, history)
+                        future = pool.schedule(self.runModule, args=(module_name,), timeout=options.Modules['timeout'])
                         future.add_done_callback(self.onComplete)
                         futures.append([module_name, future])
                     for module_name, future in futures:
                         try:
-                            result = future.result(timeout=options.Modules['timeout'])
+                            result = future.result()
                             self.log.info(f"Complete : {module_name} module ...")
                             success += 1
                         except TimeoutError as e:
@@ -196,16 +195,14 @@ class MattermostManager(object):
                     self.log.error(f"Error   :{str(e)}")
                 failed += 1
             finally:
-                if history:
-                    history.sync()
-                    history.close()
                 pool.stop()
                 pool.join()
             self.log.info(f"Finished : {success}/{failed+success} modules ran successfully, sleeping {options.Modules['timer']} seconds ...")
             time.sleep(options.Modules['timer'])
 
-    def runModule(self, module_name, history):
+    def runModule(self, module_name):
         try:
+            history = shelve.open(self.modules[module_name]['cache'], writeback=True)
             if not module_name in history:
                 history[module_name] = []
                 first_run = True
@@ -254,6 +251,10 @@ class MattermostManager(object):
         except Exception as e:
             if options.debug:
                 self.log.error(f"Error   : {module_name} ...\nTraceback: {traceback.format_exc()}")
+        finally:
+            if history:
+                history.sync()
+                history.close()
 
     def callModule(self, module_name, function_name = 'query', *args, **kwargs):
         spec = None

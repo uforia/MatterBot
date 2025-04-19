@@ -61,6 +61,7 @@ def query(MAX=settings.ENTRIES):
     count = 0
     while count < MAX:
         try:
+            content = None
             title = feed.entries[count].title[:-8] # Remove standard 'exploit' str from title
             link = feed.entries[count].link
             if settings.FILTER:
@@ -83,8 +84,9 @@ def query(MAX=settings.ENTRIES):
             else:
                 content = settings.NAME + ': [' + title + '](' + link + ')'
             # TODO: query opencve api and get description?
-            for channel in settings.CHANNELS:
-                items.append([channel, content])
+            if content:
+                for channel in settings.CHANNELS:
+                    items.append([channel, content])
             count += 1
         except IndexError:
             return items # No more items
