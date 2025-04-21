@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 
-NAME = "Checkpoint Threat Research"
+NAME = "Checkpoint (Email) Threat Research"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://research.checkpoint.com/category/threat-research/feed/"
+URLS = (
+    "https://research.checkpoint.com/category/threat-research/feed/",
+    "https://emailsecurity.checkpoint.com/blog/rss.xml"
+)
 ENTRIES = 10
