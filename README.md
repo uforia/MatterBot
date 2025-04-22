@@ -53,6 +53,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | Eclypsium Threat Research                                                                        | RSS            | No               | No                |
 | Elastic Security Labs                                                                            | RSS            | No               | No                |
 | F5 Labs Threat Intelligence                                                                      | RSS            | No               | No                |
+| FieldEffect Threat Intelligence                                                                  | RSS            | No               | No                |
 | Fortinet PSIRT/Threat Research Blogs                                                             | RSS            | No               | No                |
 | GBHackers News                                                                                   | RSS            | No               | No                |
 | Google Cloud Threat Intelligence                                                                 | RSS            | No               | No                |
@@ -78,6 +79,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | NCSC Netherlands Advisories                                                                      | RSS            | No               | No                |
 | NCSC United Kingdom Advisories                                                                   | RSS            | No               | No                |
 | Netskope Threat Labs                                                                             | RSS            | No               | No                |
+| OffSec Threat Research                                                                           | RSS            | No               | No                |
 | OpenCVE feed of CVEs                                                                             | RSS            | Yes              | No                |
 | Orange Cyberdefense SensePost                                                                    | RSS            | No               | No                |
 | Osint10x Blog / News                                                                             | RSS            | No               | No                |
@@ -85,6 +87,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | PacketStorm Security                                                                             | RSS            | No               | No                |
 | Palo Alto Unit 42 Threat Research                                                                | RSS            | No               | No                |
 | Patchstack Wordpress Security                                                                    | RSS            | No               | No                |
+| Persistent Security News                                                                         | RSS            | No               | No                |
 | Portswigger Threat Research                                                                      | RSS            | No               | No                |
 | Prodaft Threat Intelligence                                                                      | RSS            | No               | No                |
 | Pulsedive Threat Intelligence                                                                    | RSS            | No               | No                |
@@ -101,6 +104,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | Kaspersky SecureList News                                                                        | RSS            | No               | No                |
 | SecurityAffairs News                                                                             | RSS            | No               | No                |
 | Sekoia Threat Intelligence                                                                       | RSS            | No               | No                |
+| Snyk.io Security Blog                                                                            | RSS            | No               | No                |
 | SOC Prime Threat Intelligence                                                                    | RSS            | No               | No                |
 | Specterops Security Blog                                                                         | RSS            | No               | No                |
 | Spiceworks Tech News                                                                             | RSS            | No               | No                |
@@ -120,6 +124,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | Trustwave SpiderLabs                                                                             | RSS            | No               | No                |
 | US-CERT National Cyber Awareness System (Advisories, Alerts, Analysis Reports, Current Activity) | RSS            | No               | No                |
 | Validin Threat Intelligence                                                                      | RSS            | No               | No                |
+| Varonis Threat Research                                                                          | RSS            | No               | No                |
 | Velociraptor News/Updates                                                                        | RSS            | No               | No                |
 | Volexity Memory Forensics & Threat Intelligence Blog                                             | RSS            | No               | No                |
 | Wallarm API Security                                                                             | RSS            | No               | No                |
