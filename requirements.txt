@@ -12,6 +12,7 @@ mwdblib
 numpy
 pandas
 pebble
+psutil
 pyOpenSSL
 pypandoc
 pytz

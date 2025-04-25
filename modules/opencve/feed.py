@@ -104,12 +104,12 @@ def query(MAX=settings.ENTRIES):
                                         vector = cvssdata['data']['vector']
                                         break
                             content = settings.NAME + f': [{cve}]({link}) - CVSS: `{cvss}`\n>{description}\n'
-                            if (isinstance(cvss,float) and cvss >= settings.THRESHOLD) or settings.NOCVSS:
+                            if ((isinstance(cvss,float) or isinstance(cvss,int)) and cvss >= settings.THRESHOLD) or settings.NOCVSS:
                                 for channel in settings.CHANNELS:
                                     items.add((channel, content))
                                     history['opencve'].append(historyitem)
                             if settings.AUTOADVISORY:
-                                if isinstance(cvss,float):
+                                if (isinstance(cvss,float) or isinstance(cvss,int)):
                                     if cvss > settings.ADVISORYTHRESHOLD:
                                         if 'vendors' in cve_details:
                                             vendors = cve_details['vendors']
