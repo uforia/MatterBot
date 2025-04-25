@@ -31,7 +31,11 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | Bad Sector Labs Newsletter                                                                       | RSS            | No               | No                |
 | Bishop Fox Offensive Security                                                                    | RSS            | No               | No                |
 | Bruce Schneier's Blog                                                                            | RSS            | No               | No                |
+| Canadian Centre for Cyber Security                                                               | RSS            | No               | No                |
 | CERT Bund (BSI)                                                                                  | RSS            | No               | No                |
+| CERT European Union                                                                              | RSS            | No               | No                |
+| CERT Italia                                                                                      | RSS            | No               | No                |
+| CERT Österreich                                                                                  | RSS            | No               | No                |
 | CERT Polska                                                                                      | RSS            | No               | No                |
 | CERT République Française                                                                        | RSS            | No               | No                |
 | CERT VDE Industrial Advisories                                                                   | RSS            | No               | No                |
@@ -57,6 +61,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | Fortinet PSIRT/Threat Research Blogs                                                             | RSS            | No               | No                |
 | GBHackers News                                                                                   | RSS            | No               | No                |
 | Google Cloud Threat Intelligence                                                                 | RSS            | No               | No                |
+| GreyNoise Threat Intelligence                                                                    | RSS            | No               | No                |
 | Group-IB Blog                                                                                    | RSS            | No               | No                |
 | Harfanglab Threat Intelligence                                                                   | RSS            | No               | No                |
 | Horizon3 Threat Research                                                                         | RSS            | No               | No                |
