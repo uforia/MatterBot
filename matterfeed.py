@@ -155,7 +155,7 @@ class MattermostManager(object):
                 failed = 0
                 self.modules = self.findModules()
                 self.feedmap = self.update_feedmap()
-                with pebble.ProcessPool(max_workers=len(self.modules)) as pool:
+                with pebble.ProcessPool(max_workers=options.Modules['threads']) as pool:
                     futures = []
                     for module_name in self.modules:
                         self.log.info(f"Starting : {module_name} module ...")
