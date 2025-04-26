@@ -17,31 +17,30 @@ import feedparser
 import re
 from pathlib import Path
 try:
-    from modules.uscert import defaults as settings
+    from modules.certau import defaults as settings
 except ModuleNotFoundError: # local test run
     import defaults as settings
     if Path('settings.py').is_file():
         import settings
 else:
-    if Path('modules/uscert/settings.py').is_file():
+    if Path('modules/certau/settings.py').is_file():
         try:
-            from modules.uscert import settings
+            from modules.certau import settings
         except ModuleNotFoundError: # local test run
             import settings
 
 def query(MAX=settings.ENTRIES):
     items = []
-    stripchars = '`\\[\\]\'\"'
-    regex = re.compile('[%s]' % stripchars)
-    for category in settings.CATEGORIES:
-        feedurl = "https://us-cert.cisa.gov/"+category+".xml"
-        feed = feedparser.parse(feedurl, agent='MatterBot RSS Automation 1.0')
+    for URL in settings.URLS:
+        feed = feedparser.parse(URL, agent='Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0')
         count = 0
+        stripchars = '`\\[\\]\'\"'
+        regex = re.compile('[%s]' % stripchars)
         while count < MAX:
             try:
                 title = feed.entries[count].title
                 link = feed.entries[count].link
-                content = settings.NAME + ' ' + category.split('/')[-1].replace('-',' ').title() + ': [' + title + '](' + link + ')'
+                content = settings.NAME + ': [' + title + '](' + link + ')'
                 if len(feed.entries[count].description):
                     description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
                     if len(description)>400:
