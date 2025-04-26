@@ -28,17 +28,23 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | Any.run Cybersecurity Blog                                                                       | RSS            | No               | No                |
 | Aqua Security Blog                                                                               | RSS            | No               | No                |
 | Arctic Wolf Security Blog                                                                        | RSS            | No               | No                |
+| Australian Cyber Security Centre                                                                 | RSS            | No               | No                |
 | Bad Sector Labs Newsletter                                                                       | RSS            | No               | No                |
 | Bishop Fox Offensive Security                                                                    | RSS            | No               | No                |
 | Bruce Schneier's Blog                                                                            | RSS            | No               | No                |
 | Canadian Centre for Cyber Security                                                               | RSS            | No               | No                |
 | CERT Bund (BSI)                                                                                  | RSS            | No               | No                |
+| CERT České Republiky                                                                             | RSS            | No               | No                |
+| CERT Eesti                                                                                       | RSS            | No               | No                |
 | CERT European Union                                                                              | RSS            | No               | No                |
 | CERT Italia                                                                                      | RSS            | No               | No                |
 | CERT Österreich                                                                                  | RSS            | No               | No                |
 | CERT Polska                                                                                      | RSS            | No               | No                |
+| CERT Republika Latvijas                                                                          | RSS            | No               | No                |
 | CERT République Française                                                                        | RSS            | No               | No                |
+| CERT Türkiye Cumhuriyeti (USOM)                                                                  | RSS            | No               | No                |
 | CERT VDE Industrial Advisories                                                                   | RSS            | No               | No                |
+| CERT Україна (UA)                                                                                | RSS            | No               | No                |
 | Checkmarx Application Security Blog                                                              | RSS            | No               | No                |
 | Checkpoint (Email) Security Research                                                             | RSS            | No               | No                |
 | CISecurity                                                                                       | RSS            | No               | No                |
@@ -52,8 +58,10 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | DataBreachToday News                                                                             | RSS            | No               | No                |
 | Datadog Security Labs                                                                            | RSS            | No               | No                |
 | Deepinstinct Threat Intelligence                                                                 | RSS            | No               | No                |
+| DeiC Sikkerhed/DKCERT                                                                            | RSS            | No               | No                |
 | DIVD CSIRT                                                                                       | RSS            | No               | No                |
 | Kevin Beaumont@Medium (DoublePulsar)                                                             | RSS            | No               | No                |
+| Kyberturvallisuuskeskuksen Suomi (NCC-FI)                                                        | RSS            | No               | No                |
 | Eclypsium Threat Research                                                                        | RSS            | No               | No                |
 | Elastic Security Labs                                                                            | RSS            | No               | No                |
 | F5 Labs Threat Intelligence                                                                      | RSS            | No               | No                |
@@ -81,8 +89,11 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | MatterBot Github                                                                                 | RSS            | No               | No                |
 | Microsoft Vulnerability & Threat Reports                                                         | RSS            | No               | No                |
 | Morphisec Threat Intelligence                                                                    | RSS            | No               | No                |
+| Nasjonal sikkerhetsmyndighet (NorCERT)                                                           | RSS            | No               | No                |
+| Nationellt CSIRT Sverige                                                                         | RSS            | No               | No                |
 | NCSC Netherlands Advisories                                                                      | RSS            | No               | No                |
 | NCSC United Kingdom Advisories                                                                   | RSS            | No               | No                |
+| Nemzeti Koordinációs Központ (NCC-HU)                                                            | RSS            | No               | No                |
 | Netskope Threat Labs                                                                             | RSS            | No               | No                |
 | OffSec Threat Research                                                                           | RSS            | No               | No                |
 | OpenCVE feed of CVEs                                                                             | RSS            | Yes              | No                |

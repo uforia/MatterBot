@@ -17,22 +17,22 @@ import feedparser
 import re
 from pathlib import Path
 try:
-    from modules.certca import defaults as settings
+    from modules.certau import defaults as settings
 except ModuleNotFoundError: # local test run
     import defaults as settings
     if Path('settings.py').is_file():
         import settings
 else:
-    if Path('modules/certca/settings.py').is_file():
+    if Path('modules/certau/settings.py').is_file():
         try:
-            from modules.certca import settings
+            from modules.certau import settings
         except ModuleNotFoundError: # local test run
             import settings
 
 def query(MAX=settings.ENTRIES):
     items = []
     for URL in settings.URLS:
-        feed = feedparser.parse(URL, agent='MatterBot RSS Automation 1.0')
+        feed = feedparser.parse(URL, agent='Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0')
         count = 0
         stripchars = '`\\[\\]\'\"'
         regex = re.compile('[%s]' % stripchars)
