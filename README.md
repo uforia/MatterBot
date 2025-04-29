@@ -34,6 +34,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | Bruce Schneier's Blog                                                                            | RSS            | No               | No                |
 | Canadian Centre for Cyber Security                                                               | RSS            | No               | No                |
 | CERT Bund (BSI)                                                                                  | RSS            | No               | No                |
+| CERT Centro Criptológico Nacional                                                                | RSS            | No               | No                |
 | CERT České Republiky                                                                             | RSS            | No               | No                |
 | CERT Eesti                                                                                       | RSS            | No               | No                |
 | CERT European Union                                                                              | RSS            | No               | No                |
@@ -61,7 +62,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | DeiC Sikkerhed/DKCERT                                                                            | RSS            | No               | No                |
 | DIVD CSIRT                                                                                       | RSS            | No               | No                |
 | Kevin Beaumont@Medium (DoublePulsar)                                                             | RSS            | No               | No                |
-| Kyberturvallisuuskeskuksen Suomi (NCC-FI)                                                        | RSS            | No               | No                |
+| Kyberturvallisuuskeskuksen Suomi (NCSC-FI)                                                       | RSS            | No               | No                |
 | Eclypsium Threat Research                                                                        | RSS            | No               | No                |
 | Elastic Security Labs                                                                            | RSS            | No               | No                |
 | F5 Labs Threat Intelligence                                                                      | RSS            | No               | No                |
@@ -93,7 +94,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | Nationellt CSIRT Sverige                                                                         | RSS            | No               | No                |
 | NCSC Netherlands Advisories                                                                      | RSS            | No               | No                |
 | NCSC United Kingdom Advisories                                                                   | RSS            | No               | No                |
-| Nemzeti Koordinációs Központ (NCC-HU)                                                            | RSS            | No               | No                |
+| Nemzeti Koordinációs Központ (NCSC-HU)                                                            | RSS            | No               | No                |
 | Netskope Threat Labs                                                                             | RSS            | No               | No                |
 | OffSec Threat Research                                                                           | RSS            | No               | No                |
 | OpenCVE feed of CVEs                                                                             | RSS            | Yes              | No                |
