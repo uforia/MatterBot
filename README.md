@@ -94,7 +94,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | Nationellt CSIRT Sverige                                                                         | RSS            | No               | No                |
 | NCSC Netherlands Advisories                                                                      | RSS            | No               | No                |
 | NCSC United Kingdom Advisories                                                                   | RSS            | No               | No                |
-| Nemzeti Koordinációs Központ (NCSC-HU)                                                            | RSS            | No               | No                |
+| Nemzeti Koordinációs Központ (NCSC-HU)                                                           | RSS            | No               | No                |
 | Netskope Threat Labs                                                                             | RSS            | No               | No                |
 | OffSec Threat Research                                                                           | RSS            | No               | No                |
 | OpenCVE feed of CVEs                                                                             | RSS            | Yes              | No                |
