@@ -19,15 +19,15 @@ from argostranslate import package, translate
 from pathlib import Path
 
 try:
-    from modules.certita import defaults as settings
+    from modules.certit import defaults as settings
 except ModuleNotFoundError: # local test run
     import defaults as settings
     if Path('settings.py').is_file():
         import settings
 else:
-    if Path('modules/certita/settings.py').is_file():
+    if Path('modules/certit/settings.py').is_file():
         try:
-            from modules.certita import settings
+            from modules.certit import settings
         except ModuleNotFoundError: # local test run
             import settings
 
