@@ -34,12 +34,13 @@ else:
 def query(MAX=settings.ENTRIES):
     items = []
     feed = feedparser.parse(settings.URL, agent='MatterBot RSS Automation 1.0')
+    reversedFeed = list(reversed(feed.entries))
     count = 0
     stripchars = '`\\[\\]\'\"'
     regex = re.compile('[%s]' % stripchars)
     while count < MAX:
         try:
-            title = feed.entries[count].title
+            title = reversedFeed[count].title
             if settings.TRANSLATION:
                 from_lan = "fr"
                 to_lan = "en"
@@ -52,7 +53,7 @@ def query(MAX=settings.ENTRIES):
                 if packageSelection not in installed_packages:
                     package.install_from_path(packageSelection.download())
                 title = translate.translate(title, from_lan, to_lan)
-            link = feed.entries[count].link
+            link = reversedFeed[count].link
             content = settings.NAME + ': [' + title + '](' + link + ')'
             for channel in settings.CHANNELS:
                 items.append([channel, content])
