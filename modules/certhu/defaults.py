@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-NAME = "Nemzeti Koordinációs Központ (NCC-HU)"
+NAME = "Nemzeti Koordinációs Központ (NCSC-HU)"
 CHANNELS = (
     "newsfeed",
 )

@@ -18,15 +18,15 @@ import re
 from pathlib import Path
 
 try:
-    from modules.certhr import defaults as settings
+    from modules.certhu import defaults as settings
 except ModuleNotFoundError: # local test run
     import defaults as settings
     if Path('settings.py').is_file():
         import settings
 else:
-    if Path('modules/certhr/settings.py').is_file():
+    if Path('modules/certhu/settings.py').is_file():
         try:
-            from modules.certhr import settings
+            from modules.certhu import settings
         except ModuleNotFoundError: # local test run
             import settings
 
@@ -42,7 +42,7 @@ def query(MAX=settings.ENTRIES):
             try:
                 title = feed.entries[count].title
                 if settings.TRANSLATION:
-                    from_lan = "hu"
+                    from_lan = "es"
                     to_lan = "en"
                     # Check for new language packages to install (initial setup)
                     installed_packages = package.get_installed_packages()

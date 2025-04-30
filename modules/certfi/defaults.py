@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-NAME = "Kyberturvallisuuskeskuksen Suomi (NCC-FI)"
+NAME = "Kyberturvallisuuskeskuksen Suomi (NCSC-FI)"
 CHANNELS = (
     "newsfeed",
 )
