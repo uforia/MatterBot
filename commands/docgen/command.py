@@ -254,7 +254,7 @@ def process(command, channel, username, params, files, conn):
                             if entry['type'] == template_cases['type']:
                                 template_id_chain = entry
                 if template_id_chain:
-                    template_cases['currentdate'] = datetime.datetime.now().strftime('%Y%m%d')
+                    template_cases['currentdate'] = datetime.datetime.now().strftime('%Y-%m-%d')
                     template_cases['reporttypename'] = template_id_chain['reporttypename']
                     skeletondocument = []
                     pagecount = 0
@@ -294,7 +294,7 @@ def process(command, channel, username, params, files, conn):
                     if len(skeletondocument):
                         doctype = template_cases['reporttypename'].replace(' ','_')
                         # To-Do: needs database of customer info
-                        now = template_cases['currentdate']
+                        now = template_cases['currentdate'].replace('-','')
                         nameid = customerdata['customername'].replace(' ','_')
                         MODULEDIR = "commands/docgen/"
                         templatefiles = {}
