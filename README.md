@@ -33,19 +33,22 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | Bishop Fox Offensive Security                                                                    | RSS            | No               | No                |
 | Bruce Schneier's Blog                                                                            | RSS            | No               | No                |
 | Canadian Centre for Cyber Security                                                               | RSS            | No               | No                |
-| CERT Bund (BSI)                                                                                  | RSS            | No               | No                |
-| CERT Centro Criptológico Nacional                                                                | RSS            | No               | No                |
-| CERT České Republiky                                                                             | RSS            | No               | No                |
-| CERT Eesti                                                                                       | RSS            | No               | No                |
+| CERT Bundesrepublik Deutschland                                                                  | RSS            | No               | No                |
+| CERT Česká Republika                                                                             | RSS            | No               | No                |
+| CERT Eesti Vabariik                                                                              | RSS            | No               | No                |
 | CERT European Union                                                                              | RSS            | No               | No                |
-| CERT Italia                                                                                      | RSS            | No               | No                |
-| CERT Österreich                                                                                  | RSS            | No               | No                |
-| CERT Polska                                                                                      | RSS            | No               | No                |
-| CERT Republika Latvijas                                                                          | RSS            | No               | No                |
+| CERT Instituto Nacional de Ciberseguridad                                                        | RSS            | No               | No                |
+| CERT Latvijas Republika                                                                          | RSS            | No               | No                |
+| CERT Repubblica Italiana                                                                         | RSS            | No               | No                |
+| CERT Republik Österreich                                                                         | RSS            | No               | No                |
+| CERT Republika Slovenija                                                                         | RSS            | No               | No                |
 | CERT République Française                                                                        | RSS            | No               | No                |
+| CERT Rzeczpospolita Polska                                                                       | RSS            | No               | No                |
 | CERT Türkiye Cumhuriyeti (USOM)                                                                  | RSS            | No               | No                |
 | CERT VDE Industrial Advisories                                                                   | RSS            | No               | No                |
+| CERT Репу̀блика Бълга̀рия (BG)                                                                     | RSS            | No               | No                |
 | CERT Україна (UA)                                                                                | RSS            | No               | No                |
+| CERT 中華人民共和國香港特別行政區 (HK)                                                              | RSS            | No               | No                |
 | Checkmarx Application Security Blog                                                              | RSS            | No               | No                |
 | Checkpoint (Email) Security Research                                                             | RSS            | No               | No                |
 | CISecurity                                                                                       | RSS            | No               | No                |
@@ -86,6 +89,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | KnowBe4 News                                                                                     | RSS            | No               | No                |
 | KQLQuery Blog                                                                                    | RSS            | No               | No                |
 | KrebsOnSecurity Blog                                                                             | RSS            | No               | No                |
+| Lumen Black Lotus Labs                                                                           | RSS            | No               | No                |
 | MajorLeagueHacking News                                                                          | RSS            | No               | No                |
 | MatterBot Github                                                                                 | RSS            | No               | No                |
 | Microsoft Vulnerability & Threat Reports                                                         | RSS            | No               | No                |
@@ -118,6 +122,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | S3 Eurom Research                                                                                | RSS            | No               | No                |
 | SANS Internet Storm Center                                                                       | RSS            | No               | No                |
 | SebDraven                                                                                        | RSS            | No               | No                |
+| Synacktiv Threat Research                                                                        | RSS            | No               | No                |
 | Kaspersky SecureList News                                                                        | RSS            | No               | No                |
 | SecurityAffairs News                                                                             | RSS            | No               | No                |
 | Sekoia Threat Intelligence                                                                       | RSS            | No               | No                |
