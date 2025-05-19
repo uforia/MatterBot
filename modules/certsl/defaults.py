@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-NAME = "CERT Česká Republika"
+NAME = "CERT Republika Slovenija"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://nukib.gov.cz/rss.xml"
+URL = "https://www.cert.si/feed/"
 ENTRIES = 10
 TRANSLATION = True

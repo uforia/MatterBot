@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-NAME = "CERT Eesti"
+NAME = "CERT Eesti Vabariik"
 CHANNELS = (
     "newsfeed",
 )
