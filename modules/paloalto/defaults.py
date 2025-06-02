@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-NAME = "Palo Alto Unit 42 Threat Research"
+NAME = "Palo Alto/Unit 42 Advisories"
 CHANNELS = (
     "newsfeed",
 )

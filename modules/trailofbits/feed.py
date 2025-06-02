@@ -23,7 +23,7 @@ except ModuleNotFoundError: # local test run
     if Path('settings.py').is_file():
         import settings
 else:
-    if Path('modules/tevora/settings.py').is_file():
+    if Path('modules/trailofbits/settings.py').is_file():
         try:
             from modules.trailofbits import settings
         except ModuleNotFoundError: # local test run
