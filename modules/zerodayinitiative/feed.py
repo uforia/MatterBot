@@ -61,9 +61,6 @@ def query(MAX=settings.ENTRIES):
                         cvss = float(score.group())
                 if cvss >= threshold:
                     content = settings.NAME + ': [' + title + f' - CVSS: `{cvss}`' + '](' + link + ')'
-                    if len(description)>400:
-                        description = description[:396]+' ...'
-                    content += '\n>'+description+'\n'
                     for channel in settings.CHANNELS:
                         items.append([channel, content])
                 count+=1
