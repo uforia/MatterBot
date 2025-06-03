@@ -17,15 +17,15 @@ import feedparser
 import re
 from pathlib import Path
 try:
-    from modules.trailofbits import defaults as settings
+    from modules.nextron import defaults as settings
 except ModuleNotFoundError: # local test run
     import defaults as settings
     if Path('settings.py').is_file():
         import settings
 else:
-    if Path('modules/trailofbits/settings.py').is_file():
+    if Path('modules/nextron/settings.py').is_file():
         try:
-            from modules.trailofbits import settings
+            from modules.nextron import settings
         except ModuleNotFoundError: # local test run
             import settings
 

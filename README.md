@@ -51,6 +51,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | CERT 中華人民共和國香港特別行政區 (HK)                                                              | RSS            | No               | No                |
 | Checkmarx Application Security Blog                                                              | RSS            | No               | No                |
 | Checkpoint (Email) Security Research                                                             | RSS            | No               | No                |
+| Cisco Security Advisories                                                                        | RSS            | No               | No                |
 | CISecurity                                                                                       | RSS            | No               | No                |
 | Cqure Blog                                                                                       | RSS            | No               | No                |
 | CSHub (configurable list of CSHub feeds)                                                         | RSS            | No               | No                |
@@ -64,6 +65,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | Deepinstinct Threat Intelligence                                                                 | RSS            | No               | No                |
 | DeiC Sikkerhed/DKCERT                                                                            | RSS            | No               | No                |
 | DIVD CSIRT                                                                                       | RSS            | No               | No                |
+| Eclecticiq Intelligence Research                                                                 | RSS            | No               | No                |
 | Kevin Beaumont@Medium (DoublePulsar)                                                             | RSS            | No               | No                |
 | Kyberturvallisuuskeskuksen Suomi (NCSC-FI)                                                       | RSS            | No               | No                |
 | Eclypsium Threat Research                                                                        | RSS            | No               | No                |
@@ -96,6 +98,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | Morphisec Threat Intelligence                                                                    | RSS            | No               | No                |
 | Nasjonal sikkerhetsmyndighet (NorCERT)                                                           | RSS            | No               | No                |
 | Nationellt CSIRT Sverige                                                                         | RSS            | No               | No                |
+| Nextron Systems Blog                                                                             | RSS            | No               | No                |
 | NCSC Netherlands Advisories                                                                      | RSS            | No               | No                |
 | NCSC United Kingdom Advisories                                                                   | RSS            | No               | No                |
 | Nemzeti Koordinációs Központ (NCSC-HU)                                                           | RSS            | No               | No                |
@@ -106,7 +109,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | Osint10x Blog / News                                                                             | RSS            | No               | No                |
 | Outpost24 Threat Intelligence                                                                    | RSS            | No               | No                |
 | PacketStorm Security                                                                             | RSS            | No               | No                |
-| Palo Alto Unit 42 Threat Research                                                                | RSS            | No               | No                |
+| Palo Alto/Unit 42 Advisories                                                                     | RSS            | No               | No                |
 | Patchstack Wordpress Security                                                                    | RSS            | No               | No                |
 | Persistent Security News                                                                         | RSS            | No               | No                |
 | Portswigger Threat Research                                                                      | RSS            | No               | No                |
@@ -115,6 +118,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | Qualys Threat Research                                                                           | RSS            | No               | No                |
 | RansomLook (with support for detection of keywords/regex)                                        | JSON           | No               | No                |
 | Ransomwatch                                                                                      | JSON           | No               | No                |
+| Recorded Future Threat Research                                                                  | RSS            | No               | No                |
 | Redcanary Security Blog                                                                          | RSS            | No               | No                |
 | Reddit (configurable list of subreddits)                                                         | RSS            | No               | No                |
 | Redsense Threat Intelligence                                                                     | RSS            | No               | No                |

@@ -14,31 +14,20 @@
 
 import bs4
 import feedparser
-import os
 import re
-import sys
-
 from pathlib import Path
 try:
-    from modules.zerodayinitiative import defaults as settings
+    from modules.paloalto import defaults as settings
 except ModuleNotFoundError: # local test run
     import defaults as settings
     if Path('settings.py').is_file():
         import settings
 else:
-    if Path('modules/zerodayinitiative/settings.py').is_file():
+    if Path('modules/paloalto/settings.py').is_file():
         try:
-            from modules.zerodayinitiative import settings
+            from modules.paloalto import settings
         except ModuleNotFoundError: # local test run
             import settings
-
-def importScore():
-    running = os.path.abspath(__file__)
-    cwd = os.path.abspath(os.path.join(os.path.dirname(running), '..'))
-    if cwd not in sys.path:
-        sys.path.insert(0, cwd)
-    from opencve.defaults import ADVISORYTHRESHOLD # Import threshold score from opencve module
-    return ADVISORYTHRESHOLD
 
 def query(MAX=settings.ENTRIES):
     items = []
@@ -50,20 +39,17 @@ def query(MAX=settings.ENTRIES):
         while count < MAX:
             try:
                 title = feed.entries[count].title
-                link = feed.entries[count].link
-                threshold = importScore()
-                if len(feed.entries[count].description):
-                    description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
-                    try:
-                        cvss = float(description[13:16]) # Filter for upcoming advisory
-                    except ValueError:
-                        score = re.search(r'\b\d+\.\d+\b', description) # Filter for published advisory
-                        cvss = float(score.group())
-                if cvss >= threshold:
-                    content = settings.NAME + ': [' + title + f' - CVSS: `{cvss}`' + '](' + link + ')'
+                filtered = False
+                if "security" in URL and "Severity: CRITICAL" in title: # Check for critical advisories
+                        filtered = True
+                elif "unit42" in URL:
+                    filtered = True
+                if filtered:
+                    link = feed.entries[count].link
+                    content = settings.NAME + ': [' + title + '](' + link + ')'
                     for channel in settings.CHANNELS:
                         items.append([channel, content])
-                count+=1
+                count += 1
             except IndexError:
                 return items # No more items
     return items

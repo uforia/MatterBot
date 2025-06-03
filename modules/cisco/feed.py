@@ -17,15 +17,15 @@ import feedparser
 import re
 from pathlib import Path
 try:
-    from modules.trailofbits import defaults as settings
+    from modules.cisco import defaults as settings
 except ModuleNotFoundError: # local test run
     import defaults as settings
     if Path('settings.py').is_file():
         import settings
 else:
-    if Path('modules/trailofbits/settings.py').is_file():
+    if Path('modules/cisco/settings.py').is_file():
         try:
-            from modules.trailofbits import settings
+            from modules.cisco import settings
         except ModuleNotFoundError: # local test run
             import settings
 
@@ -33,20 +33,19 @@ def query(MAX=settings.ENTRIES):
     items = []
     feed = feedparser.parse(settings.URL, agent='MatterBot RSS Automation 1.0')
     count = 0
+    category = "Security Impact Rating:  Critical"
     stripchars = '`\\[\\]\'\"'
     regex = re.compile('[%s]' % stripchars)
     while count < MAX:
         try:
-            title = feed.entries[count].title
-            link = feed.entries[count].link
-            content = settings.NAME + ': [' + title + '](' + link + ')'
             if len(feed.entries[count].description):
                 description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
-                if len(description)>400:
-                    description = description[:396]+' ...'
-                content += '\n>'+description+'\n'
-            for channel in settings.CHANNELS:
-                items.append([channel, content])
+                if category in description:    
+                    title = feed.entries[count].title
+                    link = feed.entries[count].link
+                    content = settings.NAME + ': [' + title + '](' + link + ')'
+                    for channel in settings.CHANNELS:
+                        items.append([channel, content])
             count+=1
         except IndexError:
             return items # No more items
