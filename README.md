@@ -23,7 +23,6 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 
 | Name                                                                                             | Type           | API Key Required | Paid Subscription |
 | ------------------------------------------------------------------------------------------------ |:--------------:|:----------------:|:-----------------:|
-| 0day Exploits                                                                                    | RSS            | No               | No                |
 | 0dayfans Security News                                                                           | RSS            | No               | No                |
 | Any.run Cybersecurity Blog                                                                       | RSS            | No               | No                |
 | Aqua Security Blog                                                                               | RSS            | No               | No                |
