@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from datetime import datetime
 
-NAME = "Zero Day Initiative Upcoming Advisories"
+NAME = "Zero Day Initiative Upcoming Vulnerabilities"
 CHANNELS = (
     "newsfeed",
 )
