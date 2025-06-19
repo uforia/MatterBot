@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-NAME = "SOC Prime Threat Intelligence"
+NAME = "SOCPrime Threat Intelligence"
 CHANNELS = (
     "newsfeed",
 )
