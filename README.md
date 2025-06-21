@@ -86,6 +86,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | Helpnet Security                                                                                 | RSS            | No               | No                |
 | Horizon3 Threat Research                                                                         | RSS            | No               | No                |
 | Hudson Rock Infostealers                                                                         | RSS            | No               | No                |
+| Huntress Threat Intelligence                                                                     | RSS            | No               | No                |
 | IBM X-Force Threat Reports                                                                       | RSS            | No               | No                |
 | Internet Crime Complaint Center Industry Alerts                                                  | RSS            | No               | No                |
 | Internet Crime Complaint Center Press Releases                                                   | RSS            | No               | No                |
