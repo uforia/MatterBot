@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 
 NAME = "CiscoTalos Threat Intelligence"
+URL = "https://blog.talosintelligence.com/rss/"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://blog.talosintelligence.com/rss/"
+TOPICS = (
+    "Security Posture",
+    "Threat Intelligence"
+)
 ENTRIES = 10

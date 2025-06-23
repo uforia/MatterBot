@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 
 NAME = "Binary Defense"
+URL = "https://www.binarydefense.com/feed/"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://www.binarydefense.com/feed/"
+TOPICS = (
+    "Security Posture",
+    "Threat Intelligence"
+)
 ENTRIES = 10

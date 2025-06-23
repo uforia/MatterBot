@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 
 NAME = "Barracuda Threat Intelligence"
+URL = "https://blog.barracuda.com/feed/"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://blog.barracuda.com/feed/"
+TOPICS = (
+    "Threat Intelligence",
+    "Vulnerabilities"
+)
 ENTRIES = 10

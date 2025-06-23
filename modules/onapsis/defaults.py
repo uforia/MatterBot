@@ -5,4 +5,9 @@ CHANNELS = (
     "newsfeed",
 )
 URL = "https://onapsis.com/feed/"
+TOPICS = (
+    "Advisories",
+    "Enterprise Software",
+    "Threat Intelligence"
+)
 ENTRIES = 10

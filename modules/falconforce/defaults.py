@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 
 NAME = "FalconForce"
+URL = "https://medium.com/feed/falconforce"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://medium.com/feed/falconforce"
+TOPICS = (
+    "Reverse Engineering",
+    "Threat Intelligence"
+)
 ENTRIES = 10
