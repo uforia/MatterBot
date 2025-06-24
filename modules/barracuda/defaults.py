@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-NAME = "SOCPrime Threat Intelligence"
-URL = "https://socprime.com/feed/"
+NAME = "Barracuda Threat Intelligence"
+URL = "https://blog.barracuda.com/feed/"
 CHANNELS = (
     "newsfeed",
 )

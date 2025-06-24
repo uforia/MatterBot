@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 
-NAME = "SOCPrime Threat Intelligence"
-URL = "https://socprime.com/feed/"
+NAME = "Bleepingcomputer News"
+URL = "https://www.bleepingcomputer.com/feed/"
 CHANNELS = (
     "newsfeed",
 )
 TOPICS = (
+    "Generic News",
+    "Security Posture",
     "Threat Intelligence",
     "Vulnerabilities"
 )

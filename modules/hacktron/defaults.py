@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 
-NAME = "SOCPrime Threat Intelligence"
-URL = "https://socprime.com/feed/"
+NAME = "Hacktron AI Threat Research"
+URL = "https://www.hacktron.ai/blog/index.xml"
 CHANNELS = (
     "newsfeed",
 )
 TOPICS = (
+    "Exploits",
+    "Reverse Engineering",
     "Threat Intelligence",
     "Vulnerabilities"
 )

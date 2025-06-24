@@ -29,7 +29,11 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | Arctic Wolf Security Blog                                                                        | RSS            | No               | No                |
 | Australian Cyber Security Centre                                                                 | RSS            | No               | No                |
 | Bad Sector Labs Newsletter                                                                       | RSS            | No               | No                |
+| Barracuda Threat Intelligence                                                                    | RSS            | No               | No                |
+| Binary Defense                                                                                   | RSS            | No               | No                |
 | Bishop Fox Offensive Security                                                                    | RSS            | No               | No                |
+| Bleepingcomputer News                                                                            | RSS            | No               | No                |
+| Broadcom Symantec                                                                                | RSS            | No               | No                |
 | Bruce Schneier's Blog                                                                            | RSS            | No               | No                |
 | Canadian Centre for Cyber Security                                                               | RSS            | No               | No                |
 | CERT Bundesrepublik Deutschland                                                                  | RSS            | No               | No                |
@@ -51,6 +55,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | Checkmarx Application Security Blog                                                              | RSS            | No               | No                |
 | Checkpoint (Email) Security Research                                                             | RSS            | No               | No                |
 | Cisco Security Advisories                                                                        | RSS            | No               | No                |
+| CiscoTalos Threat Intelligence                                                                   | RSS            | No               | No                |
 | CISecurity                                                                                       | RSS            | No               | No                |
 | Cqure Blog                                                                                       | RSS            | No               | No                |
 | CSHub (configurable list of CSHub feeds)                                                         | RSS            | No               | No                |
@@ -64,21 +69,24 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | Deepinstinct Threat Intelligence                                                                 | RSS            | No               | No                |
 | DeiC Sikkerhed/DKCERT                                                                            | RSS            | No               | No                |
 | DIVD CSIRT                                                                                       | RSS            | No               | No                |
+| Dragos OT Security                                                                               | RSS            | No               | No                |
 | Eclecticiq Intelligence Research                                                                 | RSS            | No               | No                |
-| Kevin Beaumont@Medium (DoublePulsar)                                                             | RSS            | No               | No                |
-| Kyberturvallisuuskeskuksen Suomi (NCSC-FI)                                                       | RSS            | No               | No                |
 | Eclypsium Threat Research                                                                        | RSS            | No               | No                |
 | Elastic Security Labs                                                                            | RSS            | No               | No                |
 | F5 Labs Threat Intelligence                                                                      | RSS            | No               | No                |
+| FalconForce                                                                                      | RSS            | No               | No                |
 | FieldEffect Threat Intelligence                                                                  | RSS            | No               | No                |
 | Fortinet PSIRT/Threat Research Blogs                                                             | RSS            | No               | No                |
 | GBHackers News                                                                                   | RSS            | No               | No                |
 | Google Cloud Threat Intelligence                                                                 | RSS            | No               | No                |
 | GreyNoise Threat Intelligence                                                                    | RSS            | No               | No                |
 | Group-IB Blog                                                                                    | RSS            | No               | No                |
+| Hacktron AI Threat Research                                                                      | RSS            | No               | No                |
 | Harfanglab Threat Intelligence                                                                   | RSS            | No               | No                |
+| Helpnet Security                                                                                 | RSS            | No               | No                |
 | Horizon3 Threat Research                                                                         | RSS            | No               | No                |
 | Hudson Rock Infostealers                                                                         | RSS            | No               | No                |
+| Huntress Threat Intelligence                                                                     | RSS            | No               | No                |
 | IBM X-Force Threat Reports                                                                       | RSS            | No               | No                |
 | Internet Crime Complaint Center Industry Alerts                                                  | RSS            | No               | No                |
 | Internet Crime Complaint Center Press Releases                                                   | RSS            | No               | No                |
@@ -86,10 +94,13 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | Jamf Apple Security Research                                                                     | RSS            | No               | No                |
 | JPCERT/CC Warnings & Emergency Bulletins                                                         | RSS            | No               | No                |
 | Juniper Network Blogs                                                                            | RSS            | No               | No                |
+| Kaspersky SecureList News                                                                        | RSS            | No               | No                |
+| Kevin Beaumont@Medium (DoublePulsar)                                                             | RSS            | No               | No                |
 | Kitploit Tool Updates                                                                            | RSS            | No               | No                |
 | KnowBe4 News                                                                                     | RSS            | No               | No                |
 | KQLQuery Blog                                                                                    | RSS            | No               | No                |
 | KrebsOnSecurity Blog                                                                             | RSS            | No               | No                |
+| Kyberturvallisuuskeskuksen Suomi (NCSC-FI)                                                       | RSS            | No               | No                |
 | Lumen Black Lotus Labs                                                                           | RSS            | No               | No                |
 | MajorLeagueHacking News                                                                          | RSS            | No               | No                |
 | MatterBot Github                                                                                 | RSS            | No               | No                |
@@ -97,12 +108,15 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | Morphisec Threat Intelligence                                                                    | RSS            | No               | No                |
 | Nasjonal sikkerhetsmyndighet (NorCERT)                                                           | RSS            | No               | No                |
 | Nationellt CSIRT Sverige                                                                         | RSS            | No               | No                |
+| Netwitness Intelligence                                                                          | RSS            | No               | No                |
 | Nextron Systems Blog                                                                             | RSS            | No               | No                |
 | NCSC Netherlands Advisories                                                                      | RSS            | No               | No                |
 | NCSC United Kingdom Advisories                                                                   | RSS            | No               | No                |
 | Nemzeti Koordinációs Központ (NCSC-HU)                                                           | RSS            | No               | No                |
 | Netskope Threat Labs                                                                             | RSS            | No               | No                |
 | OffSec Threat Research                                                                           | RSS            | No               | No                |
+| Okta Security                                                                                    | RSS            | No               | No                |
+| Onapsis SAP Security                                                                             | RSS            | No               | No                |
 | OpenCVE feed of CVEs                                                                             | RSS            | Yes              | No                |
 | Orange Cyberdefense SensePost                                                                    | RSS            | No               | No                |
 | Osint10x Blog / News                                                                             | RSS            | No               | No                |
@@ -126,14 +140,15 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | SANS Internet Storm Center                                                                       | RSS            | No               | No                |
 | SebDraven                                                                                        | RSS            | No               | No                |
 | Synacktiv Threat Research                                                                        | RSS            | No               | No                |
-| Kaspersky SecureList News                                                                        | RSS            | No               | No                |
 | SecurityAffairs News                                                                             | RSS            | No               | No                |
 | Sekoia Threat Intelligence                                                                       | RSS            | No               | No                |
 | Snyk.io Security Blog                                                                            | RSS            | No               | No                |
-| SOC Prime Threat Intelligence                                                                    | RSS            | No               | No                |
+| SOCPrime Threat Intelligence                                                                     | RSS            | No               | No                |
+| Sophos X-Ops                                                                                     | RSS            | No               | No                |
 | Specterops Security Blog                                                                         | RSS            | No               | No                |
 | Spiceworks Tech News                                                                             | RSS            | No               | No                |
 | Sploitus Exploits                                                                                | RSS            | No               | No                |
+| Splunk Threat Research                                                                           | RSS            | No               | No                |
 | Starlabs Threat Research                                                                         | RSS            | No               | No                |
 | Sublime Security Blog                                                                            | RSS            | No               | No                |
 | Thalium Threat Research                                                                          | RSS            | No               | No                |
@@ -146,10 +161,12 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | TrailOfBits Security Blog                                                                        | RSS            | No               | No                |
 | TrendMicro Research                                                                              | RSS            | No               | No                |
 | Tripwire State of Security                                                                       | RSS            | No               | No                |
+| Trustedsec Offensive Security                                                                    | RSS            | No               | No                |
 | Trustwave SpiderLabs                                                                             | RSS            | No               | No                |
 | US-CERT National Cyber Awareness System (Advisories, Alerts, Analysis Reports, Current Activity) | RSS            | No               | No                |
 | Validin Threat Intelligence                                                                      | RSS            | No               | No                |
 | Varonis Threat Research                                                                          | RSS            | No               | No                |
+| Veeam Advisories                                                                                 | RSS            | No               | No                |
 | Velociraptor News/Updates                                                                        | RSS            | No               | No                |
 | Volexity Memory Forensics & Threat Intelligence Blog                                             | RSS            | No               | No                |
 | Wallarm API Security                                                                             | RSS            | No               | No                |

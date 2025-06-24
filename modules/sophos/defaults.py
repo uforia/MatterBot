@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-NAME = "SOCPrime Threat Intelligence"
-URL = "https://socprime.com/feed/"
+NAME = "Sophos X-Ops"
+URL = "https://news.sophos.com/en-us/category/threat-research/feed/"
 CHANNELS = (
     "newsfeed",
 )

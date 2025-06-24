@@ -41,6 +41,7 @@ def query(MAX=settings.ENTRIES):
         while count < MAX:
             try:
                 title = feed.entries[count].title
+                link = feed.entries[count].link
                 if settings.TRANSLATION:
                     from_lan = "hu"
                     to_lan = "en"
@@ -53,10 +54,9 @@ def query(MAX=settings.ENTRIES):
                     if packageSelection not in installed_packages:
                         package.install_from_path(packageSelection.download())
                     title = translate.translate(title, from_lan, to_lan)
-                link = feed.entries[count].link
-                content = settings.NAME + ': [' + title + '](' + link + ')'
-                for channel in settings.CHANNELS:
-                    items.append([channel, content])
+                    content = settings.NAME + ': [' + title + '](' + link + ')'
+                    for channel in settings.CHANNELS:
+                        items.append([channel, content])
                 count+=1
             except IndexError:
                 return items # No more items
