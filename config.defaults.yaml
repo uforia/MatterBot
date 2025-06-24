@@ -22,6 +22,17 @@ Matterbot:
     - "@unbind"
     - "!map"
     - "@map"
+  feedcmds: # Do not change these, or things might break
+    - "!subscribe"
+    - "!sub"
+    - "@subscribe"
+    - "@sub"
+    - "!unsubscribe"
+    - "!unsub"
+    - "@unsubscribe"
+    - "@unsub"
+    - "!feeds"
+    - "@feeds"
   recursion: True # Is the bot allowed to respond to its own messages?
   msglength: 16383 # Change to '4000' if you are using Mattermost <=5.x (seriously, you should upgrade!)
   logcmd: True

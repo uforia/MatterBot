@@ -7,6 +7,7 @@ import fnmatch
 import importlib.util
 import json
 import logging
+import pathlib
 import pebble
 import os
 import shelve
@@ -46,13 +47,12 @@ class MattermostManager(object):
         self.my_team_id = self.mmDriver.teams.get_team_by_name(options.Matterbot['teamname'])['id']
         self.channels = {}
         self.test = {}
-        self.feedmap = self.update_feedmap()
         userchannels = self.mmDriver.channels.get_channels_for_user(self.me['id'],self.my_team_id)
         for userchannel in userchannels:
             channel_info = self.mmDriver.channels.get_channel(userchannel['id'])
             self.channels[channel_info['name']] = channel_info['id']
 
-    def update_feedmap(self):
+    def load_feedmap(self):
         try:
             with open(options.Modules['feedmap'],'r') as f:
                 return json.load(f)
@@ -60,6 +60,13 @@ class MattermostManager(object):
             if options.debug:
                 log.error(f"Error   : Cannot read {options.Modules['feedmap']} file. Announcements in additional channels might not work!")
             return {}
+
+    def update_feedmap(self):
+        try:
+            with open(options.Matterbot['feedmap'],'w') as f:
+                json.dump(self.feedmap,f)
+        except:
+            log.error(f"An error occurred updating the `%s` feedmap file; config changes were not successfully saved!" % (options.Matterbot['feedmap'],))
 
     def createPost(self, channel, text, uploads = []):
         try:
@@ -132,6 +139,48 @@ class MattermostManager(object):
                     if not module_name in modules:
                         modules[module_name] = {}
                     modules[module_name]['cache'] = f"{root}/{module_name}.cache"
+
+                    # Load the module settings and build the feedmap
+                    settings_file = os.path.join(module_path, module_name, "settings.py")
+                    if not os.path.exists(settings_file):
+                        settings_file = os.path.join(module_path, module_name, "defaults.py")
+                        if not os.path.exists(settings_file):
+                            raise ImportError(f"No configuration found for {module_name} ...")
+                    unique_settings_name = f"settings_{uuid.uuid4().hex}"
+                    spec = importlib.util.spec_from_file_location(unique_settings_name, settings_file)
+                    if not spec or spec.loader is None:
+                        raise ImportError(f"Could not load spec for {settings_file} ...")
+                    settings = importlib.util.module_from_spec(spec)
+                    sys.modules[spec.name] = settings
+                    try:
+                        spec.loader.exec_module(settings)
+                    except Exception as e:
+                        raise ImportError(f"Settings for {module_name} could not be loaded...")
+                    if not module_name in self.feedmap:
+                        self.feedmap[module_name] = {
+                            'NAME': getattr(settings,'NAME'),
+                            'CHANNELS': [],
+                        }
+                    if hasattr(settings,'CHANNELS'):
+                        if not 'CHANNELS' in self.feedmap[module_name]:
+                            self.feedmap[module_name]['CHANNELS'] = []
+                        for channel in getattr(settings,'CHANNELS'):
+                            if not channel in self.feedmap[module_name]['CHANNELS']:
+                                self.feedmap[module_name]['CHANNELS'].append(channel)
+                    if hasattr(settings,'TOPICS'):
+                        if not 'TOPICS' in self.feedmap:
+                            self.feedmap['TOPICS'] = {}
+                        if not 'TOPICS' in self.feedmap[module_name]:
+                            self.feedmap[module_name]['TOPICS'] = []
+                        for topic in getattr(settings,'TOPICS'):
+                            if not topic in self.feedmap[module_name]['TOPICS']:
+                                self.feedmap[module_name]['TOPICS'].append(topic)
+                            if not topic in self.feedmap['TOPICS']:
+                                self.feedmap['TOPICS'][topic] = []
+                            if not module_name in self.feedmap['TOPICS'][topic]:
+                                self.feedmap['TOPICS'][topic].append(module_name)
+            self.log.info(f"Saving   : New feedmap {options.Modules['feedmap']} ...")
+            self.update_feedmap()
             self.log.info(f"Starting : {len(modules)} module(s) ...")
             return modules
         except Exception as e:
@@ -153,8 +202,8 @@ class MattermostManager(object):
             try:
                 success = 0
                 failed = 0
+                self.feedmap = self.load_feedmap()
                 self.modules = self.findModules()
-                self.feedmap = self.update_feedmap()
                 with pebble.ProcessPool(max_workers=options.Modules['threads']) as pool:
                     futures = []
                     for module_name in self.modules:
@@ -222,9 +271,9 @@ class MattermostManager(object):
                     if not [channel, content, uploads] in posts:
                         posts.append([channel, content, uploads])
                     if module_name in self.feedmap:
-                        for extrachannel in self.feedmap[module_name]:
-                            if not [extrachannel, content, uploads] in posts:
-                                posts.append([extrachannel, content, uploads])
+                        for newschannel in self.feedmap[module_name]['CHANNELS']:
+                            if not [newschannel, content, uploads] in posts:
+                                posts.append([newschannel, content, uploads])
                 for post in posts:
                     channel, content, uploads = post
                     # Make sure we're not triggering self-calls
@@ -259,6 +308,7 @@ class MattermostManager(object):
     def callModule(self, module_name, function_name = 'query', *args, **kwargs):
         spec = None
         try:
+            # Load the module
             importlib.invalidate_caches()
             module_file = os.path.join(module_path, module_name, "feed.py")
             if not os.path.exists(module_file):
@@ -276,6 +326,8 @@ class MattermostManager(object):
             func = getattr(module, function_name)
             if not callable(func):
                 raise AttributeError(f"{function_name} is not callable in {module_name} ...")
+
+            # Return a handle to the module query function entry point
             return func(*args, **kwargs)
         except Exception as e:
             if options.debug:

@@ -53,16 +53,8 @@ class MattermostManager(object):
         self.binds = []
         self.channelmapping = {'idtoname': {}, 'nametoid': {}}
         self.channels = self.mmDriver.channels.get_channels_for_user(self.my_id,self.my_team_id)
-        try:
-            bindmap = pathlib.Path(options.Matterbot['bindmap'])
-            if bindmap.is_file():
-                with open(options.Matterbot['bindmap']) as f:
-                    self.commands = json.load(f)
-                    for module in self.commands:
-                        self.binds.extend(self.commands[module]['binds'])
-            log.info("Loaded existing bindmap file %s: %s" % (options.Matterbot['bindmap'],self.commands))
-        except: # There is no existing command map, or it failed loading; create an empty map instead.
-            pass
+        self.feedmap = self.load_feedmap()
+        self.bindmap = self.load_bindmap()
         # Load any new modules
         for root, dirs, files in os.walk(modulepath):
             for module in fnmatch.filter(files, "command.py"):
@@ -103,18 +95,31 @@ class MattermostManager(object):
                         HELP = overridesettings.HELP
                 self.commands[module_name]['process'] = getattr(module, 'process')
                 self.commands[module_name]['help'] = HELP
-
-
         self.binds = sorted(list(set(self.binds)))
         # Start the websocket
         self.mmDriver.init_websocket(self.handle_raw_message)
 
-    async def update_feedmap(self):
+    def load_bindmap(self):
         try:
-            with open(options.Matterbot['feedmap'],'w') as f:
-                json.dump(self.feedmap,f)
-        except:
-            log.error(f"An error occurred updating the `%s` feedmap file; config changes were not successfully saved!" % (options.Matterbot['feedmap'],))
+            bindmap = pathlib.Path(options.Matterbot['bindmap'])
+            if bindmap.is_file():
+                with open(options.Matterbot['bindmap']) as f:
+                    self.commands = json.load(f)
+                    for module in self.commands:
+                        self.binds.extend(self.commands[module]['binds'])
+                    log.info("Loaded existing bindmap file %s: %s" % (options.Matterbot['bindmap'],self.commands))
+        except: # There is no existing command map, or it failed loading; create an empty map instead.
+            raise
+
+    def load_feedmap(self):
+        try:
+            feedmap = pathlib.Path(options.Matterbot['feedmap'])
+            if feedmap.is_file():
+                with open(options.Matterbot['feedmap']) as f:
+                    log.info("Loaded existing feedmap file %s" % (options.Matterbot['feedmap']))
+                    return json.load(f)
+        except: # There is no existing feed map, or it failed loading; create an empty map instead.
+            raise
 
     async def update_bindmap(self):
         try:
@@ -126,6 +131,14 @@ class MattermostManager(object):
                 json.dump(self.bindmap,f)
         except:
             log.error(f"An error occurred updating the `%s` bindmap file; config changes were not successfully saved!" % (options.Matterbot['bindmap'],))
+
+    async def update_feedmap(self):
+        try:
+            self.newfeedmap = copy.deepcopy(self.feedmap)
+            with open(options.Matterbot['feedmap'],'w') as f:
+                json.dump(self.newfeedmap,f)
+        except:
+            log.error(f"An error occurred updating the `%s` feedmap file; config changes were not successfully saved!" % (options.Matterbot['feedmap'],))
 
     async def handle_raw_message(self, raw_json: str):
         try:
@@ -302,6 +315,97 @@ class MattermostManager(object):
         log.info(f"User {userid} is not allowed to use {module} in {channame}.")
         return False
 
+    async def feed_message(self, userid, post, params, chaninfo, rootid):
+        command = post['message'].split()[0]
+        chanid = post['channel_id']
+        channame = chaninfo['name']
+        username = self.userid_to_username(userid)
+        messages = []
+        if not params:
+            if command in ('!feeds', '@feeds'):
+                if (self.my_id and userid) in channame:
+                    text =  "**Feeds do not work in direct messages.**\n"
+                    messages.append(text)
+                else:
+                    enabled_feeds = set()
+                    unclassified_feeds = set()
+                    if len(self.feedmap):
+                        text =  "**List of available topics for channel: `%s`**\n" % (self.channame_to_chandisplayname(channame,))
+                        text += "\n"
+                        text += "\n| **Topic** | **Available Feed(s)** |"
+                        text += "\n| :- | :- |"
+                        if 'TOPICS' in self.feedmap:
+                            for topic in sorted(self.feedmap['TOPICS']):
+                                availablefeeds = self.feedmap['TOPICS'][topic]
+                                for module_name in self.feedmap:
+                                    if 'NAME' in self.feedmap[module_name]:
+                                        if channame in self.feedmap[module_name]['CHANNELS']:
+                                            if module_name in availablefeeds:
+                                                availablefeeds.remove(module_name)
+                                            enabled_feeds.add(module_name)
+                                if len(availablefeeds):
+                                    text += f"\n| {topic} | `"+"`, `".join(sorted(availablefeeds))+"` |"
+                        for module_name in self.feedmap:
+                            if 'NAME' in self.feedmap[module_name]:
+                                if 'TOPICS' not in self.feedmap[module_name]:
+                                    unclassified_feeds.add(module_name)
+                        if len(availablefeeds):
+                            text += f"\n| Unclassified | `"+"`, `".join(sorted(unclassified_feeds))+"` |"
+                        text += "\n\n"
+                        messages.append(text)
+                    if len(enabled_feeds):
+                        text = f"Enabled feeds: `"+"` ,`".join(enabled_feeds)+"`"
+                        messages.append(text)
+                    else:
+                        text = "There are no feeds enabled in this channel.\n"
+                        messages.append(text)
+        else:
+            if command in options.Matterbot['feedcmds']:
+                if not self.isadmin(userid):
+                    logging.warning(f"User {username} ({userid}) attempted to use a feed (un)subscribe command without proper authorization.")
+                    text = "@" + username + ", you do not have permission to subscribe to / unsubscribe from feeds."
+                else:
+                    all_channel_types = [self.chanid_to_channame(_['id']) for _ in self.mmDriver.channels.get_channels_for_user(self.my_id,self.my_team_id) if self.is_in_channel(_['id'])]
+                    my_channels = [_ for _ in all_channel_types if not self.my_id in _]
+                    if not channame in my_channels:
+                        text = "@" + username + ", you cannot bind feeds to direct message windows."
+                    else:
+                        feeds_to_consider = set()
+                        if params[0] == '*':
+                            feeds_to_consider = self.feedmap
+                        else:
+                            for param in params[0:]:
+                                if param in self.feedmap['TOPICS']:
+                                    for module_name in self.feedmap['TOPICS'][param]:
+                                        feeds_to_consider.add(module_name)
+                                else:
+                                    feeds_to_consider.add(param)
+                        switched_feeds = set()
+                        if len(params):
+                            if command in ('!unsub', '!unsubscribe', '@unsub', '@unsubscribe'):
+                                mode = 'disable'
+                            elif command in ('!sub', '!subscribe', '@sub', '@subscribe'):
+                                mode = 'enable'
+                            for module_name in feeds_to_consider:
+                                if module_name in self.feedmap:
+                                    if mode == 'enable':
+                                        if 'NAME' in self.feedmap[module_name]:
+                                            if not channame in self.feedmap[module_name]['CHANNELS']:
+                                                self.feedmap[module_name]['CHANNELS'].append(channame)
+                                                switched_feeds.add(module_name)
+                                    elif mode == 'disable':
+                                        if 'NAME' in self.feedmap[module_name]:
+                                            if channame in self.feedmap[module_name]['CHANNELS']:
+                                                self.feedmap[module_name]['CHANNELS'].remove(channame)
+                                                switched_feeds.add(module_name)
+                                if len(switched_feeds):
+                                    text = "@" + username + f", the following feeds were {mode}d: `"+"`, `".join(switched_feeds)+"`."
+                    messages.append(text)
+                    await self.update_feedmap()
+        if len(messages):
+            for message in messages:
+                await self.send_message(chanid, message, rootid)
+
     async def bind_message(self, userid, post, params, chaninfo, rootid):
         command = post['message'].split()[0]
         chanid = post['channel_id']
@@ -335,7 +439,7 @@ class MattermostManager(object):
                 messages.append(text)
         else:
             if not self.isadmin(userid):
-                logging.warning("User %s attempted to use a bind command without proper authorization.") % (userid,)
+                logging.warning(f"User {username} ({userid}) attempted to use a bind command without proper authorization.")
                 text = "@" + username + ", you do not have permission to bind commands."
             else:
                 all_channel_types = [self.chanid_to_channame(_['id']) for _ in self.mmDriver.channels.get_channels_for_user(self.my_id,self.my_team_id) if self.is_in_channel(_['id'])]
@@ -495,10 +599,12 @@ class MattermostManager(object):
                 addparams = False
                 message = mline.split()
                 for idx,word in enumerate(message):
-                    log.debug(f"(({word in self.binds}) and ({message[idx-1] not in options.Matterbot['helpcmds']} and {message[idx-1] not in options.Matterbot['mapcmds']} ) # In this case hand over the word to elif \
-                     or ({word in options.Matterbot['helpcmds']}) or (({word in options.Matterbot['mapcmds']}) and ({message[idx-1] not in options.Matterbot['helpcmds'] }))  )")
-                    if ((word in self.binds) and (message[idx-1] not in options.Matterbot['helpcmds'] and message[idx-1] not in options.Matterbot['mapcmds'] ) # In this case hand over the word to elif \
-                         or (word in options.Matterbot['helpcmds']) or ((word in options.Matterbot['mapcmds']) and (message[idx-1] not in options.Matterbot['helpcmds'] ))  ): # word is a helpcmd or bind command
+                    if ((word in self.binds) \
+                        and (message[idx-1] not in options.Matterbot['helpcmds'] and message[idx-1] not in options.Matterbot['mapcmds'] \
+                        and message[idx-1] not in options.Matterbot['feedcmds'] ) \
+                        or (word in options.Matterbot['helpcmds']) \
+                        or ((word in options.Matterbot['mapcmds']) and (message[idx-1] not in options.Matterbot['helpcmds'] )) \
+                        or ((word in options.Matterbot['feedcmds']) and (message[idx-1] not in options.Matterbot['helpcmds'] ))  ):
                         messages.append({'command':word,'parameters':[]})
                         addparams = True
                     elif addparams:
@@ -513,6 +619,9 @@ class MattermostManager(object):
                 elif command in options.Matterbot['mapcmds']:
                     await self.log_message(userid, command, params, chaninfo, rootid)
                     await self.bind_message(userid, post, params, chaninfo, rootid)
+                elif command in options.Matterbot['feedcmds']:
+                    await self.log_message(userid, command, params, chaninfo, rootid)
+                    await self.feed_message(userid, post, params, chaninfo, rootid)
                 else:
                     await self.log_message(userid, command, params, chaninfo, rootid)
                     tasks = []
