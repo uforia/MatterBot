@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 
 NAME = "Persistent Security News"
+URL = "https://www.persistent-security.net/blog-feed.xml"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://www.persistent-security.net/blog-feed.xml"
+TOPICS = (
+    "Threat Intelligence",
+)
 ENTRIES = 10
+ADMIN_ONLY = False

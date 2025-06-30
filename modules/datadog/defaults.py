@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 
 NAME = "Datadog Security Labs"
+URL = "https://securitylabs.datadoghq.com/rss/feed.xml"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://securitylabs.datadoghq.com/rss/feed.xml"
+TOPICS = (
+    "Threat Intelligence",
+)
 ENTRIES = 10
+ADMIN_ONLY = False

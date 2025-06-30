@@ -7,6 +7,8 @@ CHANNELS = (
 )
 TOPICS = (
     "Security Posture",
-    "Threat Intelligence"
+    "Threat Intelligence",
+    "Vulnerabilities"
 )
 ENTRIES = 10
+ADMIN_ONLY = False

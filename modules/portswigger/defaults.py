@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 
 NAME = "Portswigger Threat Research"
+URL = "https://portswigger.net/research/rss"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://portswigger.net/research/rss"
+TOPICS = (
+    "Threat Intelligence",
+)
 ENTRIES = 10
+ADMIN_ONLY = False

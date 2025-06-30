@@ -10,4 +10,11 @@ CATEGORIES = [
     "ncas/analysis-reports",
     "ncas/current-activity",
 ]
+TOPICS = (
+    "Advisories",
+    "Government",
+    "Threat Intelligence",
+    "Vulnerabilities"
+)
 ENTRIES = 10
+ADMIN_ONLY = False

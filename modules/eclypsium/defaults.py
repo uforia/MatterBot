@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 
 NAME = "Eclypsium Threat Research"
+URL = "https://eclypsium.com/feed/"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://eclypsium.com/feed/"
+TOPICS = (
+    "Threat Intelligence",
+    "Vulnerabilities"
+)
 ENTRIES = 10
+ADMIN_ONLY = False

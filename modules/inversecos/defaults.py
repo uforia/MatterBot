@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 
 NAME = "Xintra Research Blog"
+URL = "https://www.inversecos.com/feeds/posts/default?alt=rss"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://www.inversecos.com/feeds/posts/default?alt=rss"
+TOPICS = (
+    "Threat Intelligence",
+)
 ENTRIES = 10
+ADMIN_ONLY = False

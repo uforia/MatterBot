@@ -8,4 +8,9 @@ CATEGORIES = [
     "attacks",
     "malware",
 ]
+TOPICS = (
+    "Generic News",
+    "Security Posture"
+)
 ENTRIES = 10
+ADMIN_ONLY = False

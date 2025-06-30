@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 
 NAME = "GBHackers On Security news"
+URL = "https://gbhackers.com/feed/"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://gbhackers.com/feed/"
+TOPICS = (
+    "Generic News",
+    "Vulnerabilities"
+)
 ENTRIES = 10
+ADMIN_ONLY = False

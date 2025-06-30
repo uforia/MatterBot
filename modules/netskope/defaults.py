@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 
 NAME = "Netskope Threat Labs"
+URL = "https://www.netskope.com/blog/category/netskope-threat-labs/feed"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://www.netskope.com/blog/category/netskope-threat-labs/feed"
+TOPICS = (
+    "Threat Intelligence",
+)
 ENTRIES = 10
+ADMIN_ONLY = False

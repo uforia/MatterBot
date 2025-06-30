@@ -4,6 +4,10 @@ NAME = "OpenCVE Feed"
 CHANNELS = (
     "newsfeed",
 )
+TOPICS = (
+    "Vulnerabilities",
+)
+ADMIN_ONLY = True
 # Your OpenCVE instance. You may use the public OpenCVE API as well, but
 # be aware of rate limits. It is strongly recommended to setup your own
 # OpenCVE instance.

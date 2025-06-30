@@ -5,4 +5,8 @@ CHANNELS = (
     "newsfeed",
 )
 URL = "https://blog.lumen.com/feed/"
+TOPICS = (
+    "Threat Intelligence",
+)
 ENTRIES = 10
+ADMIN_ONLY = False
