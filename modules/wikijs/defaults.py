@@ -5,4 +5,8 @@ CHANNELS = (
     "<your WikiJS output channel on Mattermost>",
 )
 API = "<wiki URL>" # /graphql will be added automatically
+TOPICS = (
+    "Generic News",
+)
+ADMIN_ONLY = True
 TOKEN = "<bearer token for your API access"

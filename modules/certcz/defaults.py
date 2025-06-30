@@ -10,6 +10,6 @@ TOPICS = (
     "Government",
     "Vulnerabilities"
 )
+ADMIN_ONLY = False
 ENTRIES = 10
 TRANSLATION = True
-ADMIN_ONLY = False

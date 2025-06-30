@@ -11,6 +11,7 @@ CHANNELS = (
 )
 TOPICS = (
     "Advisories",
-    "Vulnerabilities"
+    "Vulnerabilities",
 )
+ADMIN_ONLY = False
 ENTRIES = 10

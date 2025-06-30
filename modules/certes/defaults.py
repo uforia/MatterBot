@@ -20,6 +20,6 @@ TOPICS = (
     "Threat Intelligence",
     "Vulnerabilities"
 )
+ADMIN_ONLY = False
 ENTRIES = 10
 TRANSLATION = True
-ADMIN_ONLY = False
