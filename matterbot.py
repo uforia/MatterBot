@@ -356,6 +356,9 @@ class MattermostManager(object):
                             if 'NAME' in self.feedmap[module_name]:
                                 if 'TOPICS' not in self.feedmap[module_name]:
                                     unclassified_feeds.add(module_name)
+                                else:
+                                    if not len(self.feedmap[module_name]['TOPICS']):
+                                        unclassified_feeds.add(module_name)
                         if len(unclassified_feeds):
                             unclassified_feeds_displaynames = set()
                             for unclassified_feed in unclassified_feeds:
@@ -378,7 +381,7 @@ class MattermostManager(object):
                 if not self.isadmin(userid):
                     if options.Matterbot['feedmode'].lower() == 'admin':
                         logging.warning(f"User {username} ({userid}) attempted to use a feed (un)subscribe command without proper authorization.")
-                        text = "@" + username + ", you do not have permission to subscribe to / unsubscribe from feeds."
+                        text = "@" + username + ", you do not have permission to (un)subscribe from/to feeds."
                         messages.append(text)
                 if self.isadmin(userid) or options.Matterbot['feedmode'].lower() == 'user':
                     all_channel_types = [self.chanid_to_channame(_['id']) for _ in self.mmDriver.channels.get_channels_for_user(self.my_id,self.my_team_id) if self.is_in_channel(_['id'])]
