@@ -8,10 +8,10 @@ CHANNELS = (
 TOPICS = (
     "Advisories",
     "Government",
-    "Vulnerabilities"
+    "Vulnerabilities",
 )
-ENTRIES = 30
 ADMIN_ONLY = False
+ENTRIES = 30
 
 # The AUTOADVISORY feature is really only useful if you are using other
 # related bot modules, such as Qualys, and the bot can 'call itself'.

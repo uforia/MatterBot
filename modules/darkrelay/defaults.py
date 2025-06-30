@@ -7,8 +7,8 @@ CHANNELS = (
 )
 TOPICS = (
     "Exploits",
-    "Reversing"
-    "CTI"
+    "Reversing",
+    "CTI",
 )
 ADMIN_ONLY = False
 ENTRIES = 10
