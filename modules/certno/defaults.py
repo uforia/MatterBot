@@ -7,10 +7,10 @@ CHANNELS = (
 )
 TOPICS = (
     "Advisories",
-    "Generic News",
+    "General",
     "Government",
     "Vulnerabilities"
 )
+ADMIN_ONLY = False
 ENTRIES = 10
 TRANSLATION = True
-ADMIN_ONLY = False

@@ -14,5 +14,5 @@ TOPICS = (
     "Government",
     "Threat Intelligence"
 )
-ENTRIES = 10
 ADMIN_ONLY = False
+ENTRIES = 10
