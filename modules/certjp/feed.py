@@ -18,15 +18,15 @@ import re
 from pathlib import Path
 
 try:
-    from modules.jpcert import defaults as settings
+    from modules.certjp import defaults as settings
 except ModuleNotFoundError: # local test run
     import defaults as settings
     if Path('settings.py').is_file():
         import settings
 else:
-    if Path('modules/jpcert/settings.py').is_file():
+    if Path('modules/certjp/settings.py').is_file():
         try:
-            from modules.jpcert import settings
+            from modules.certjp import settings
         except ModuleNotFoundError: # local test run
             import settings
 
