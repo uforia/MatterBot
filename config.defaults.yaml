@@ -22,6 +22,10 @@ Matterbot:
     - "@unbind"
     - "!map"
     - "@map"
+  feedmode: "admin" # "admin" means only admins can use the feedcmds. Change to "user" for user-level access.
+                    # Be careful: in "user" mode, users may be able to subscribe to sensitive feed modules,
+                    # unless the feed's own settings restrict it to admin mode! Check the modules directory
+                    # for examples on how to do this.
   feedcmds: # Do not change these, or things might break
     - "!subscribe"
     - "!sub"

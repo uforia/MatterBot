@@ -161,6 +161,11 @@ class MattermostManager(object):
                             'NAME': getattr(settings,'NAME'),
                             'CHANNELS': [],
                         }
+                    if hasattr(settings,'ADMIN_ONLY'):
+                        if not 'ADMIN_ONLY' in self.feedmap[module_name]:
+                            self.feedmap[module_name]['ADMIN_ONLY'] = True
+                        else:
+                            self.feedmap[module_name]['ADMIN_ONLY'] = getattr(settings,'ADMIN_ONLY')
                     if hasattr(settings,'CHANNELS'):
                         if not 'CHANNELS' in self.feedmap[module_name]:
                             self.feedmap[module_name]['CHANNELS'] = []

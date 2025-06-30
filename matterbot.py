@@ -362,25 +362,29 @@ class MattermostManager(object):
         else:
             if command in options.Matterbot['feedcmds']:
                 if not self.isadmin(userid):
-                    logging.warning(f"User {username} ({userid}) attempted to use a feed (un)subscribe command without proper authorization.")
-                    text = "@" + username + ", you do not have permission to subscribe to / unsubscribe from feeds."
-                else:
+                    if options.Matterbot['feedmode'].lower() == 'admin':
+                        logging.warning(f"User {username} ({userid}) attempted to use a feed (un)subscribe command without proper authorization.")
+                        text = "@" + username + ", you do not have permission to subscribe to / unsubscribe from feeds."
+                elif self.isadmin(userid) or options.Matterbot['feedmode'].lower() == 'user':
                     all_channel_types = [self.chanid_to_channame(_['id']) for _ in self.mmDriver.channels.get_channels_for_user(self.my_id,self.my_team_id) if self.is_in_channel(_['id'])]
                     my_channels = [_ for _ in all_channel_types if not self.my_id in _]
                     if not channame in my_channels:
-                        text = "@" + username + ", you cannot bind feeds to direct message windows."
+                        text = f"@{username}, you cannot have feeds in a Direct Message window."
                     else:
                         feeds_to_consider = set()
                         if params[0] == '*':
                             feeds_to_consider = self.feedmap
                         else:
                             for param in params[0:]:
-                                if param in self.feedmap['TOPICS']:
-                                    for module_name in self.feedmap['TOPICS'][param]:
+                                lowercase_topics = {_.lower(): _ for _ in self.feedmap['TOPICS']}
+                                if param.lower() in lowercase_topics:
+                                    topic_key = lowercase_topics[param]
+                                    for module_name in self.feedmap['TOPICS'][topic_key]:
                                         feeds_to_consider.add(module_name)
                                 else:
                                     feeds_to_consider.add(param)
                         switched_feeds = set()
+                        blocked_feedchanges = set()
                         if len(params):
                             if command in ('!unsub', '!unsubscribe', '@unsub', '@unsubscribe'):
                                 mode = 'disable'
@@ -388,20 +392,30 @@ class MattermostManager(object):
                                 mode = 'enable'
                             for module_name in feeds_to_consider:
                                 if module_name in self.feedmap:
-                                    if mode == 'enable':
-                                        if 'NAME' in self.feedmap[module_name]:
-                                            if not channame in self.feedmap[module_name]['CHANNELS']:
-                                                self.feedmap[module_name]['CHANNELS'].append(channame)
-                                                switched_feeds.add(module_name)
-                                    elif mode == 'disable':
-                                        if 'NAME' in self.feedmap[module_name]:
-                                            if channame in self.feedmap[module_name]['CHANNELS']:
-                                                self.feedmap[module_name]['CHANNELS'].remove(channame)
-                                                switched_feeds.add(module_name)
+                                    ADMIN_ONLY = self.feedmap[module_name]['ADMIN_ONLY'] if 'ADMIN_ONLY' in self.feedmap[module_name] else True
+                                    if not ADMIN_ONLY or self.isadmin(userid):
+                                        if mode == 'enable':
+                                            if 'NAME' in self.feedmap[module_name]:
+                                                if not channame in self.feedmap[module_name]['CHANNELS']:
+                                                    self.feedmap[module_name]['CHANNELS'].append(channame)
+                                                    switched_feeds.add(module_name)
+                                        elif mode == 'disable':
+                                            if 'NAME' in self.feedmap[module_name]:
+                                                if channame in self.feedmap[module_name]['CHANNELS']:
+                                                    self.feedmap[module_name]['CHANNELS'].remove(channame)
+                                                    switched_feeds.add(module_name)
+                                    else:
+                                        blocked_feedchanges.add(module_name)
+                                if len(blocked_feedchanges):
+                                    logging.warning(f"User {username} ({userid}) attempted an (un)subscribe from/to `{"`, `".join(module_name)}` in {channame} without authorization.")
+                                    text = f"@{username}, you do not have permission to (un)subscribe from/to `{"`, `".join(module_name)}` in {channame}."
                                 if len(switched_feeds):
-                                    text = "@" + username + f", the following feeds were {mode}d: `"+"`, `".join(switched_feeds)+"`."
-                    messages.append(text)
-                    await self.update_feedmap()
+                                    logging.info(f"User {username} ({userid}) (un)subscribed from/to in {channame}: `{"`, `".join(module_name)}`.")
+                                    text = f"@{username}, the following feeds were {mode}d in {channame}: `"+"`, `".join(switched_feeds)+"`."
+                            await self.update_feedmap()
+                else:
+                    text = f"@{username}, how did you end up here?"
+                messages.append(text)
         if len(messages):
             for message in messages:
                 await self.send_message(chanid, message, rootid)
