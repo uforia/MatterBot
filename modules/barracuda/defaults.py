@@ -10,3 +10,4 @@ TOPICS = (
     "Vulnerabilities"
 )
 ENTRIES = 10
+ADMIN_ONLY = False

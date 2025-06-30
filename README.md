@@ -176,6 +176,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | Windows IR Blog                                                                                  | RSS            | No               | No                |
 | Wiz.io Cloud Research                                                                            | RSS            | No               | No                |
 | Xintra (Inversecos) Research Blog                                                                | RSS            | No               | No                |
+| Yarix Threat Intelligence                                                                        | RSS            | No               | No                |
 | Zero Day Initiative Upcoming Advisories                                                          | RSS            | No               | No                |
 | Zetier Threat Intelligence                                                                       | RSS            | No               | No                |
 

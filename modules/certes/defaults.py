@@ -22,3 +22,4 @@ TOPICS = (
 )
 ENTRIES = 10
 TRANSLATION = True
+ADMIN_ONLY = False
