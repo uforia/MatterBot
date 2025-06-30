@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 
 NAME = "OpenCVE Feed"
+# Your OpenCVE instance. You may use the public OpenCVE API as well, but
+# be aware of rate limits. It is strongly recommended to setup your own
+# OpenCVE instance.
+URL = "https://<your-opencve-instance-here>"
 CHANNELS = (
     "newsfeed",
 )
@@ -8,10 +12,6 @@ TOPICS = (
     "Vulnerabilities",
 )
 ADMIN_ONLY = True
-# Your OpenCVE instance. You may use the public OpenCVE API as well, but
-# be aware of rate limits. It is strongly recommended to setup your own
-# OpenCVE instance.
-URL = "https://<your-opencve-instance-here>"
 # If you want to link to the public OpenCVE descriptions, change this to
 # 'True'
 PUBLICDESCURL = True
