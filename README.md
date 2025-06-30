@@ -133,7 +133,6 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | Recorded Future Threat Research                                                                  | RSS            | No               | No                |
 | Redcanary Security Blog                                                                          | RSS            | No               | No                |
 | Reddit (configurable list of subreddits)                                                         | RSS            | No               | No                |
-| Redsense Threat Intelligence                                                                     | RSS            | No               | No                |
 | RST Cloud Intelligence                                                                           | RSS            | No               | No                |
 | S3 Eurom Research                                                                                | RSS            | No               | No                |
 | SANS Internet Storm Center                                                                       | RSS            | No               | No                |
