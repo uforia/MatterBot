@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 
 NAME = "CERT Česká Republika"
+URL = "https://nukib.gov.cz/rss.xml"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://nukib.gov.cz/rss.xml"
+TOPICS = (
+    "Advisories",
+    "Government",
+    "Vulnerabilities"
+)
 ENTRIES = 10
 TRANSLATION = True
+ADMIN_ONLY = False

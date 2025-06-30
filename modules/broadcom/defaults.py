@@ -9,7 +9,9 @@ CHANNELS = (
     "newsfeed",
 )
 TOPICS = (
+    "Enterprise Software",
     "Threat Intelligence",
     "Vulnerabilities"
 )
 ENTRIES = 10
+ADMIN_ONLY = False

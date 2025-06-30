@@ -6,7 +6,7 @@ CHANNELS = (
     "newsfeed",
 )
 TOPICS = (
-    "OT",
+    "Operational Technology",
     "Security Posture",
     "Threat Intelligence"
 )

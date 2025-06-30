@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 
 NAME = "CERT République Française"
+URL = "https://www.cert.ssi.gouv.fr/feed/"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://www.cert.ssi.gouv.fr/feed/"
+TOPICS = (
+    "Advisories",
+    "Government",
+    "Vulnerabilities"
+)
 ENTRIES = 10
 TRANSLATION = True
+ADMIN_ONLY = False
