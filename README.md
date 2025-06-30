@@ -161,6 +161,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | Tripwire State of Security                                                                       | RSS            | No               | No                |
 | Trustedsec Offensive Security                                                                    | RSS            | No               | No                |
 | Trustwave SpiderLabs                                                                             | RSS            | No               | No                |
+| Tweakers.net Nieuws                                                                              | RSS            | No               | No                |
 | US-CERT National Cyber Awareness System (Advisories, Alerts, Analysis Reports, Current Activity) | RSS            | No               | No                |
 | Validin Threat Intelligence                                                                      | RSS            | No               | No                |
 | Varonis Threat Research                                                                          | RSS            | No               | No                |
