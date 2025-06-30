@@ -11,7 +11,7 @@ CHANNELS = (
 )
 TOPICS = (
     "Advisories",
-    "Generic News",
+    "General",
     "Government",
     "Vulnerabilities"
 )

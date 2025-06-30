@@ -14,3 +14,7 @@ RENAMES = {
     'x_2': 'x',
 }
 ENTRIES = 100
+TOPICS = (
+    "CTI",
+)
+ADMIN_ONLY = False

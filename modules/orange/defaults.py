@@ -7,8 +7,8 @@ CHANNELS = (
 )
 TOPICS = (
     "Exploits",
-    "Generic News",
-    "Reverse Engineering"
+    "General",
+    "Reversing"
 )
-ENTRIES = 10
 ADMIN_ONLY = False
+ENTRIES = 10

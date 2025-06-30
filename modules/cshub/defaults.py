@@ -9,8 +9,8 @@ CATEGORIES = [
     "malware",
 ]
 TOPICS = (
-    "Generic News",
-    "Security Posture"
+    "General",
+    "Posture"
 )
-ENTRIES = 10
 ADMIN_ONLY = False
+ENTRIES = 10

@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 
 NAME = "SebDraven blog"
+URL = "https://medium.com/feed/@sebdraven"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://medium.com/feed/@sebdraven"
+TOPICS = (
+    "CTI",
+)
+ADMIN_ONLY = False
 ENTRIES = 10

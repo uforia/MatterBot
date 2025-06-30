@@ -8,8 +8,8 @@ CHANNELS = (
 TOPICS = (
     "Advisories",
     "Government",
-    "Operational Technology",
+    "OT",
     "Vulnerabilities"
 )
-ENTRIES = 10
 ADMIN_ONLY = False
+ENTRIES = 10

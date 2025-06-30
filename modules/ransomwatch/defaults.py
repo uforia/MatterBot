@@ -1,9 +1,16 @@
 #!/usr/bin/env python3
 
 NAME = "Ransomware Activity tracker"
+URL = "https://raw.githubusercontent.com/joshhighet/ransomwatch/main/posts.json"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://raw.githubusercontent.com/joshhighet/ransomwatch/main/posts.json"
+TOPICS = (
+    "General",
+    "CTI",
+    "Vendor",
+    "Vulnerabilities"
+)
+ADMIN_ONLY = False
 ENTRIES = 20
 HISTORY = "ransomwatch.cache"

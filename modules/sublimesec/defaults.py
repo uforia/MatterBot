@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 
 NAME = "Sublime Security Blog"
+URL = "https://sublime.security/blog/rss.xml"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://sublime.security/blog/rss.xml"
+TOPICS = (
+    "CTI",
+)
+ADMIN_ONLY = False
 ENTRIES = 10

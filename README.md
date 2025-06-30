@@ -180,6 +180,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | Zetier Threat Intelligence                                                                       | RSS            | No               | No                |
 
 New Matterfeed modules can be created. A boilerplate example can be found in the `modules` directory.
+Every module is categorized in one or more topic(s). Users can subscribe or unsubscribe to specific newsfeeds or to a whole topic.
 
 ### `matterbot` Commands
 
@@ -265,6 +266,11 @@ New Matterbot modules can be created. A boilerplate example can be found in the 
 1) Copy `config.defaults.yaml` to `config.yaml` and edit the settings.
 2) For every module you want to use, check the respective configuration in `modules/.../`. If you do not want to use a `feed` module, the easiest way to disable it is to move the directory somewhere else (or delete it), so it will not be detected on startup.
 3) Start up the `matterfeed.py` and watch the logfile for errors.
+
+### Configuring channel newsfeeds
+
+Admins and users have the option to create a custom newsfeed channel. In here, you can subscribe to specific feeds or topics. Every module has a `ADMIN_ONLY` setting which can be `True` or `False`. Admins can choose if regular users can activate a module in their own channel, or if the subscription is only managed by the admin.
+Use `@feeds` to see all available topics and (activated) feeds. To subscribe, use `@sub <feedname>`/`@subscribe <feedname>` or `@unsub <feedname>`/`@unsubscribe <feedname>` to unsubscribe from a feed in a channel.
 
 ## matterbot.py
 

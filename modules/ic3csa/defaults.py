@@ -9,5 +9,5 @@ TOPICS = (
     "Advisories",
     "Government"
 )
-ENTRIES = 10
 ADMIN_ONLY = False
+ENTRIES = 10

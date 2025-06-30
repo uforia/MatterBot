@@ -13,7 +13,7 @@ CHANNELS = (
 )
 TOPICS = (
     "Advisories",
-    "Threat Intelligence",
+    "CTI",
     "Vendor",
     "Vulnerabilities"
 )

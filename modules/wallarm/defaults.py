@@ -5,4 +5,9 @@ CHANNELS = (
     "newsfeed",
 )
 URL = "https://lab.wallarm.com/feed/"
+TOPICS = (
+    "General",
+    "CTI"
+)
+ADMIN_ONLY = False
 ENTRIES = 10

@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
 NAME = "Qualys Threat Research"
+URL = "https://blog.qualys.com/vulnerabilities-threat-research/feed"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://blog.qualys.com/vulnerabilities-threat-research/feed"
 TOPICS = (
-    "Threat Intelligence",
+    "CTI",
     "Vulnerabilities"
 )
-ENTRIES = 10
 ADMIN_ONLY = False
+ENTRIES = 10

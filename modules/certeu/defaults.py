@@ -10,9 +10,9 @@ CHANNELS = (
 )
 TOPICS = (
     "Advisories",
-    "Generic News",
+    "General",
     "Government",
-    "Threat Intelligence"
+    "CTI"
 )
 ADMIN_ONLY = False
 ENTRIES = 10

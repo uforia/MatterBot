@@ -6,7 +6,7 @@ CHANNELS = (
 )
 URL = "https://blog.lumen.com/feed/"
 TOPICS = (
-    "Threat Intelligence",
+    "CTI",
 )
-ENTRIES = 10
 ADMIN_ONLY = False
+ENTRIES = 10

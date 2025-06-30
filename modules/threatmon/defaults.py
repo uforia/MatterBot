@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 
 NAME = "Threatmon Threat Intelligence"
+URL = "https://threatmon.io/feed/"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://threatmon.io/feed/"
+TOPICS = (
+    "CTI",
+)
+ADMIN_ONLY = False
 ENTRIES = 10

@@ -8,5 +8,5 @@ CHANNELS = (
 TOPICS = (
     "Exploits",
 )
-ENTRIES = 10
 ADMIN_ONLY = False
+ENTRIES = 10

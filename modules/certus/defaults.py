@@ -13,8 +13,8 @@ CATEGORIES = [
 TOPICS = (
     "Advisories",
     "Government",
-    "Threat Intelligence",
+    "CTI",
     "Vulnerabilities"
 )
-ENTRIES = 10
 ADMIN_ONLY = False
+ENTRIES = 10

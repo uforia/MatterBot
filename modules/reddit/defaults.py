@@ -10,4 +10,8 @@ SUBREDDITS = [
     'malware',
     'threatintel',
 ]
+TOPICS = (
+    "General",
+)
+ADMIN_ONLY = False
 ENTRIES = 10

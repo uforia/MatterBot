@@ -6,9 +6,9 @@ CHANNELS = (
     "newsfeed",
 )
 TOPICS = (
-    "Detection Engineering",
-    "Reverse Engineering",
-    "Threat Intelligence"
+    "CTI",
+    "Detection",
+    "Reversing"
 )
 ENTRIES = 10
 ADMIN_ONLY = False

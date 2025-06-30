@@ -7,8 +7,8 @@ CHANNELS = (
 URL = "https://onapsis.com/feed/"
 TOPICS = (
     "Advisories",
-    "Enterprise Software",
-    "Threat Intelligence"
+    "Software",
+    "CTI"
 )
-ENTRIES = 10
 ADMIN_ONLY = False
+ENTRIES = 10

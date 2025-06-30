@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 
 NAME = "Security Affairs"
+URL = "https://securityaffairs.com/wordpress/rss"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://securityaffairs.com/wordpress/rss"
+TOPICS = (
+    "General",
+)
+ADMIN_ONLY = False
 ENTRIES = 10

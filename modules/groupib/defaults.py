@@ -6,7 +6,7 @@ CHANNELS = (
     "newsfeed",
 )
 TOPICS = (
-    "Generic News",
+    "General",
 )
-ENTRIES = 10
 ADMIN_ONLY = False
+ENTRIES = 10

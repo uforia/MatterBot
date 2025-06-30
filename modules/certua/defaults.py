@@ -7,8 +7,8 @@ CHANNELS = (
 )
 TOPICS = (
     "Government",
-    "Reverse Engineering",
-    "Threat Intelligence",
+    "Reversing",
+    "CTI",
     "Vulnerabilities"
 )
 ENTRIES = 10

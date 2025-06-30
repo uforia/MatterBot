@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 
 NAME = "Windows IR Blog"
+URL = "https://windowsir.blogspot.com/feeds/posts/default?alt=rss"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://windowsir.blogspot.com/feeds/posts/default?alt=rss"
 TOPICS = (
-    "Detection Engineering",
-    "Exploits",
-    "Reverse Engineering",
-    "Threat Intelligence",
+    "Detection",
+    "Reversing",
+    "CTI",
     "Vulnerabilities",
 )
 ADMIN_ONLY = False

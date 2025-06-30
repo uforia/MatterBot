@@ -6,7 +6,7 @@ CHANNELS = (
 )
 API = "<wiki URL>" # /graphql will be added automatically
 TOPICS = (
-    "Generic News",
+    "General",
 )
 ADMIN_ONLY = True
 TOKEN = "<bearer token for your API access"

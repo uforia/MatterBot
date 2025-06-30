@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 
 NAME = "Snyk.io Security Blog"
+URL = "https://snyk.io/blog/feed/"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://snyk.io/blog/feed/"
+TOPICS = (
+    "General",
+)
+ADMIN_ONLY = False
 ENTRIES = 10

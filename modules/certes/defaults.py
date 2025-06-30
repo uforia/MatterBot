@@ -17,7 +17,7 @@ CHANNELS = (
 TOPICS = (
     "Advisories",
     "Government",
-    "Threat Intelligence",
+    "CTI",
     "Vulnerabilities"
 )
 ADMIN_ONLY = False

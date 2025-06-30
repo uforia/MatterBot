@@ -6,7 +6,7 @@ CHANNELS = (
     "newsfeed",
 )
 TOPICS = (
-    "Generic News",
+    "General",
     "Government"
 )
 ADMIN_ONLY = False

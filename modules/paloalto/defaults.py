@@ -10,9 +10,9 @@ CHANNELS = (
 )
 TOPICS = (
     "Advisories",
-    "Threat Intelligence",
+    "CTI",
     "Vendor",
     "Vulnerabilities"
 )
-ENTRIES = 10
 ADMIN_ONLY = False
+ENTRIES = 10

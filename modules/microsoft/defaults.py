@@ -10,7 +10,7 @@ CHANNELS = (
 )
 TOPICS = (
     "Advisories",
-    "Threat Intelligence",
+    "CTI",
     "Vulnerabilities"
 )
 ENTRIES = 30
