@@ -121,7 +121,6 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | Orange Cyberdefense SensePost                                                                    | RSS            | No               | No                |
 | Osint10x Blog / News                                                                             | RSS            | No               | No                |
 | Outpost24 Threat Intelligence                                                                    | RSS            | No               | No                |
-| PacketStorm Security                                                                             | RSS            | No               | No                |
 | Palo Alto/Unit 42 Advisories                                                                     | RSS            | No               | No                |
 | Patchstack Wordpress Security                                                                    | RSS            | No               | No                |
 | Persistent Security News                                                                         | RSS            | No               | No                |
