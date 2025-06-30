@@ -273,7 +273,7 @@ Optionally, admins and users can create a channel with its own custom newsfeed. 
   
 Usage is simple:  
 - Type `@feeds` to see all available topics and (de)activated feeds;  
-- To (un)subscribe from/to specific feed names, use the `@sub`, `@unsub`, `@subscribe`, `@unsubscribe` commands followed by one or more feed names, e.g.: `@sub <feedname1> <feedname2> ... <feedname3>`;
+- To (un)subscribe from/to specific feed names, use the `@sub`, `@unsub`, `@subscribe`, `@unsubscribe` commands followed by one or more feed names, e.g.: `@sub <feedname1> <feedname2> ... <feednameN>`;
 - It is also possible to (de)activate feeds based on topics. Use the same `@sub`, `@unsub`, `@subscribe`, `@unsubscribe` commands but specify a topic, e.g.: `@sub Advisories`.  
 
 ## matterbot.py
