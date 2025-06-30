@@ -368,7 +368,7 @@ class MattermostManager(object):
                                 unclassified_feeds_displaynames.add(displayname)
                             text += f"\n| Unclassified | `"+"`, `".join(sorted(unclassified_feeds_displaynames))+"` |"
                         text += "\n\n"
-                        text += "*An asterisk after a module name (\*) indicates the feed can only be enabled/disabled by a MatterBot admin.*\n"
+                        text += "*An asterisk after a module name `(*)` indicates the feed can only be enabled/disabled by a MatterBot admin.*\n"
                         messages.append(text)
                     if len(enabled_feeds):
                         text = f"Enabled feeds: `"+"` ,`".join(enabled_feeds)+"`"
