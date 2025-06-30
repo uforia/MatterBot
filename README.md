@@ -269,8 +269,12 @@ New Matterbot modules can be created. A boilerplate example can be found in the 
 
 ### Configuring channel newsfeeds
 
-Admins and users have the option to create a custom newsfeed channel. In here, you can subscribe to specific feeds or topics. Every module has a `ADMIN_ONLY` setting which can be `True` or `False`. Admins can choose if regular users can activate a module in their own channel, or if the subscription is only managed by the admin.
-Use `@feeds` to see all available topics and (activated) feeds. To subscribe, use `@sub <feedname>`/`@subscribe <feedname>` or `@unsub <feedname>`/`@unsubscribe <feedname>` to unsubscribe from a feed in a channel.
+Optionally, admins and users can create a channel with its own custom newsfeed. After adding the bot to the channel, there are commands to (un)subscribe from/to specific feeds or topics. Every feed module has an `ADMIN_ONLY` setting, which is either set to `True` or `False`. This is a hardcoded value which indicates that the module is user-(un)subscribable or not. Additionally, a global configuration setting in your `config.yaml` determines whether only bot admins or users may (de)activate feeds in a channel.  
+  
+Usage is simple:  
+- Type `@feeds` to see all available topics and (de)activated feeds;  
+- To (un)subscribe from/to specific feed names, use the `@sub`, `@unsub`, `@subscribe`, `@unsubscribe` commands followed by one or more feed names, e.g.: `@sub <feedname1> <feedname2> ... <feedname3>`;
+- It is also possible to (de)activate feeds based on topics. Use the same `@sub`, `@unsub`, `@subscribe`, `@unsubscribe` commands but specify a topic, e.g.: `@sub Advisories`.  
 
 ## matterbot.py
 
