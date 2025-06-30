@@ -160,23 +160,24 @@ class MattermostManager(object):
                         self.feedmap[module_name] = {
                             'NAME': getattr(settings,'NAME'),
                             'CHANNELS': [],
+                            'TOPICS': [],
+                            'ADMIN_ONLY': True,
                         }
+                    if not 'TOPICS' in self.feedmap:
+                        self.feedmap['TOPICS'] = {}
+                    if not 'CHANNELS' in self.feedmap[module_name]:
+                        self.feedmap[module_name]['CHANNELS'] = []
+                    if not 'TOPICS' in self.feedmap[module_name]:
+                        self.feedmap[module_name]['TOPICS'] = []
+                    if not 'ADMIN_ONLY' in self.feedmap[module_name]:
+                        self.feedmap[module_name]['ADMIN_ONLY'] = True
                     if hasattr(settings,'ADMIN_ONLY'):
-                        if not 'ADMIN_ONLY' in self.feedmap[module_name]:
-                            self.feedmap[module_name]['ADMIN_ONLY'] = True
-                        else:
-                            self.feedmap[module_name]['ADMIN_ONLY'] = getattr(settings,'ADMIN_ONLY')
+                        self.feedmap[module_name]['ADMIN_ONLY'] = getattr(settings,'ADMIN_ONLY')
                     if hasattr(settings,'CHANNELS'):
-                        if not 'CHANNELS' in self.feedmap[module_name]:
-                            self.feedmap[module_name]['CHANNELS'] = []
                         for channel in getattr(settings,'CHANNELS'):
                             if not channel in self.feedmap[module_name]['CHANNELS']:
                                 self.feedmap[module_name]['CHANNELS'].append(channel)
                     if hasattr(settings,'TOPICS'):
-                        if not 'TOPICS' in self.feedmap:
-                            self.feedmap['TOPICS'] = {}
-                        if not 'TOPICS' in self.feedmap[module_name]:
-                            self.feedmap[module_name]['TOPICS'] = []
                         for topic in getattr(settings,'TOPICS'):
                             if not topic in self.feedmap[module_name]['TOPICS']:
                                 self.feedmap[module_name]['TOPICS'].append(topic)

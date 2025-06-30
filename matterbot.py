@@ -316,6 +316,7 @@ class MattermostManager(object):
         return False
 
     async def feed_message(self, userid, post, params, chaninfo, rootid):
+        self.feedmap = self.load_feedmap()
         command = post['message'].split()[0]
         chanid = post['channel_id']
         channame = chaninfo['name']
@@ -344,14 +345,27 @@ class MattermostManager(object):
                                                 availablefeeds.remove(module_name)
                                             enabled_feeds.add(module_name)
                                 if len(availablefeeds):
-                                    text += f"\n| {topic} | `"+"`, `".join(sorted(availablefeeds))+"` |"
+                                    availablefeeds_displaynames = set()
+                                    for availablefeed in availablefeeds:
+                                        displayname = availablefeed
+                                        if 'ADMIN_ONLY' in self.feedmap[availablefeed]:
+                                            displayname = availablefeed+r'(*)' if self.feedmap[availablefeed]['ADMIN_ONLY'] else availablefeed
+                                        availablefeeds_displaynames.add(displayname)
+                                    text += f"\n| {topic} | `"+"`, `".join(sorted(availablefeeds_displaynames))+"` |"
                         for module_name in self.feedmap:
                             if 'NAME' in self.feedmap[module_name]:
                                 if 'TOPICS' not in self.feedmap[module_name]:
                                     unclassified_feeds.add(module_name)
-                        if len(availablefeeds):
-                            text += f"\n| Unclassified | `"+"`, `".join(sorted(unclassified_feeds))+"` |"
+                        if len(unclassified_feeds):
+                            unclassified_feeds_displaynames = set()
+                            for unclassified_feed in unclassified_feeds:
+                                displayname = unclassified_feed
+                                if 'ADMIN_ONLY' in self.feedmap[unclassified_feed]:
+                                    displayname = unclassified_feed+r'(*)' if self.feedmap[unclassified_feed]['ADMIN_ONLY'] else unclassified_feed
+                                unclassified_feeds_displaynames.add(displayname)
+                            text += f"\n| Unclassified | `"+"`, `".join(sorted(unclassified_feeds_displaynames))+"` |"
                         text += "\n\n"
+                        text += "*An asterisk after a module name (\*) indicates the feed can only be enabled/disabled by a MatterBot admin.*\n"
                         messages.append(text)
                     if len(enabled_feeds):
                         text = f"Enabled feeds: `"+"` ,`".join(enabled_feeds)+"`"
@@ -365,11 +379,13 @@ class MattermostManager(object):
                     if options.Matterbot['feedmode'].lower() == 'admin':
                         logging.warning(f"User {username} ({userid}) attempted to use a feed (un)subscribe command without proper authorization.")
                         text = "@" + username + ", you do not have permission to subscribe to / unsubscribe from feeds."
-                elif self.isadmin(userid) or options.Matterbot['feedmode'].lower() == 'user':
+                        messages.append(text)
+                if self.isadmin(userid) or options.Matterbot['feedmode'].lower() == 'user':
                     all_channel_types = [self.chanid_to_channame(_['id']) for _ in self.mmDriver.channels.get_channels_for_user(self.my_id,self.my_team_id) if self.is_in_channel(_['id'])]
                     my_channels = [_ for _ in all_channel_types if not self.my_id in _]
                     if not channame in my_channels:
                         text = f"@{username}, you cannot have feeds in a Direct Message window."
+                        messages.append(text)
                     else:
                         feeds_to_consider = set()
                         if params[0] == '*':
@@ -407,15 +423,20 @@ class MattermostManager(object):
                                     else:
                                         blocked_feedchanges.add(module_name)
                                 if len(blocked_feedchanges):
-                                    logging.warning(f"User {username} ({userid}) attempted an (un)subscribe from/to `{"`, `".join(module_name)}` in {channame} without authorization.")
-                                    text = f"@{username}, you do not have permission to (un)subscribe from/to `{"`, `".join(module_name)}` in {channame}."
+                                    logging.warning(f"User {username} ({userid}) attempted an (un)subscribe from/to `{"`, `".join(blocked_feedchanges)}` in `{channame}` without authorization.")
+                                    text = f"@{username}, you do not have permission to (un)subscribe from/to `{"`, `".join(blocked_feedchanges)}` in `{channame}`."
+                                    messages.append(text)
                                 if len(switched_feeds):
-                                    logging.info(f"User {username} ({userid}) (un)subscribed from/to in {channame}: `{"`, `".join(module_name)}`.")
-                                    text = f"@{username}, the following feeds were {mode}d in {channame}: `"+"`, `".join(switched_feeds)+"`."
+                                    logging.info(f"User {username} ({userid}) (un)subscribed from/to in `{channame}`: `{"`, `".join(switched_feeds)}`.")
+                                    text = f"@{username}, the following feeds were {mode}d in `{channame}`: `"+"`, `".join(switched_feeds)+"`."
+                                    messages.append(text)
                             await self.update_feedmap()
+                elif not self.isadmin(userid) and options.Matterbot['feedmode'].lower() == 'admin':
+                    text = f"@{username}, feed (un)subscription is restricted to administrators in the current bot configuration."
+                    messages.append(text)
                 else:
                     text = f"@{username}, how did you end up here?"
-                messages.append(text)
+                    messages.append(text)
         if len(messages):
             for message in messages:
                 await self.send_message(chanid, message, rootid)
