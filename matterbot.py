@@ -423,11 +423,11 @@ class MattermostManager(object):
                                     else:
                                         blocked_feedchanges.add(module_name)
                                 if len(blocked_feedchanges):
-                                    logging.warning(f"User {username} ({userid}) attempted an (un)subscribe from/to `{"`, `".join(blocked_feedchanges)}` in `{channame}` without authorization.")
-                                    text = f"@{username}, you do not have permission to (un)subscribe from/to `{"`, `".join(blocked_feedchanges)}` in `{channame}`."
+                                    logging.warning(f"User {username} ({userid}) attempted an (un)subscribe from/to `"+"`, `".join(blocked_feedchanges)+f"` in `{channame}` without authorization.")
+                                    text = f"@{username}, you do not have permission to (un)subscribe from/to `"+"`, `".join(blocked_feedchanges)+f"` in `{channame}`."
                                     messages.append(text)
                                 if len(switched_feeds):
-                                    logging.info(f"User {username} ({userid}) (un)subscribed from/to in `{channame}`: `{"`, `".join(switched_feeds)}`.")
+                                    logging.info(f"User {username} ({userid}) (un)subscribed from/to in `{channame}`: `"+"`, `".join(switched_feeds)+"`.")
                                     text = f"@{username}, the following feeds were {mode}d in `{channame}`: `"+"`, `".join(switched_feeds)+"`."
                                     messages.append(text)
                             await self.update_feedmap()
