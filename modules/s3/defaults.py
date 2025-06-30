@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 
 NAME = "S3 Eurom Research"
+URL = "https://www.s3.eurecom.fr/index.xml"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://www.s3.eurecom.fr/index.xml"
+TOPICS = (
+    "CTI",
+    "Reversing"
+)
+ADMIN_ONLY = False
 ENTRIES = 10

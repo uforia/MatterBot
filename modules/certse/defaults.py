@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
 NAME = "Nationellt CSIRT Sverige"
+URL = "https://www.cert.se/feed.rss"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://www.cert.se/feed.rss"
 TOPICS = (
     "Advisories",
-    "Generic News",
+    "General",
     "Government",
     "Vulnerabilities"
 )

@@ -5,4 +5,10 @@ CHANNELS = (
     "newsfeed",
 )
 URL = "https://certvde.com/en/advisories/feeds/rss/"
+TOPICS = (
+    "Advisories",
+    "OT",
+    "Vulnerabilities"
+)
+ADMIN_ONLY = False
 ENTRIES = 10

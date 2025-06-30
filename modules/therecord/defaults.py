@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 
 NAME = "The Record Media"
+URL = "https://therecord.media/news/cybercrime/feed"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://therecord.media/news/cybercrime/feed"
+TOPICS = (
+    "General",
+)
+ADMIN_ONLY = False
 ENTRIES = 10

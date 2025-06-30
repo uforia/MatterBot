@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 
 NAME = "CERT Rzeczpospolita Polska"
+URL = "https://cert.pl/en/rss.xml"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://cert.pl/en/rss.xml"
 TOPICS = (
     "Advisories",
-    "Generic News",
     "Government",
-    "Threat Intelligence",
     "Vulnerabilities"
 )
 ADMIN_ONLY = False

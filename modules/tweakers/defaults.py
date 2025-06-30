@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-NAME = "Snyk.io Security Blog"
-URL = "https://snyk.io/blog/feed/"
+NAME = "Tweakers.net Nieuws"
+URL = "https://tweakers.net/feeds/mixed.xml"
 CHANNELS = (
     "newsfeed",
 )

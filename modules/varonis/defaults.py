@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 
 NAME = "Varonis Threat Research"
+URL = "https://www.varonis.com/blog/rss.xml"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://www.varonis.com/blog/rss.xml"
+TOPICS = (
+    "CTI",
+)
+ADMIN_ONLY = False
 ENTRIES = 10

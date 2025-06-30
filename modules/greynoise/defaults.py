@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 
 NAME = "GreyNoise Threat Intelligence"
+URL = "https://www.greynoise.io/blog/rss.xml"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://www.greynoise.io/blog/rss.xml"
+TOPICS = (
+    "CTI",
+    "Vulnerabilities"
+)
+ADMIN_ONLY = False
 ENTRIES = 10

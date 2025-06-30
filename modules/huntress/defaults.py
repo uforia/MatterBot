@@ -6,7 +6,8 @@ CHANNELS = (
     "newsfeed",
 )
 TOPICS = (
-    "Threat Intelligence",
+    "CTI",
     "Vulnerabilities"
 )
+ADMIN_ONLY = False
 ENTRIES = 10

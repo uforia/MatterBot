@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-NAME = "CERT Republika Slovenija"
-URL = "https://www.cert.si/feed/"
+NAME = "JPCERT/CC Warnings & Emergency Bulletins"
+URL = "https://www.jpcert.or.jp/rss/jpcert.rdf"
 CHANNELS = (
     "newsfeed",
 )

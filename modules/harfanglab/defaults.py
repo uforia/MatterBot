@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 
 NAME = "Harfanglab Threat Intelligence"
+URL = "https://harfanglab.io/insidethelab/feed/"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://harfanglab.io/insidethelab/feed/"
+TOPICS = (
+    "CTI",
+)
+ADMIN_ONLY = False
 ENTRIES = 10

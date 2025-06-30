@@ -10,4 +10,11 @@ CATEGORIES = [
     "ncas/analysis-reports",
     "ncas/current-activity",
 ]
+TOPICS = (
+    "Advisories",
+    "Government",
+    "CTI",
+    "Vulnerabilities"
+)
+ADMIN_ONLY = False
 ENTRIES = 10

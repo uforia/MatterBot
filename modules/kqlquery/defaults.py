@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 
 NAME = "KQLQuery Blog"
+URL = "https://kqlquery.com/index.xml"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://kqlquery.com/index.xml"
+TOPICS = (
+    "CTI",
+)
+ADMIN_ONLY = False
 ENTRIES = 10

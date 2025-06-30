@@ -121,7 +121,6 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | Orange Cyberdefense SensePost                                                                    | RSS            | No               | No                |
 | Osint10x Blog / News                                                                             | RSS            | No               | No                |
 | Outpost24 Threat Intelligence                                                                    | RSS            | No               | No                |
-| PacketStorm Security                                                                             | RSS            | No               | No                |
 | Palo Alto/Unit 42 Advisories                                                                     | RSS            | No               | No                |
 | Patchstack Wordpress Security                                                                    | RSS            | No               | No                |
 | Persistent Security News                                                                         | RSS            | No               | No                |
@@ -134,7 +133,6 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | Recorded Future Threat Research                                                                  | RSS            | No               | No                |
 | Redcanary Security Blog                                                                          | RSS            | No               | No                |
 | Reddit (configurable list of subreddits)                                                         | RSS            | No               | No                |
-| Redsense Threat Intelligence                                                                     | RSS            | No               | No                |
 | RST Cloud Intelligence                                                                           | RSS            | No               | No                |
 | S3 Eurom Research                                                                                | RSS            | No               | No                |
 | SANS Internet Storm Center                                                                       | RSS            | No               | No                |
@@ -163,6 +161,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | Tripwire State of Security                                                                       | RSS            | No               | No                |
 | Trustedsec Offensive Security                                                                    | RSS            | No               | No                |
 | Trustwave SpiderLabs                                                                             | RSS            | No               | No                |
+| Tweakers.net Nieuws                                                                              | RSS            | No               | No                |
 | US-CERT National Cyber Awareness System (Advisories, Alerts, Analysis Reports, Current Activity) | RSS            | No               | No                |
 | Validin Threat Intelligence                                                                      | RSS            | No               | No                |
 | Varonis Threat Research                                                                          | RSS            | No               | No                |
@@ -181,6 +180,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | Zetier Threat Intelligence                                                                       | RSS            | No               | No                |
 
 New Matterfeed modules can be created. A boilerplate example can be found in the `modules` directory.
+Every module is categorized in one or more topic(s). Users can subscribe or unsubscribe to specific newsfeeds or to a whole topic.
 
 ### `matterbot` Commands
 
@@ -266,6 +266,11 @@ New Matterbot modules can be created. A boilerplate example can be found in the 
 1) Copy `config.defaults.yaml` to `config.yaml` and edit the settings.
 2) For every module you want to use, check the respective configuration in `modules/.../`. If you do not want to use a `feed` module, the easiest way to disable it is to move the directory somewhere else (or delete it), so it will not be detected on startup.
 3) Start up the `matterfeed.py` and watch the logfile for errors.
+
+### Configuring channel newsfeeds
+
+Admins and users have the option to create a custom newsfeed channel. In here, you can subscribe to specific feeds or topics. Every module has a `ADMIN_ONLY` setting which can be `True` or `False`. Admins can choose if regular users can activate a module in their own channel, or if the subscription is only managed by the admin.
+Use `@feeds` to see all available topics and (activated) feeds. To subscribe, use `@sub <feedname>`/`@subscribe <feedname>` or `@unsub <feedname>`/`@unsubscribe <feedname>` to unsubscribe from a feed in a channel.
 
 ## matterbot.py
 

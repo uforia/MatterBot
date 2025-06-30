@@ -12,22 +12,24 @@
 # <channel>: basically the destination channel in Mattermost, e.g. 'Newsfeed', 'Incident', etc.
 # <content>: the content of the message, MD format possible
 
-import bs4
+from argostranslate import package, translate
 import feedparser
 import re
 from pathlib import Path
+
 try:
-    from modules.packetstormsecurity import defaults as settings
+    from modules.certjp import defaults as settings
 except ModuleNotFoundError: # local test run
     import defaults as settings
     if Path('settings.py').is_file():
         import settings
 else:
-    if Path('modules/packetstormsecurity/settings.py').is_file():
+    if Path('modules/certjp/settings.py').is_file():
         try:
-            from modules.packetstormsecurity import settings
+            from modules.certjp import settings
         except ModuleNotFoundError: # local test run
             import settings
+
 
 def query(MAX=settings.ENTRIES):
     items = []
@@ -38,19 +40,28 @@ def query(MAX=settings.ENTRIES):
     while count < MAX:
         try:
             title = feed.entries[count].title
+            if settings.TRANSLATION:
+                from_lan = "ja"
+                to_lan = "en"
+                # Check for new language packages to install (initial setup)
+                installed_packages = package.get_installed_packages()
+                package.update_package_index()
+                updateIndex = package.get_available_packages()
+                # Filter for correct language packages
+                packageSelection = next(filter(lambda x: x.from_code == from_lan and x.to_code == to_lan, updateIndex))
+                if packageSelection not in installed_packages:
+                    package.install_from_path(packageSelection.download())
+                title = translate.translate(title, from_lan, to_lan)
             link = feed.entries[count].link
             content = settings.NAME + ': [' + title + '](' + link + ')'
-            if len(feed.entries[count].description):
-                description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
-                if len(description)>400:
-                    description = description[:396]+' ...'
-                content += '\n>'+description+'\n'
             for channel in settings.CHANNELS:
                 items.append([channel, content])
             count+=1
         except IndexError:
             return items # No more items
     return items
+
+
 
 if __name__ == "__main__":
     print(query())

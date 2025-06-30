@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 
 NAME = "Patchstack Wordpress Security"
+URL = "https://patchstack.com/rss"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://patchstack.com/rss"
+TOPICS = (
+    "CTI",
+    "Vulnerabilities"
+)
+ADMIN_ONLY = False
 ENTRIES = 10

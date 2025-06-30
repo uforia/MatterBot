@@ -17,15 +17,15 @@ import feedparser
 import re
 from pathlib import Path
 try:
-    from modules.redsense import defaults as settings
+    from modules.tweakers import defaults as settings
 except ModuleNotFoundError: # local test run
     import defaults as settings
     if Path('settings.py').is_file():
         import settings
 else:
-    if Path('modules/redsense/settings.py').is_file():
+    if Path('modules/tweakers/settings.py').is_file():
         try:
-            from modules.redsense import settings
+            from modules.tweakers import settings
         except ModuleNotFoundError: # local test run
             import settings
 

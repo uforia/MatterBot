@@ -6,10 +6,10 @@ CHANNELS = (
     "newsfeed",
 )
 TOPICS = (
-    "Generic News",
-    "Security Posture",
-    "Threat Intelligence",
+    "General",
+    "Posture",
+    "CTI",
     "Vulnerabilities"
 )
-ENTRIES = 10
 ADMIN_ONLY = False
+ENTRIES = 10

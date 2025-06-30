@@ -8,4 +8,9 @@ CATEGORIES = [
     "attacks",
     "malware",
 ]
+TOPICS = (
+    "General",
+    "Posture"
+)
+ADMIN_ONLY = False
 ENTRIES = 10

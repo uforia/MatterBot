@@ -15,4 +15,8 @@ DOMAINS = ( # Use '.' for a wildcard: all domains contain at least one '.'
 )
 HISTORY = 'history.cache'
 THRESHOLD = 70 # Minimum score before reporting on a domain. Too low: lots of noise. Too high: chance of false negatives.
+TOPICS = (
+    "CTI",
+)
 ENTRIES = 10
+ADMIN_ONLY = True

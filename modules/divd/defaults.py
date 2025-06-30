@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 
 NAME = "DIVD CSIRT Feed"
+URL = "https://csirt.divd.nl/feed.xml"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://csirt.divd.nl/feed.xml"
+TOPICS = (
+    "Advisories",
+    "Government",
+    "Vulnerabilities"
+)
+ADMIN_ONLY = False
 ENTRIES = 10

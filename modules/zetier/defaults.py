@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 
 NAME = "Zetier Threat Intelligence"
+URL = "https://zetier.com/feed/"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://zetier.com/feed/"
 TOPICS = (
     "Exploits",
-    "Operational Technology",
-    "Reverse Engineering",
-    "Vulnerabilities",
+    "OT",
+    "Reversing",
+    "Vulnerabilities"
 )
 ADMIN_ONLY = False
 ENTRIES = 10

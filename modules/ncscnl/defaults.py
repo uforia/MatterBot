@@ -1,11 +1,18 @@
 #!/usr/bin/env python3
 
 NAME = "NCSC-NL Advisories"
+URL = "https://advisories.ncsc.nl/rss/advisories"
 CHANNELS = (
     "newsfeed",
 )
-URL = "https://advisories.ncsc.nl/rss/advisories"
+TOPICS = (
+    "Advisories",
+    "Government",
+    "Vulnerabilities"
+)
 ENTRIES = 30
+ADMIN_ONLY = False
+
 # The AUTOADVISORY feature is really only useful if you are using other
 # related bot modules, such as Qualys, and the bot can 'call itself'.
 # E.g.: you would need something like '@qualys sw' as the command.

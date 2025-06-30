@@ -7,7 +7,8 @@ CHANNELS = (
 )
 TOPICS = (
     "Exploits",
-    "Reverse Engineering",
-    "Threat Intelligence"
+    "Reversing",
+    "CTI"
 )
+ADMIN_ONLY = False
 ENTRIES = 10
