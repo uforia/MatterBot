@@ -38,6 +38,7 @@ parts/
 sdist/
 temp/
 var/
+welcome.msg
 wheels/
 pip-wheel-metadata/
 share/python-wheels/

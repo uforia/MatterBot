@@ -10,6 +10,7 @@ import logging
 import os
 import pathlib
 import sys
+import time
 import traceback
 import configargparse
 from mattermostdriver import Driver
@@ -55,6 +56,7 @@ class MattermostManager(object):
         self.channels = self.mmDriver.channels.get_channels_for_user(self.my_id,self.my_team_id)
         self.feedmap = self.load_feedmap()
         self.bindmap = self.load_bindmap()
+        self.welcome_channel_members = self.start_welcome_channel()
         # Load any new modules
         for root, dirs, files in os.walk(modulepath):
             for module in fnmatch.filter(files, "command.py"):
@@ -107,7 +109,7 @@ class MattermostManager(object):
                     self.commands = json.load(f)
                     for module in self.commands:
                         self.binds.extend(self.commands[module]['binds'])
-                    log.info("Loaded existing bindmap file %s: %s" % (options.Matterbot['bindmap'],self.commands))
+                    log.info("Loaded existing bindmap file %s" % (options.Matterbot['bindmap']))
         except: # There is no existing command map, or it failed loading; create an empty map instead.
             raise
 
@@ -120,6 +122,28 @@ class MattermostManager(object):
                     return json.load(f)
         except: # There is no existing feed map, or it failed loading; create an empty map instead.
             raise
+
+    def start_welcome_channel(self):
+        try:
+            if options.Matterbot['welcome']:
+                if options.Matterbot['welcome_channel']:
+                    welcome_channel_id = options.Matterbot['welcome_channel']
+                    if self.is_in_channel(welcome_channel_id):
+                        channel_members = self.mmDriver.channels.get_channel_members(welcome_channel_id)
+                        return [_['user_id'] for _ in channel_members]
+        except:
+            log.error(f"An error occurred updating the welcome channel state!")
+
+    async def update_welcome_channel(self):
+        try:
+            if options.Matterbot['welcome']:
+                if options.Matterbot['welcome_channel']:
+                    welcome_channel_id = options.Matterbot['welcome_channel']
+                    if self.is_in_channel(welcome_channel_id):
+                        channel_members = self.mmDriver.channels.get_channel_members(welcome_channel_id)
+                        return [_['user_id'] for _ in channel_members]
+        except:
+            log.error(f"An error occurred updating the welcome channel state!")
 
     async def update_bindmap(self):
         try:
@@ -282,9 +306,9 @@ class MattermostManager(object):
 
     def is_in_channel(self, chanid, userid=None):
         if not userid:
-            userid = self.my_id if not userid else userid
-            self.channels = self.mmDriver.channels.get_channels_for_user(userid,self.my_team_id)
-            return True if chanid in [_['id'] for _ in self.channels] else False
+            userid = self.my_id
+        self.channels = self.mmDriver.channels.get_channels_for_user(userid, self.my_team_id)
+        return True if chanid in [_['id'] for _ in self.channels] else False
 
     def isallowed_module(self, userid, module, chaninfo):
         """
@@ -567,18 +591,52 @@ class MattermostManager(object):
         chanid = event['channel_id'] if 'channel_id' in event else None
         if chanid:
             channame = self.channelmapping['idtoname'][chanid]['name'] if chanid in self.channelmapping['idtoname'] else None
+        else:
+            channame = None
         userid = event['user_id'] if 'user_id' in event else None
         if userid:
             username = self.userid_to_username(userid)
         if not eventtype: # Not a regular type of event, check for the various types
-            if 'remover_id' in event and [chanid not in self.mmDriver.channels.get_channels_for_user(self.my_id,self.my_team_id)]: # Removed from a channel!
-                userid = event['remover_id']
-                username = self.userid_to_username(userid)
-                for modulename in self.commands:
-                    if channame in self.commands[modulename]['chans']:
-                        self.commands[modulename]['chans'].remove(channame)
-                        log.info(f"I was just removed from the '{channame}' ({chanid}) channel by '{username}' ({userid}). Existing module bindings for the channel were removed the config file.")
-                await self.update_bindmap()
+            if 'remover_id' in event and 'user_id' in event: # Removed from a channel!
+                if 'user_id' == self.my_id:
+                    username = self.userid_to_username(userid)
+                    if channame:
+                        for modulename in self.commands:
+                            if channame in self.commands[modulename]['chans']:
+                                self.commands[modulename]['chans'].remove(channame)
+                                log.info(f"I was just removed from the '{channame}' ({chanid}) channel by '{username}' ({userid}). Existing module bindings for the channel were removed the config file.")
+                        await self.update_bindmap()
+            if (options.Matterbot['welcome'] and len(event) == 2 and 'team_id' in event and 'user_id' in event) or \
+               (options.Matterbot['welcome'] and len(event) == 2 and 'remover_id' in event and 'user_id' in event):
+                old_members = self.welcome_channel_members
+                self.welcome_channel_members = await self.update_welcome_channel()
+                if len(self.welcome_channel_members) > len(old_members):
+                    difference = list(set(self.welcome_channel_members) - set(old_members))
+                    channel_change = 'joined'
+                elif len(old_members) > len(self.welcome_channel_members):
+                    difference = list(set(old_members) - set(self.welcome_channel_members))
+                    channel_change = 'left'
+                else:
+                    difference = None
+                if difference:
+                    if options.Matterbot['welcome_channel']:
+                        welcome_channel = options.Matterbot['welcome_channel']
+                    if options.Matterbot['welcome_banner']:
+                        welcome_banner = options.Matterbot['welcome_banner']
+                    if welcome_channel and welcome_banner:
+                        if channel_change == 'joined':
+                            usernames = ['@'+self.userid_to_username(_) for _ in difference]
+                            text = ", ".join(usernames)+": "+welcome_banner+"\n"
+                            if options.Matterbot['welcome_file']:
+                                welcome_file = options.Matterbot['welcome_file']
+                                welcome_message = pathlib.Path(welcome_file)
+                                if welcome_message.is_file():
+                                    try:
+                                        with open(welcome_file) as f:
+                                            text += f.read()
+                                    except:
+                                        log.error(f"The welcome message file {welcome_file} could not be read!")
+                            await self.send_message(welcome_channel, text)
 
 
     async def call_module(self, module, command, channame, rootid, username, params, files, conn):

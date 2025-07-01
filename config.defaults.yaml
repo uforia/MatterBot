@@ -37,6 +37,10 @@ Matterbot:
     - "@unsub"
     - "!feeds"
     - "@feeds"
+  welcome: True # Send welcome messages to new users in a welcome channel?
+  welcome_banner: "**Welcome to this Mattermost!**" # Put your single-line welcome banner here. Use the welcome_file for larger messages (e.g. ToS)
+  welcome_channel: "abc" # Set this to the channel ID where the bot will welcome users
+  welcome_file: "welcome.msg" # Optionally, add this message to the generic welcome
   recursion: True # Is the bot allowed to respond to its own messages?
   msglength: 16383 # Change to '4000' if you are using Mattermost <=5.x (seriously, you should upgrade!)
   logcmd: True
