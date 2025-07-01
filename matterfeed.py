@@ -3,6 +3,7 @@
 import ast
 from concurrent.futures import TimeoutError, CancelledError
 import configargparse
+import copy
 import fnmatch
 import importlib.util
 import json
@@ -185,6 +186,12 @@ class MattermostManager(object):
                                 self.feedmap['TOPICS'][topic] = []
                             if not module_name in self.feedmap['TOPICS'][topic]:
                                 self.feedmap['TOPICS'][topic].append(module_name)
+            newfeedmap = copy.deepcopy(self.feedmap)
+            for module_name in newfeedmap:
+                if not module_name in modules.keys():
+                    if not module_name in ('TOPICS',):
+                        if module_name in self.feedmap:
+                            del self.feedmap[module_name]
             self.log.info(f"Saving   : New feedmap {options.Modules['feedmap']} ...")
             self.update_feedmap()
             self.log.info(f"Starting : {len(modules)} module(s) ...")
