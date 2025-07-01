@@ -511,6 +511,7 @@ class MattermostManager(object):
     async def help_message(self, userid, params, chaninfo, rootid):
         chanid = chaninfo['id']
         commands = set()
+        params = [_.lower() for _ in params]
         if not params:
             for module in self.commands:
                 if self.isallowed_module(userid, module, chaninfo):
