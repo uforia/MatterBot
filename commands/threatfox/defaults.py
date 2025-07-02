@@ -3,7 +3,10 @@
 BINDS = ['@threatfox', '@ioc', '@tf']
 CHANS = ['debug']
 APIURL = {
-    'threatfox':   {'url': 'https://threatfox-api.abuse.ch/api/v1/'},
+    'threatfox':   {
+        'url': 'https://threatfox-api.abuse.ch/api/v1/',
+        'key': '<your-threatfox-api-key-here>',
+        },
 }
 CONTENTTYPE = 'application/json'
 HELP = {

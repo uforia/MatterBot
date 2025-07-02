@@ -24,6 +24,7 @@ def process(command, channel, username, params, files, conn):
         params = params[0].replace('[', '').replace(']', '').replace('hxxp','http')
         headers = {
             'Content-Type': settings.CONTENTTYPE,
+            'Auth-Key': settings.APIURL['threatfox']['key'],
         }
         message = 'ThreatFox search for `%s`:\n' % (params,)
         try:
@@ -47,26 +48,29 @@ def process(command, channel, username, params, files, conn):
                 }
             if data:
                 with requests.post(settings.APIURL['threatfox']['url'], json=data, headers=headers) as response:
-                    json_response = response.json()
-                    if json_response['query_status'] == 'ok':
-                        if 'data' in json_response:
-                            data = json_response['data']
-                            for sample in data:
-                                id = sample['id']
-                                ioc = sample['ioc']
-                                threat = sample['threat_type_desc']
-                                malware_printable = sample['malware_printable']
-                                message += '- Threat: `%s`: `%s`' % (malware_printable, threat)
-                                if 'tags' in sample:
-                                    if sample['tags']:
-                                        tags = sample['tags']
-                                        tags = '`, `'.join(tags) if isinstance(tags,list) else '`' + tags + '`'
-                                        message += ' | Tags: `' + tags + '`'
-                                threatfox_reference = 'https://threatfox.abuse.ch/ioc/%s' % (id,)
-                                message += ' | Reference: [ThreatFox ID %s](%s)' % (id, threatfox_reference)
-                                message += '\n'
-                            if len(data)>0:
-                                messages.append({'text': message.strip()})
+                    if response.status_code in (401,):
+                        message = "Incorrect ThreatFox API key or not configured!"
+                    else:
+                        json_response = response.json()
+                        if json_response['query_status'] == 'ok':
+                            if 'data' in json_response:
+                                data = json_response['data']
+                                for sample in data:
+                                    id = sample['id']
+                                    ioc = sample['ioc']
+                                    threat = sample['threat_type_desc']
+                                    malware_printable = sample['malware_printable']
+                                    message += '- Threat: `%s`: `%s`' % (malware_printable, threat)
+                                    if 'tags' in sample:
+                                        if sample['tags']:
+                                            tags = sample['tags']
+                                            tags = '`, `'.join(tags) if isinstance(tags,list) else '`' + tags + '`'
+                                            message += ' | Tags: `' + tags + '`'
+                                    threatfox_reference = 'https://threatfox.abuse.ch/ioc/%s' % (id,)
+                                    message += ' | Reference: [ThreatFox ID %s](%s)' % (id, threatfox_reference)
+                                    message += '\n'
+                                if len(data)>0:
+                                    messages.append({'text': message.strip()})
         except Exception as e:
             messages.append({'text': 'A Python error occurred searching ThreatFox: %s\n%s' % (str(e),traceback.format_exc())})
         finally:
