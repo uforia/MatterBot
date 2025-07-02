@@ -12,3 +12,4 @@ HELP = {
         'desc': 'Returns the domains and subdomains related to a certificate. This is usefull to find hidden subdomains related to a website. Make sure you only add the domain and not www. or https://. Example query is `@cs abuse.ch`',
     },
 }
+ENTRIES = 10

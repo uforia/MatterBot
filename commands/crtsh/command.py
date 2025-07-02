@@ -51,12 +51,13 @@ def process(command, channel, username, params, files, conn):
                 table_message = ""
                 unique_common_names = set()
                 # Create the header of the table
-                table_message += f"Here are the crt.sh results for: {param}\n\n"
+                table_message += f"Here are the last `{settings.ENTRIES}` crt.sh results for: `{param}`\n\n"
                 table_message += "| Issuer Name     | Common Name     | Entry Time      | Validity        |\n"
                 table_message += "|-----------------|-----------------|-----------------|-----------------|\n"
                 table_message += "|||| |\n"
                 # Iterate through entries in the JSON response
-                for entry in json_response:
+                length = 0
+                for entry in sorted(json_response, key=lambda x: x['entry_timestamp'], reverse=True):
                     common_name = entry.get('common_name')
                     if common_name and common_name not in unique_common_names:
                         unique_common_names.add(common_name)
@@ -68,6 +69,9 @@ def process(command, channel, username, params, files, conn):
                         table_message += (
                             f"| `{issuer_name}`     | `{common_name}`    | `{entry_timestamp}` | `{not_before}` to `{not_after}` |\n"
                         )
+                        length += 1
+                        if length == settings.ENTRIES:
+                            break
                 messages.append({'text': table_message.strip()})
         except Exception as e:
             # Append error message to the messages list
