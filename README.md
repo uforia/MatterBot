@@ -2,7 +2,7 @@
 
 Code is GPLv3, (c) Arnim Eijkhoudt, 2022-2025.
 
-- Official github repository: https://github.com/uforia/MatterBot/
+- Official github repository: https://github.com/uforia/matterbot/
 - Pull/feature requests and comments are welcome: please open/post them on GitHub
 - If you are looking to deploy MatterBot for commercial purposes, please reach out to me
   via the uforia[@]dhcp[.]net email adress
