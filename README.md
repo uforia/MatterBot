@@ -13,7 +13,7 @@ Code probably has bugs, but it is officially in a 'works for me' and 'works for 
 
 ## Contents
 
-MatterBot consists of two parts that can be run independently: `matterbot` and `matterfeed`. Both parts can be run independently. `matterfeed` aggregates information from various resources (see table below) on a set schedule and posts those in a channel. `matterbot` sits in at least one or more channels, and listens for commands/triggers to spring into action and e.g. collect information for you from various online and local resources via API calls.
+MatterBot consists of two parts, `matterbot` and `matterfeed`, that can be run mostly independently. `matterfeed` aggregates information from various resources (see table below) on a set schedule and posts those in a channel. `matterbot` sits in at least one or more channels, and listens for commands/triggers to spring into action and e.g. collect information for you from various online and local resources via API calls.
 
 Both `matterbot` and `matterfeed` should be run within a `tmux` or `screen` session. The code does not daemonize itself, and there are no plans to implement this currently.
 
