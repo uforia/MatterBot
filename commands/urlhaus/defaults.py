@@ -3,7 +3,11 @@
 BINDS = ['@urlhaus', '@ioc', '@uh']
 CHANS = ['debug']
 APIURL = {
-    'urlhaus':  {'url': 'https://urlhaus-api.abuse.ch/v1/url/', 'payload': 'https://urlhaus-api.abuse.ch/v1/payload/'},
+    'urlhaus':  {
+        'url': 'https://urlhaus-api.abuse.ch/v1/url/',
+        'payload': 'https://urlhaus-api.abuse.ch/v1/payload/',
+        'key': '<your-urlhaus-api-key-here>',
+    },
 }
 CONTENTTYPE = 'text/html'
 HELP = {

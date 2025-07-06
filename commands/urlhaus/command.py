@@ -23,6 +23,7 @@ def process(command, channel, username, params, files, conn):
         params = params[0].replace('[', '').replace(']', '').replace('hxxp','http')
         headers = {
             'Content-Type': settings.CONTENTTYPE,
+            'Auth-Key': settings.APIURL['threatfox']['key'],
         }
         try:
             type = None
@@ -44,48 +45,54 @@ def process(command, channel, username, params, files, conn):
                 type = 'url'
             if type == 'url':
                 with requests.post(settings.APIURL['urlhaus']['url'], data=data) as response:
-                    json_response = response.json()
-                    if json_response['query_status'] == 'ok':
-                        message = 'URLhaus search for `%s`:\n' % (params,)
-                        urlhaus_reference = json_response['urlhaus_reference']
-                        id = json_response['id']
-                        threat = json_response['threat']
-                        url_status = json_response['url_status']
-                        host = json_response['host']
-                        payloads = json_response['payloads']
-                        tags = json_response['tags']
-                        message += '- Threat: `%s`' % (threat,)
-                        if tags:
-                            message += ' | Tags: `' + '`, `'.join(tags) + '`'
-                        if payloads:
-                            filenames = set()
-                            message += ' | Payload(s): '
-                            for payload in payloads:
-                                filename = payload['filename']
-                                if filename not in filenames:
-                                    filenames.add(filename)
-                                    message += '`%s` ' % (filename,)
-                        message += ' | Status: `%s`' % (url_status,)
-                        message += ' | Reference: [URLhaus ID %s](%s)' % (id, urlhaus_reference)
-                        message += '\n'
-                        messages.append({'text': message.strip()})
+                    if response.status_code in (401,):
+                        message = "Incorrect ThreatFox API key or not configured!"
+                    else:
+                        json_response = response.json()
+                        if json_response['query_status'] == 'ok':
+                            message = 'URLhaus search for `%s`:\n' % (params,)
+                            urlhaus_reference = json_response['urlhaus_reference']
+                            id = json_response['id']
+                            threat = json_response['threat']
+                            url_status = json_response['url_status']
+                            host = json_response['host']
+                            payloads = json_response['payloads']
+                            tags = json_response['tags']
+                            message += '- Threat: `%s`' % (threat,)
+                            if tags:
+                                message += ' | Tags: `' + '`, `'.join(tags) + '`'
+                            if payloads:
+                                filenames = set()
+                                message += ' | Payload(s): '
+                                for payload in payloads:
+                                    filename = payload['filename']
+                                    if filename not in filenames:
+                                        filenames.add(filename)
+                                        message += '`%s` ' % (filename,)
+                            message += ' | Status: `%s`' % (url_status,)
+                            message += ' | Reference: [URLhaus ID %s](%s)' % (id, urlhaus_reference)
+                            message += '\n'
+                            messages.append({'text': message.strip()})
             if type == 'hash':
                 with requests.post(settings.APIURL['urlhaus']['payload'], data=data) as response:
-                    json_response = response.json()
-                    if json_response['query_status'] == 'ok':
-                        urls = json_response['urls']
-                        file_type = json_response['file_type']
-                        if urls:
-                            message = 'URLhaus search for `%s`:\n' % (params,)
-                            for url in urls:
-                                id = url['url_id']
-                                urlhaus_reference = url['urlhaus_reference']
-                                link = url['url']
-                                filename = url['filename']
-                                message += '- URL: `%s`' % (link,)
-                                message += ' | Payload: `%s` (%s)' % (filename, file_type)
-                                message += ' | Reference: [URLhaus ID %s](%s)' % (id, urlhaus_reference)
-                        messages.append({'text': message.strip()})
+                    if response.status_code in (401,):
+                        message = "Incorrect ThreatFox API key or not configured!"
+                    else:
+                        json_response = response.json()
+                        if json_response['query_status'] == 'ok':
+                            urls = json_response['urls']
+                            file_type = json_response['file_type']
+                            if urls:
+                                message = 'URLhaus search for `%s`:\n' % (params,)
+                                for url in urls:
+                                    id = url['url_id']
+                                    urlhaus_reference = url['urlhaus_reference']
+                                    link = url['url']
+                                    filename = url['filename']
+                                    message += '- URL: `%s`' % (link,)
+                                    message += ' | Payload: `%s` (%s)' % (filename, file_type)
+                                    message += ' | Reference: [URLhaus ID %s](%s)' % (id, urlhaus_reference)
+                            messages.append({'text': message.strip()})
         except Exception as e:
             messages.append({'text': 'A Python error occurred searching ThreatFox: %s\n%s' % (str(e),traceback.format_exc())})
         finally:
