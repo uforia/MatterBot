@@ -23,7 +23,7 @@ def process(command, channel, username, params, files, conn):
         params = params[0].replace('[', '').replace(']', '').replace('hxxp','http')
         headers = {
             'Content-Type': settings.CONTENTTYPE,
-            'Auth-Key': settings.APIURL['threatfox']['key'],
+            'Auth-Key': settings.APIURL['urlhaus']['key'],
         }
         try:
             type = None
@@ -46,7 +46,7 @@ def process(command, channel, username, params, files, conn):
             if type == 'url':
                 with requests.post(settings.APIURL['urlhaus']['url'], data=data) as response:
                     if response.status_code in (401,):
-                        message = "Incorrect ThreatFox API key or not configured!"
+                        message = "Incorrect URLhaus API key or not configured!"
                     else:
                         json_response = response.json()
                         if json_response['query_status'] == 'ok':
@@ -76,7 +76,7 @@ def process(command, channel, username, params, files, conn):
             if type == 'hash':
                 with requests.post(settings.APIURL['urlhaus']['payload'], data=data) as response:
                     if response.status_code in (401,):
-                        message = "Incorrect ThreatFox API key or not configured!"
+                        message = "Incorrect URLhaus API key or not configured!"
                     else:
                         json_response = response.json()
                         if json_response['query_status'] == 'ok':
@@ -94,6 +94,6 @@ def process(command, channel, username, params, files, conn):
                                     message += ' | Reference: [URLhaus ID %s](%s)' % (id, urlhaus_reference)
                             messages.append({'text': message.strip()})
         except Exception as e:
-            messages.append({'text': 'A Python error occurred searching ThreatFox: %s\n%s' % (str(e),traceback.format_exc())})
+            messages.append({'text': 'A Python error occurred searching URLhaus: %s\n%s' % (str(e),traceback.format_exc())})
         finally:
             return {'messages': messages}
