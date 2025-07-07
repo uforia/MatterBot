@@ -47,7 +47,7 @@ def process(command, channel, username, params, files, conn):
                         if "results" in json_response:
                             if len(json_response["results"]):
                                 length = 0
-                                message = f"Urlscan.io search results for: `{"`, `".join(params)}`\n"
+                                message = "Urlscan.io search results for: `"+"`, `".join(params)+"`\n"
                                 message += f"\n| Timestamp | Title | IP | URL | Verdict | Details | Screenshot |"
                                 message += f"\n| -: | :- | -: | :- | :- |"
                                 fields = ['title', 'ip', 'url']
