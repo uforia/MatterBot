@@ -54,6 +54,7 @@ def query(MAX=settings.ENTRIES):
                     content += '\n>'+description+'\n'
                 upload = None
                 if 'media_content' in feed.entries[count]:
+                    uploads = []
                     for media in feed.entries[count]['media_content']:
                         if 'url' in media:
                             url = media['url']
@@ -62,9 +63,10 @@ def query(MAX=settings.ENTRIES):
                                     filename = url.split('/')[-1]
                                     bytes = response.content
                                     upload = {'filename': filename, 'bytes': bytes}
+                                    uploads.append(upload)
                 for channel in settings.CHANNELS:
                     if upload:
-                        items.append([channel, content, {'uploads': [upload]}])
+                        items.append([channel, content, {'uploads': uploads}])
                     else:
                         items.append([channel, content])
                 count+=1
