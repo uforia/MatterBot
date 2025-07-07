@@ -18,15 +18,15 @@ import re
 import requests
 from pathlib import Path
 try:
-    from modules.tripwire import defaults as settings
+    from modules.mastodon import defaults as settings
 except ModuleNotFoundError: # local test run
     import defaults as settings
     if Path('settings.py').is_file():
         import settings
 else:
-    if Path('modules/tripwire/settings.py').is_file():
+    if Path('modules/mastodon/settings.py').is_file():
         try:
-            from modules.tripwire import settings
+            from modules.mastodon import settings
         except ModuleNotFoundError: # local test run
             import settings
 
