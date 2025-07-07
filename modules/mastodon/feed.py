@@ -52,6 +52,7 @@ def query(MAX=settings.ENTRIES):
                     if len(description)>400:
                         description = description[:396]+' ...'
                     content += '\n>'+description+'\n'
+                upload = None
                 if 'media_content' in feed.entries[count]:
                     for media in feed.entries[count]['media_content']:
                         if 'url' in media:
