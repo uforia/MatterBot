@@ -60,7 +60,7 @@ def query(MAX=settings.ENTRIES):
                             with requests.get(url, headers=headers) as response:
                                 if response.status_code in (200,206):
                                     filename = url.split('/')[-1]
-                                    bytes = response.content
+                                    bytes = response.content[:50]
                                     upload = {'filename': filename, 'bytes': bytes}
                 for channel in settings.CHANNELS:
                     if upload:
