@@ -51,7 +51,7 @@ class MattermostManager(object):
     def update_channels(self):
         try:
             self.log.info(f"Starting : Updating channels ...")
-            channelmap = {}
+            channelmap = copy.deepcopy(self.channels)
             userchannels = self.mmDriver.channels.get_channels_for_user(self.me['id'],self.my_team_id)
             for userchannel in userchannels:
                 channel_info = self.mmDriver.channels.get_channel(userchannel['id'])
