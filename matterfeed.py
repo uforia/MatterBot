@@ -8,7 +8,6 @@ import fnmatch
 import importlib.util
 import json
 import logging
-import pathlib
 import pebble
 import os
 import shelve
@@ -46,12 +45,21 @@ class MattermostManager(object):
         })
         self.me = self.mmDriver.users.get_user( user_id='me' )
         self.my_team_id = self.mmDriver.teams.get_team_by_name(options.Matterbot['teamname'])['id']
-        self.channels = {}
+        self.channels = self.update_channels()
         self.test = {}
-        userchannels = self.mmDriver.channels.get_channels_for_user(self.me['id'],self.my_team_id)
-        for userchannel in userchannels:
-            channel_info = self.mmDriver.channels.get_channel(userchannel['id'])
-            self.channels[channel_info['name']] = channel_info['id']
+
+    def update_channels(self):
+        try:
+            channelmap = {}
+            userchannels = self.mmDriver.channels.get_channels_for_user(self.me['id'],self.my_team_id)
+            for userchannel in userchannels:
+                channel_info = self.mmDriver.channels.get_channel(userchannel['id'])
+                channelmap[channel_info['name']] = channel_info['id']
+            return channelmap
+        except:
+            if options.debug:
+                log.error(f"Error   : Cannot update channel map, announcements in additional channels might not work!")
+            return {}
 
     def load_feedmap(self):
         try:
@@ -285,9 +293,6 @@ class MattermostManager(object):
                         posts.append([channel, content, uploads])
                     if module_name in self.feedmap:
                         for newschannel in self.feedmap[module_name]['CHANNELS']:
-                            if not newschannel in self.channels:
-                                channel_info = self.mmDriver.channels.get_channel(userchannel['id'])
-                                self.channels[channel_info['name']] = channel_info['id']
                             if not [newschannel, content, uploads] in posts:
                                 posts.append([newschannel, content, uploads])
                 for post in posts:
