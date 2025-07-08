@@ -88,7 +88,6 @@ def process(command, channel, username, params, files, conn):
                             urls = set()
                             detections = set()
                             iocs = set()
-                            print(lolbas['Detection'])
                             for detection in lolbas['Detection']:
                                 for type in detection:
                                     detections.add(type)
