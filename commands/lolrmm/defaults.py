@@ -10,7 +10,7 @@ CACHE = 'commands/lolrmm/lolrmm.json'
 HELP = {
     'DEFAULT': {
         'args': None,
-        'desc': 'Search LOLRMM for information and return any matching entries, such as hashes, filenames, etc. '
+        'desc': 'Search LOLRMM for information and return any matching entries, such as filenames, domain names, registry paths, etc. '
                 'On its first run, the module will build a cache of the LOLRMM website, so the very first query will be '
                 'slow.',
     },
