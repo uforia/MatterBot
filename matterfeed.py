@@ -50,15 +50,19 @@ class MattermostManager(object):
 
     def update_channels(self):
         try:
+            self.log.info(f"Starting : Updating channels ...")
             channelmap = {}
             userchannels = self.mmDriver.channels.get_channels_for_user(self.me['id'],self.my_team_id)
             for userchannel in userchannels:
                 channel_info = self.mmDriver.channels.get_channel(userchannel['id'])
-                channelmap[channel_info['name']] = channel_info['id']
+                if not channel_info['name'] in channelmap:
+                    self.log.info(f"Found    : {channel_info['name']} channel ...")
+                    channelmap[channel_info['name']] = channel_info['id']
+            self.log.info(f"Complete : Channels updated ...")
             return channelmap
         except:
             if options.debug:
-                log.error(f"Error   : Cannot update channel map, announcements in additional channels might not work!")
+                self.log.error(f"Error   : Cannot update channel map, announcements in additional channels might not work!")
             return {}
 
     def load_feedmap(self):
@@ -67,7 +71,7 @@ class MattermostManager(object):
                 return json.load(f)
         except:
             if options.debug:
-                log.error(f"Error   : Cannot read {options.Modules['feedmap']} file. Announcements in additional channels might not work!")
+                self.log.error(f"Error   : Cannot read {options.Modules['feedmap']} file. Announcements in additional channels might not work!")
             return {}
 
     def update_feedmap(self):
@@ -75,7 +79,7 @@ class MattermostManager(object):
             with open(options.Matterbot['feedmap'],'w') as f:
                 json.dump(self.feedmap,f)
         except:
-            log.error(f"An error occurred updating the `%s` feedmap file; config changes were not successfully saved!" % (options.Matterbot['feedmap'],))
+            self.log.error(f"An error occurred updating the `%s` feedmap file; config changes were not successfully saved!" % (options.Matterbot['feedmap'],))
 
     def createPost(self, channel, text, uploads = []):
         try:
