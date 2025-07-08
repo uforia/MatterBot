@@ -57,20 +57,20 @@ def process(command, channel, username, params, files, conn):
                         if lolrmm['Artifacts']['Network']:
                             if len(lolrmm['Artifacts']['Network']):
                                 for networkartifact in lolrmm['Artifacts']['Network']:
-                                    if len(networkartifact['Domains']):
-                                        for domain in networkartifact['Domains']:
-                                            networkartifacts.add(domain)
-                                        if query in [_.lower() for _ in networkartifacts]:
-                                            found = True
+                                    if 'Domains' in networkartifact:
+                                        if len(networkartifact['Domains']):
+                                            for domain in networkartifact['Domains']:
+                                                if query in domain.lower():
+                                                    found = True
                     if 'Disk' in lolrmm['Artifacts']:
                         if lolrmm['Artifacts']['Disk']:
                             if len(lolrmm['Artifacts']['Disk']):
-                                if lolrmm['Artifacts']['Disk']:
-                                    for diskartifact in lolrmm['Artifacts']['Disk']:
-                                        if 'File' in diskartifact:
-                                            if query in diskartifact['File'].lower() or \
-                                                query in diskartifact['Description'].lower():
-                                                found = True
+                                for diskartifact in lolrmm['Artifacts']['Disk']:
+                                    if 'File' in diskartifact:
+                                        if len(diskartifact['File']):
+                                            for file in diskartifact['File']:
+                                                if query in file.lower():
+                                                    found = True
                     if 'Registry' in lolrmm['Artifacts']:
                         if lolrmm['Artifacts']['Registry']:
                             if len(lolrmm['Artifacts']['Registry']):
