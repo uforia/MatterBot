@@ -705,7 +705,7 @@ class MattermostManager(object):
                         messages.append({'command':word.lower(),'parameters':[]})
                         addparams = True
                     elif addparams:
-                        messages[-1]['parameters'].append(word.lower())
+                        messages[-1]['parameters'].append(word)
             log.debug(f"Messages: {messages}")
             for messagedict in messages:
                 command = messagedict['command']
