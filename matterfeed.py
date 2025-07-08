@@ -285,6 +285,9 @@ class MattermostManager(object):
                         posts.append([channel, content, uploads])
                     if module_name in self.feedmap:
                         for newschannel in self.feedmap[module_name]['CHANNELS']:
+                            if not newschannel in self.channels:
+                                channel_info = self.mmDriver.channels.get_channel(userchannel['id'])
+                                self.channels[channel_info['name']] = channel_info['id']
                             if not [newschannel, content, uploads] in posts:
                                 posts.append([newschannel, content, uploads])
                 for post in posts:
