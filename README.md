@@ -33,6 +33,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | Binary Defense                                                                                   | RSS            | No               | No                |
 | Bishop Fox Offensive Security                                                                    | RSS            | No               | No                |
 | Bleepingcomputer News                                                                            | RSS            | No               | No                |
+| Bluesky Social Network                                                                           | RSS            | No               | No                |
 | Broadcom Symantec                                                                                | RSS            | No               | No                |
 | Bruce Schneier's Blog                                                                            | RSS            | No               | No                |
 | Canadian Centre for Cyber Security                                                               | RSS            | No               | No                |
