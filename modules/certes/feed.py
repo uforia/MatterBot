@@ -18,15 +18,15 @@ import re
 from pathlib import Path
 
 try:
-    from modules.certhu import defaults as settings
+    from modules.certes import defaults as settings
 except ModuleNotFoundError: # local test run
     import defaults as settings
     if Path('settings.py').is_file():
         import settings
 else:
-    if Path('modules/certhu/settings.py').is_file():
+    if Path('modules/certes/settings.py').is_file():
         try:
-            from modules.certhu import settings
+            from modules.certes import settings
         except ModuleNotFoundError: # local test run
             import settings
 
