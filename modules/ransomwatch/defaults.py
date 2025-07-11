@@ -6,10 +6,7 @@ CHANNELS = (
     "newsfeed",
 )
 TOPICS = (
-    "General",
     "CTI",
-    "Vendor",
-    "Vulnerabilities"
 )
 ADMIN_ONLY = False
 ENTRIES = 20
