@@ -51,7 +51,6 @@ def process(command, channel, username, params, files, conn,):
         # Assign response to variable
         json_response = response.json()
 
-
         def output_to_csv(data): # Generate csv for detailed results
             uploads = []
             fname = f'grayhat_{datetime.now().strftime("%m%d%Y_%H%M%S")}.csv'
@@ -102,11 +101,6 @@ def process(command, channel, username, params, files, conn,):
             table += "| " + " | ".join([":-"] * len(headers)) + " |\n"
 
             keys = ['bucket', 'fullPath', 'type', 'size', 'lastModified']
-            chars = 0
-            
-            messages.append({'text': f'{chars}'})
-
-
             data_sorted = sorted(data, key=lambda row: row.get('lastModified', ''), reverse=True)
             while len(table) < 10000: # TODO Change to options.Mattermost['msglength'] - X charlength or change to variable msg split with added header
                 for row in data_sorted:
