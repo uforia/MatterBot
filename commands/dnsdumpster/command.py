@@ -106,9 +106,9 @@ def process(command, channel, username, params, files, conn):
             total_a_recs = json_response.get('total_a_recs')
             if record_type == 'a' and total_a_recs != 0:
             # Add a special first row with the total A records count
-                table_message = f"### A Records ({total_a_recs} total)\n\n"
+                table_message = f"**A Records ({total_a_recs} total)**\n\n"
             else:
-                table_message = f"### {record_type.upper()} Records\n\n"
+                table_message = f"**{record_type.upper()} Records**\n\n"
 
             # Create the markdown table for the record type
             table_message += "| " + " | ".join(headers) + " |\n"
