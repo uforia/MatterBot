@@ -223,10 +223,12 @@ class MattermostManager(object):
             else:
                 blocks = [text]
             for block in blocks:
-                self.mmDriver.posts.create_post(options={'channel_id': chanid,
-                                                         'message': block,
-                                                         'root_id': postid,
-                                                         })
+                self.mmDriver.posts.create_post(
+                    options={
+                    'channel_id': chanid,
+                    'message': block,
+                    'root_id': postid,
+                    })
         except:
             raise
 
@@ -582,7 +584,7 @@ class MattermostManager(object):
                                     if args:
                                         text += '\n**Arguments**: `' + args + '`'
                             if len(text)>0:
-                                 await self.send_message(chanid, text, rootid)
+                                await self.send_message(chanid, text, rootid)
                         except NameError:
                             await self.send_message(chanid, text, rootid)
 
@@ -607,7 +609,7 @@ class MattermostManager(object):
                                 log.info(f"I was just removed from the '{channame}' ({chanid}) channel by '{username}' ({userid}). Existing module bindings for the channel were removed the config file.")
                         await self.update_bindmap()
             if (options.Matterbot['welcome'] and len(event) == 2 and 'team_id' in event and 'user_id' in event) or \
-               (options.Matterbot['welcome'] and len(event) == 2 and 'remover_id' in event and 'user_id' in event):
+                (options.Matterbot['welcome'] and len(event) == 2 and 'remover_id' in event and 'user_id' in event):
                 old_members = self.welcome_channel_members
                 self.welcome_channel_members = await self.update_welcome_channel()
                 if len(self.welcome_channel_members) > len(old_members):
@@ -662,11 +664,13 @@ class MattermostManager(object):
                                     files={'files': (filename, payload)}
                                 )['file_infos'][0]['id']
                                 file_ids.append(file_id)
-                            conn.posts.create_post(options={'channel_id': chanid,
-                                                                    'message': text,
-                                                                    'root_id': rootid,
-                                                                    'file_ids': file_ids,
-                                                                    })
+                            conn.posts.create_post(
+                                options={
+                                    'channel_id': chanid,
+                                    'message': text,
+                                    'root_id': rootid,
+                                    'file_ids': file_ids,
+                                    })
                         else:
                             await self.send_message(chanid, text, rootid)
                     else:
@@ -743,11 +747,10 @@ if __name__ == '__main__' :
     '''
     Interactive run from the command-line
     '''
-    parser = configargparse.ArgParser(config_file_parser_class=configargparse.YAMLConfigFileParser,
-                                      description='Matterbot loads modules '
-                                                  'and sends their output '
-                                                  'to Mattermost.',
-                                                  default_config_files=['config.yaml'])
+    parser = configargparse.ArgParser(
+        config_file_parser_class=configargparse.YAMLConfigFileParser,
+        description='Matterbot loads modules and sends their output to Mattermost.',
+        default_config_files=['config.yaml'])
     parser.add('--Matterbot', type=str, help='MatterBot configuration, as a dictionary (see YAML config)')
     parser.add('--Modules', type=str, help='Modules configuration, as a dictionary (see YAML config)')
     parser.add('--debug', default=False, action='store_true', help='Enable debug mode and log to foreground')
