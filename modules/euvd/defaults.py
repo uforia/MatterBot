@@ -9,6 +9,9 @@ CATEGORIES = {
     'Exploited': 'https://euvdservices.enisa.europa.eu/api/exploitedvulnerabilities',
     'Critical': 'https://euvdservices.enisa.europa.eu/api/criticalvulnerabilities',
 }
+TOPICS = (
+    "Vulnerabilities",
+)
 BASEDETAILURL = 'https://euvd.enisa.europa.eu/vulnerability/'
 ADMIN_ONLY = False
 CONTENTTYPE = 'application/json'
