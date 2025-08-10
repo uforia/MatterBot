@@ -96,7 +96,6 @@ def process(command, channel, username, params, files, conn):
                                         'files_count': 'Count',
                                         'threat_name': 'Name',
                                     }
-                                    
                                     first_analysis = analysis['first_analysis'] if 'first_analysis' in analysis else None
                                     message = f"**ReversingLabs URL Analysis**: `{query}`"
                                     if first_analysis:
@@ -140,8 +139,6 @@ def process(command, channel, username, params, files, conn):
                                 reason = results['reason'].replace('_', ' ').title()
                                 message += f" **Reason**: `{reason}`"
                             messages.append({'text': message})
-                with requests.get(url=ticendpoint, headers=a1kheaders) as response:
-                    pass
             if querytype == 'host':
                 a1kendpoint += f"{query}/"
                 with requests.get(url=a1kendpoint, headers=a1kheaders) as response:
