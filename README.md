@@ -87,7 +87,6 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | FalconForce                                                                                      | RSS            | No               | No                |
 | FieldEffect Threat Intelligence                                                                  | RSS            | No               | No                |
 | Fortinet PSIRT/Threat Research Blogs                                                             | RSS            | No               | No                |
-| Freebuf 新闻 (CN)                                                                                  | RSS            | No               | No                |
 | GBHackers News                                                                                   | RSS            | No               | No                |
 | Google Cloud Threat Intelligence                                                                 | RSS            | No               | No                |
 | GreyNoise Threat Intelligence                                                                    | RSS            | No               | No                |
