@@ -56,9 +56,9 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | CERT CERT Slovenská republika                                                                    | RSS            | No               | No                |
 | CERT Türkiye Cumhuriyeti (USOM)                                                                  | RSS            | No               | No                |
 | CERT VDE Industrial Advisories                                                                   | RSS            | No               | No                |
-| CERT Репу̀блика Бълга̀рия (BG)                                                                   | RSS            | No               | No                |
+| CERT Репу̀блика Бълга̀рия (BG)                                                                     | RSS            | No               | No                |
 | CERT Україна (UA)                                                                                | RSS            | No               | No                |
-| CERT 中華人民共和國香港特別行政區 (HK)                                                                         | RSS            | No               | No                |
+| CERT 中華人民共和國香港特別行政區 (HK)                                                           | RSS            | No               | No                |
 | Checkmarx Application Security Blog                                                              | RSS            | No               | No                |
 | Checkpoint (Email) Security Research                                                             | RSS            | No               | No                |
 | Cisco Security Advisories                                                                        | RSS            | No               | No                |
@@ -87,7 +87,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | FalconForce                                                                                      | RSS            | No               | No                |
 | FieldEffect Threat Intelligence                                                                  | RSS            | No               | No                |
 | Fortinet PSIRT/Threat Research Blogs                                                             | RSS            | No               | No                |
-| Freebuf 新闻 (CN)                                                                                  | RSS            | No               | No                |
+| Freebuf 新闻 (CN)                                                                                | RSS            | No               | No                |
 | GBHackers News                                                                                   | RSS            | No               | No                |
 | Google Cloud Threat Intelligence                                                                 | RSS            | No               | No                |
 | GreyNoise Threat Intelligence                                                                    | RSS            | No               | No                |
