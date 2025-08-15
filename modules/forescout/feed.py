@@ -12,22 +12,20 @@
 # <channel>: basically the destination channel in Mattermost, e.g. 'Newsfeed', 'Incident', etc.
 # <content>: the content of the message, MD format possible
 
-from argostranslate import package, translate
+import bs4
 import feedparser
 import re
-from urllib.parse import unquote
 from pathlib import Path
-
 try:
-    from modules.freebuf import defaults as settings
+    from modules.forescout import defaults as settings
 except ModuleNotFoundError: # local test run
     import defaults as settings
     if Path('settings.py').is_file():
         import settings
 else:
-    if Path('modules/freebuf/settings.py').is_file():
+    if Path('modules/forescout/settings.py').is_file():
         try:
-            from modules.freebuf import settings
+            from modules.forescout import settings
         except ModuleNotFoundError: # local test run
             import settings
 
@@ -35,28 +33,24 @@ def query(MAX=settings.ENTRIES):
     items = []
     feed = feedparser.parse(settings.URL, agent='MatterBot RSS Automation 1.0')
     count = 0
+    category = 'Research & Cyber Alerts'
     stripchars = '`\\[\\]\'\"'
     regex = re.compile('[%s]' % stripchars)
     while count < MAX:
         try:
-            title = feed.entries[count].title
-            if settings.TRANSLATION:
-                from_lan = "zt"
-                to_lan = "en"
-                # Check for new language packages to install (initial setup)
-                installed_packages = package.get_installed_packages()
-                package.update_package_index()
-                updateIndex = package.get_available_packages()
-                # Filter for correct language packages
-                packageSelection = next(filter(lambda x: x.from_code == from_lan and x.to_code == to_lan, updateIndex))
-                if packageSelection not in installed_packages:
-                    package.install_from_path(packageSelection.download())
-                title = translate.translate(title, from_lan, to_lan)
-            link = feed.entries[count].link
-            link = unquote(link)
-            content = settings.NAME + ': [' + title + '](' + link + ')'
-            for channel in settings.CHANNELS:
-                items.append([channel, content])
+            tags = feed.entries[count].tags
+            for tag in tags:
+                if category in tag['term']:
+                    title = feed.entries[count].title
+                    link = feed.entries[count].link
+                    content = settings.NAME + ': [' + title + '](' + link + ')'
+                    if len(feed.entries[count].description):
+                        description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
+                        if len(description)>400:
+                            description = description[:396]+' ...'
+                        content += '\n>'+description+'\n'
+                    for channel in settings.CHANNELS:
+                        items.append([channel, content])
             count+=1
         except IndexError:
             return items # No more items
