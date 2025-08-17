@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 
-NAME = "Freebuf 新闻 [CN]"
-URL = "https://www.freebuf.com/feed"
+NAME = "Kela Cyber Threat Intelligence"
+URL = "https://www.kelacyber.com/blog/feed"
 CHANNELS = (
     "newsfeed",
 )
 TOPICS = (
     "General",
-    "Posture"
+    "CTI",
 )
 ADMIN_ONLY = False
 ENTRIES = 10
-TRANSLATION = True
