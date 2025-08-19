@@ -40,7 +40,7 @@ def process(command, channel, username, params, files, conn,):
         # Request headers
         headers = {
             'Content-Type': settings.CONTENTTYPE,
-            'Authorization': f'Bearer {settings.APIURL['grayhat']['key']}',
+            'Authorization': f"Bearer {settings.APIURL['grayhat']['key']}",
             'User-Agent': 'MatterBot integration for grayhat v1.0',
         }
 
