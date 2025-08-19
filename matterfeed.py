@@ -213,6 +213,10 @@ class MattermostManager(object):
                                 self.feedmap['TOPICS'][topic] = []
                             if not module_name in self.feedmap['TOPICS'][topic]:
                                 self.feedmap['TOPICS'][topic].append(module_name)
+                        for topic in list(self.feedmap['TOPICS'].keys()):
+                            if module_name in self.feedmap['TOPICS'][topic] and not topic in getattr(settings, 'TOPICS'):
+                                self.log.info(f"Fixing   : Module '{module_name}' no longer covers the {topic} topic, removing from the {topic} list ...")
+                                self.feedmap['TOPICS'][topic].remove(module_name)
             # Clear out modules that no longer exist from the feedmap file
             for module_name in list(self.feedmap.keys()):
                 if not module_name in ('TOPICS', 'MODULES'):
