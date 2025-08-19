@@ -224,7 +224,7 @@ class MattermostManager(object):
                 difference = set(self.feedmap['TOPICS'][topic]) - newtopicmodulelist
                 if len(difference):
                     self.log.info(f"Fixing   : Now missing module '{module_name}' removed from {topic} list ...")
-                self.feedmap['TOPICS'][topic] = newtopicmodulelist
+                self.feedmap['TOPICS'][topic] = sorted(list(newtopicmodulelist))
             # Save the feedmap and summarize the results
             self.log.info(f"Saving   : New feedmap {options.Modules['feedmap']} ...")
             self.update_feedmap()
