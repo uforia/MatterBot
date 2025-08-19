@@ -244,7 +244,6 @@ class MattermostManager(object):
                 failed = 0
                 self.feedmap = self.load_feedmap()
                 self.modules = self.findModules()
-                return
                 self.channels = self.update_channels()
                 with pebble.ProcessPool(max_workers=options.Modules['threads']) as pool:
                     futures = []
