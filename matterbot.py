@@ -359,14 +359,14 @@ class MattermostManager(object):
                     if len(self.feedmap):
                         text =  "**List of available topics for channel: `%s`**\n" % (self.channame_to_chandisplayname(channame,))
                         text += "\n"
-                        text += "\n| **Topic** | **Available Feed(s)** |"
+                        text += "\n| **Topics** | **Available Feeds** |"
                         text += "\n| :- | :- |"
                         if 'TOPICS' in self.feedmap:
                             for topic in sorted(self.feedmap['TOPICS']):
                                 availablefeeds = self.feedmap['TOPICS'][topic]
-                                for module_name in self.feedmap:
-                                    if 'NAME' in self.feedmap[module_name]:
-                                        if channame in self.feedmap[module_name]['CHANNELS']:
+                                for module_name in self.feedmap['MODULES']:
+                                    if 'NAME' in self.feedmap['MODULES'][module_name]:
+                                        if channame in self.feedmap['MODULES'][module_name]['CHANNELS']:
                                             if module_name in availablefeeds:
                                                 availablefeeds.remove(module_name)
                                             enabled_feeds.add(module_name)
@@ -374,23 +374,23 @@ class MattermostManager(object):
                                     availablefeeds_displaynames = set()
                                     for availablefeed in availablefeeds:
                                         displayname = availablefeed
-                                        if 'ADMIN_ONLY' in self.feedmap[availablefeed]:
-                                            displayname = availablefeed+r'(*)' if self.feedmap[availablefeed]['ADMIN_ONLY'] else availablefeed
+                                        if 'ADMIN_ONLY' in self.feedmap['MODULES'][availablefeed]:
+                                            displayname = availablefeed+r'(*)' if self.feedmap['MODULES'][availablefeed]['ADMIN_ONLY'] else availablefeed
                                         availablefeeds_displaynames.add(displayname)
                                     text += f"\n| {topic} | `"+"`, `".join(sorted(availablefeeds_displaynames))+"` |"
-                        for module_name in self.feedmap:
-                            if 'NAME' in self.feedmap[module_name]:
-                                if 'TOPICS' not in self.feedmap[module_name]:
+                        for module_name in self.feedmap['MODULES']:
+                            if 'NAME' in self.feedmap['MODULES'][module_name]:
+                                if 'TOPICS' not in self.feedmap['MODULES'][module_name]:
                                     unclassified_feeds.add(module_name)
                                 else:
-                                    if not len(self.feedmap[module_name]['TOPICS']):
+                                    if not len(self.feedmap['MODULES'][module_name]['TOPICS']):
                                         unclassified_feeds.add(module_name)
                         if len(unclassified_feeds):
                             unclassified_feeds_displaynames = set()
                             for unclassified_feed in unclassified_feeds:
                                 displayname = unclassified_feed
-                                if 'ADMIN_ONLY' in self.feedmap[unclassified_feed]:
-                                    displayname = unclassified_feed+r'(*)' if self.feedmap[unclassified_feed]['ADMIN_ONLY'] else unclassified_feed
+                                if 'ADMIN_ONLY' in self.feedmap['MODULES'][unclassified_feed]:
+                                    displayname = unclassified_feed+r'(*)' if self.feedmap['MODULES'][unclassified_feed]['ADMIN_ONLY'] else unclassified_feed
                                 unclassified_feeds_displaynames.add(displayname)
                             text += f"\n| Unclassified | `"+"`, `".join(sorted(unclassified_feeds_displaynames))+"` |"
                         text += "\n\n"
@@ -418,7 +418,7 @@ class MattermostManager(object):
                     else:
                         feeds_to_consider = set()
                         if params[0] == '*':
-                            feeds_to_consider = self.feedmap
+                            feeds_to_consider = self.feedmap['MODULES']
                         else:
                             for param in params[0:]:
                                 lowercase_topics = {_.lower(): _ for _ in self.feedmap['TOPICS']}
@@ -436,18 +436,18 @@ class MattermostManager(object):
                             elif command in ('!sub', '!subscribe', '@sub', '@subscribe'):
                                 mode = 'enable'
                             for module_name in feeds_to_consider:
-                                if module_name in self.feedmap:
-                                    ADMIN_ONLY = self.feedmap[module_name]['ADMIN_ONLY'] if 'ADMIN_ONLY' in self.feedmap[module_name] else True
+                                if module_name in self.feedmap['MODULES']:
+                                    ADMIN_ONLY = self.feedmap['MODULES'][module_name]['ADMIN_ONLY'] if 'ADMIN_ONLY' in self.feedmap['MODULES'][module_name] else True
                                     if not ADMIN_ONLY or self.isadmin(userid):
                                         if mode == 'enable':
-                                            if 'NAME' in self.feedmap[module_name]:
-                                                if not channame in self.feedmap[module_name]['CHANNELS']:
-                                                    self.feedmap[module_name]['CHANNELS'].append(channame)
+                                            if 'NAME' in self.feedmap['MODULES'][module_name]:
+                                                if not channame in self.feedmap['MODULES'][module_name]['CHANNELS']:
+                                                    self.feedmap['MODULES'][module_name]['CHANNELS'].append(channame)
                                                     switched_feeds.add(module_name)
                                         elif mode == 'disable':
-                                            if 'NAME' in self.feedmap[module_name]:
-                                                if channame in self.feedmap[module_name]['CHANNELS']:
-                                                    self.feedmap[module_name]['CHANNELS'].remove(channame)
+                                            if 'NAME' in self.feedmap['MODULES'][module_name]:
+                                                if channame in self.feedmap['MODULES'][module_name]['CHANNELS']:
+                                                    self.feedmap['MODULES'][module_name]['CHANNELS'].remove(channame)
                                                     switched_feeds.add(module_name)
                                     else:
                                         blocked_feedchanges.add(module_name)

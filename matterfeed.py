@@ -169,41 +169,56 @@ class MattermostManager(object):
                         spec.loader.exec_module(settings)
                     except Exception as e:
                         raise ImportError(f"Settings for {module_name} could not be loaded...")
-                    if not module_name in self.feedmap:
-                        self.feedmap[module_name] = {
+                    if not 'MODULES' in self.feedmap:
+                        self.feedmap['MODULES'] = {}
+                    # Migrate old feedmap format to new
+                    if module_name in self.feedmap:
+                        if not module_name in self.feedmap['MODULES']:
+                            self.log.info(f"Fixing   : Old feedmap format found, moving root node for '{module_name}' module to MODULES node ...")
+                            self.feedmap['MODULES'][module_name] = self.feedmap[module_name]
+                            self.log.info(f"Fixing   : Removing old root node for '{module_name}' ...")
+                            del self.feedmap[module_name]
+                        else:
+                            self.log.info(f"Fixing   : Old feedmap format found, removing root node for '{module_name}' module ...")
+                            del self.feedmap[module_name]
+                    # New module, create an entry for it
+                    if not module_name in self.feedmap['MODULES']:
+                        self.feedmap['MODULES'][module_name] = {
                             'NAME': getattr(settings,'NAME'),
                             'CHANNELS': [],
                             'TOPICS': [],
                             'ADMIN_ONLY': True,
                         }
+                    # Create the appropriate subnodes if non-existent
                     if not 'TOPICS' in self.feedmap:
                         self.feedmap['TOPICS'] = {}
-                    if not 'CHANNELS' in self.feedmap[module_name]:
-                        self.feedmap[module_name]['CHANNELS'] = []
-                    if not 'TOPICS' in self.feedmap[module_name]:
-                        self.feedmap[module_name]['TOPICS'] = []
-                    if not 'ADMIN_ONLY' in self.feedmap[module_name]:
-                        self.feedmap[module_name]['ADMIN_ONLY'] = True
+                    if not 'CHANNELS' in self.feedmap['MODULES'][module_name]:
+                        self.feedmap['MODULES'][module_name]['CHANNELS'] = []
+                    if not 'TOPICS' in self.feedmap['MODULES'][module_name]:
+                        self.feedmap['MODULES'][module_name]['TOPICS'] = []
+                    # Set the default values from the config in the modules if non-existent
+                    if not 'ADMIN_ONLY' in self.feedmap['MODULES'][module_name]:
+                        self.feedmap['MODULES'][module_name]['ADMIN_ONLY'] = True
                     if hasattr(settings,'ADMIN_ONLY'):
-                        self.feedmap[module_name]['ADMIN_ONLY'] = getattr(settings,'ADMIN_ONLY')
+                        self.feedmap['MODULES'][module_name]['ADMIN_ONLY'] = getattr(settings,'ADMIN_ONLY')
                     if hasattr(settings,'CHANNELS'):
                         for channel in getattr(settings,'CHANNELS'):
-                            if not channel in self.feedmap[module_name]['CHANNELS']:
-                                self.feedmap[module_name]['CHANNELS'].append(channel)
+                            if not channel in self.feedmap['MODULES'][module_name]['CHANNELS']:
+                                self.feedmap['MODULES'][module_name]['CHANNELS'].append(channel)
                     if hasattr(settings,'TOPICS'):
                         for topic in getattr(settings,'TOPICS'):
-                            if not topic in self.feedmap[module_name]['TOPICS']:
-                                self.feedmap[module_name]['TOPICS'].append(topic)
+                            if not topic in self.feedmap['MODULES'][module_name]['TOPICS']:
+                                self.feedmap['MODULES'][module_name]['TOPICS'].append(topic)
                             if not topic in self.feedmap['TOPICS']:
                                 self.feedmap['TOPICS'][topic] = []
                             if not module_name in self.feedmap['TOPICS'][topic]:
                                 self.feedmap['TOPICS'][topic].append(module_name)
-            newfeedmap = copy.deepcopy(self.feedmap)
-            for module_name in newfeedmap:
-                if not module_name in modules.keys():
-                    if not module_name in ('TOPICS',):
-                        if module_name in self.feedmap:
-                            del self.feedmap[module_name]
+            # Clear out modules that no longer exist from the feedmap file
+            for module_name in list(self.feedmap.keys()):
+                if not module_name in ('TOPICS', 'MODULES'):
+                    self.log.info(f"Fixing   : Now missing module '{module_name}' in old feedmap format found, removing leftover root node ...")
+                    del self.feedmap[module_name]
+            # Save the feedmap and summarize the results
             self.log.info(f"Saving   : New feedmap {options.Modules['feedmap']} ...")
             self.update_feedmap()
             self.log.info(f"Starting : {len(modules)} module(s) ...")
@@ -229,6 +244,7 @@ class MattermostManager(object):
                 failed = 0
                 self.feedmap = self.load_feedmap()
                 self.modules = self.findModules()
+                return
                 self.channels = self.update_channels()
                 with pebble.ProcessPool(max_workers=options.Modules['threads']) as pool:
                     futures = []
