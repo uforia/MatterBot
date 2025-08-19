@@ -359,7 +359,7 @@ class MattermostManager(object):
                     if len(self.feedmap):
                         text =  "**List of available topics for channel: `%s`**\n" % (self.channame_to_chandisplayname(channame,))
                         text += "\n"
-                        text += "\n| **Topics** | **Available Feeds** |"
+                        text += f"\n| **Topics** ({len(self.feedmap['TOPICS'])}) | **Available Feeds** ({len(self.feedmap['MODULES'])}) |"
                         text += "\n| :- | :- |"
                         if 'TOPICS' in self.feedmap:
                             for topic in sorted(self.feedmap['TOPICS']):

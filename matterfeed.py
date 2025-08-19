@@ -228,7 +228,7 @@ class MattermostManager(object):
             # Save the feedmap and summarize the results
             self.log.info(f"Saving   : New feedmap {options.Modules['feedmap']} ...")
             self.update_feedmap()
-            self.log.info(f"Starting : {len(modules)} module(s) ...")
+            self.log.info(f"Starting : {len(self.feedmap['MODULES'])} module(s) ...")
             return modules
         except Exception as e:
             if options.debug:
