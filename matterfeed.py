@@ -218,14 +218,17 @@ class MattermostManager(object):
                 if not module_name in ('TOPICS', 'MODULES'):
                     self.log.info(f"Fixing   : Now missing module '{module_name}' in old feedmap format found, removing leftover root node ...")
                     del self.feedmap[module_name]
+            # Remove modules from the topics list that no longer exist
+            for topic in list(self.feedmap['TOPICS']):
+                newtopicmodulelist = set(self.feedmap['TOPICS'][topic]) & set(list(modules.keys()))
+                difference = set(self.feedmap['TOPICS'][topic]) - newtopicmodulelist
+                if len(difference):
+                    self.log.info(f"Fixing   : Now missing module '{module_name}' removed from {topic} list ...")
+                self.feedmap['TOPICS'][topic] = newtopicmodulelist
             # Save the feedmap and summarize the results
             self.log.info(f"Saving   : New feedmap {options.Modules['feedmap']} ...")
             self.update_feedmap()
             self.log.info(f"Starting : {len(modules)} module(s) ...")
-            # Remove modules from the topics list that no longer exist
-            for topic in list(self.feedmap['TOPICS']):
-                newtopicmodulelist = sorted(set(self.feedmap['TOPICS'][topic]) & set(list(modules.keys())))
-                self.feedmap['TOPICS'][topic] = newtopicmodulelist
             return modules
         except Exception as e:
             if options.debug:
