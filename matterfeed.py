@@ -222,6 +222,10 @@ class MattermostManager(object):
             self.log.info(f"Saving   : New feedmap {options.Modules['feedmap']} ...")
             self.update_feedmap()
             self.log.info(f"Starting : {len(modules)} module(s) ...")
+            # Remove modules from the topics list that no longer exist
+            for topic in list(self.feedmap['TOPICS']):
+                newtopicmodulelist = sorted(set(self.feedmap['TOPICS'][topic]) & set(list(modules.keys())))
+                self.feedmap['TOPICS'][topic] = newtopicmodulelist
             return modules
         except Exception as e:
             if options.debug:
