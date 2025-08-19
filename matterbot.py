@@ -397,7 +397,7 @@ class MattermostManager(object):
                         text += "*An asterisk after a module name indicates the feed can only be enabled/disabled by a MatterBot admin.*\n"
                         messages.append(text)
                     if len(enabled_feeds):
-                        text = f"Enabled feeds: `"+"` ,`".join(sorted(enabled_feeds))+"`"
+                        text = f"Enabled feeds: `"+"` ,`".join(sorted(enabled_feeds))+f"` ({len(enabled_feeds)})"
                         messages.append(text)
                     else:
                         text = "There are no feeds enabled in this channel.\n"
