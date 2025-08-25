@@ -423,7 +423,7 @@ class MattermostManager(object):
                             for param in params[0:]:
                                 param = param.lower()
                                 lowercase_topics = {_.lower(): _ for _ in self.feedmap['TOPICS']}
-                                if param.lower() in lowercase_topics:
+                                if param in lowercase_topics:
                                     topic_key = lowercase_topics[param]
                                     for module_name in self.feedmap['TOPICS'][topic_key]:
                                         feeds_to_consider.add(module_name)
