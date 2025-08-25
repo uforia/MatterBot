@@ -30,7 +30,7 @@ settings = load_settings()
 def process(command, channel, username, params, files, conn,):
     if not params:
         return {'messages': [{'text': "No parameters provided."}]}
-        
+
     param = params[0:]
 
     try:
