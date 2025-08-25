@@ -322,7 +322,7 @@ class MattermostManager(object):
                         uploads = []
                     if not [channel, content, uploads] in posts:
                         posts.append([channel, content, uploads])
-                    if module_name in self.feedmap:
+                    if module_name in self.feedmap['MODULES']:
                         for newschannel in self.feedmap['MODULES'][module_name]['CHANNELS']:
                             if not [newschannel, content, uploads] in posts:
                                 posts.append([newschannel, content, uploads])
