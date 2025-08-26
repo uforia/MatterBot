@@ -108,7 +108,14 @@ def process(command, channel, username, params, files, conn):
                                         m = re.search('id=\"(.+?)\"', section)
                                         if m:
                                             chaptertitle = m.group(1)
+                                            '''
                                             toc += '\n<li><a href="#'+chaptertitle+'" class="toctext"></a> <a href="'+chaptertitle+'" class="tocpagenr"> </a></li>'
+                                            '''
+                                            toc += '<div class="entry">'
+                                            toc += '<div class="left"><a href="#'+chaptertitle+'" class="toctext"></a></div>'
+                                            toc += '<div class="right"><a href="#'+chaptertitle+'" class="tocpagenr"></a></div>'
+                                            toc += '</div><br />'
+                                            toc += '\n'
                                     html = html.replace('%TOC%',toc)
                                 with open(mdfile, 'wb') as f:
                                     f.write(content.encode())
