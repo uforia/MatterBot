@@ -37,7 +37,7 @@ def process(command, channel, username, params, files, conn):
                     if response.status_code in (200,):
                         json_response = response.json()
                         if isinstance(json_response, list):
-                            if 404 in json_response[0]:
+                            if 404 in json_response:
                                 messages.append({'text': f"Onion domain `{params}` not found!"})
                         else:
                             fields = collections.OrderedDict({
@@ -61,7 +61,7 @@ def process(command, channel, username, params, files, conn):
                                             if not tag in tagcollection[tagtype]:
                                                 tagcollection[tagtype].append(tag)
                                         for tagtype in tagcollection:
-                                            message += f"| Tag: **{tagtype.capitalize()}** | "
+                                            message += f"| **Tag**: `{tagtype.capitalize()}` | "
                                             message += "`"+"`, `".join(tagcollection[tagtype])+"`"
                                             message += " |\n"
                                     else:
