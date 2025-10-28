@@ -27,7 +27,7 @@ def process(command, channel, username, params, files, conn):
     querytypes = ('euvd', 'search')
     headers = {
         'Content-Type': settings.CONTENTTYPE,
-        'User-Agent': 'MatterBot integration for dnsdumpster v1.0',
+        'User-Agent': 'MatterBot integration for ENISA EUVD v1.0',
     }
     try:
         if len(params) == 0:
