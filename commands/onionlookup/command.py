@@ -36,7 +36,10 @@ def process(command, channel, username, params, files, conn):
                         messages.append({'text': "Failed Onion-Lookup, check address validity or try again later ..."})
                     if response.status_code in (200,):
                         json_response = response.json()
-                        if len(json_response):
+                        if isinstance(json_response, list):
+                            if 404 in json_response[0]:
+                                messages.append({'text': f"Onion domain `{params}` not found!"})
+                        else:
                             fields = collections.OrderedDict({
                                 'first_seen': 'First Seen',
                                 'last_seen': 'Last Seen',
