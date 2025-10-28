@@ -55,13 +55,13 @@ def process(command, channel, username, params, files, conn):
                                         tagcollection = collections.OrderedDict()
                                         for tagentry in json_response[field]:
                                             tagtype = tagentry.split(':')[0]
-                                            tag = regex.sub('',tagentry.split('=')[1].replace('"','').replace('-',' ').capitalize())
+                                            tag = regex.sub('',tagentry.split('=')[1].replace('"','').replace('-',' ').title())
                                             if not tagtype in tagcollection:
                                                 tagcollection[tagtype] = []
                                             if not tag in tagcollection[tagtype]:
                                                 tagcollection[tagtype].append(tag)
                                         for tagtype in tagcollection:
-                                            message += f"| **Tag**: `{tagtype.capitalize()}` | "
+                                            message += f"| **Tag**: `{tagtype.title()}` | "
                                             message += "`"+"`, `".join(tagcollection[tagtype])+"`"
                                             message += " |\n"
                                     else:
