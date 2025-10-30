@@ -57,7 +57,7 @@ def process(command, channel, username, params, files, conn):
                             message = f"**ProxyCheck for:** `{query}`\n"
                             if 'last_updated' in json_response[query]:
                                 datetime_object = datetime.datetime.strptime(json_response[query]['last_updated'], "%Y-%m-%dT%H:%M:%SZ")
-                                result = datetime_object.strftime("%B %d, %Y at %H:%M%S UTC")
+                                result = datetime_object.strftime("%B %d, %Y at %H:%M:%S UTC")
                                 message += f"**Last updated:** `{result}`\n"
                             message += "\n"
                             if 'network' in json_response[query]:
