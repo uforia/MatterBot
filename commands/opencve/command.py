@@ -129,8 +129,8 @@ def process(command, channel, username, params, files, conn):
                                                     epssdetails = epssresponse.json()
                                                     if 'status-code' in epssdetails:
                                                         if epssdetails['status-code'] == 200:
-                                                            epss = round(epssdetails['data'][0]['epss'],4)*100+"%"
-                                                            percentile = round(epssdetails['data'][0]['percentile'],4)*100+"%"
+                                                            epss = str(round(float(epssdetails['data'][0]['epss']),4)*100)+"%"
+                                                            percentile = str(round(float(epssdetails['data'][0]['percentile']),4)*100)+"%"
                                             vector = cvssdata['data']['vector']
                                             break
                                 cves.append({
