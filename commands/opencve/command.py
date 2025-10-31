@@ -27,6 +27,10 @@ def process(command, channel, username, params, files, conn):
     stripchars = '`\n\r\'\"'
     regex = re.compile('[%s]' % stripchars)
     messages = []
+    headers = {
+        'Content-Type': settings.CONTENTTYPE,
+        'User-Agent': 'MatterBot integration for ENISA EUVD v1.0',
+    }
     querytypes = ('cve', 'search')
     try:
         if len(params) == 0:
@@ -60,7 +64,7 @@ def process(command, channel, username, params, files, conn):
                             while True:
                                 if len(severities):
                                     url += '&cvss=%s' % ','.join(severities)
-                                with session.get(url) as response:
+                                with session.get(url, headers=headers) as response:
                                     if response.status_code == 200:
                                         json_response = response.json()
                                         for cve in json_response['results']:
@@ -70,7 +74,7 @@ def process(command, channel, username, params, files, conn):
                                             desc = regex.sub('',cve['description'])
                                             vector = None
                                             cveurl = settings.APIURL['opencve']['url']+'/cve/%s' % (id,)
-                                            with session.get(cveurl) as response:
+                                            with session.get(cveurl, headers=headers) as response:
                                                 cvedetails = response.json()
                                                 cvss = 0.0
                                                 vector = 'N/A'
@@ -103,10 +107,12 @@ def process(command, channel, username, params, files, conn):
                         url = settings.APIURL['opencve']['url']+'/cve/%s' % (cve,)
                         session = requests.Session()
                         session.auth = (settings.APIURL['opencve']['username'],settings.APIURL['opencve']['password'])
-                        with session.get(url) as response:
+                        with session.get(url, headers=headers) as response:
                             if response.status_code == 200:
                                 cvedetails = response.json()
                                 cvss = 0.0
+                                epss = "-"
+                                percentile = "-"
                                 vector = 'N/A'
                                 id = cvedetails['cve_id']
                                 creation = cvedetails['created_at']
@@ -117,6 +123,14 @@ def process(command, channel, username, params, files, conn):
                                         cvssdata = cvedetails['metrics'][cvssversion]
                                         if len(cvssdata['data']):
                                             cvss = cvssdata['data']['score']
+                                            epssurl = f"https://api.first.org/data/v1/epss?cve={cve}"
+                                            with session.get(epssurl, headers=headers) as epssresponse:
+                                                if epssresponse.status_code == 200:
+                                                    epssdetails = epssresponse.json()
+                                                    if 'status-code' in epssdetails:
+                                                        if epssdetails['status-code'] == 200:
+                                                            epss = round(epssdetails['data'][0]['epss'],4)*100+"%"
+                                                            percentile = round(epssdetails['data'][0]['percentile'],4)*100+"%"
                                             vector = cvssdata['data']['vector']
                                             break
                                 cves.append({
@@ -125,6 +139,8 @@ def process(command, channel, username, params, files, conn):
                                     'Last Update': updated,
                                     'Description': desc,
                                     'CVSS': cvss,
+                                    'EPSS': epss,
+                                    'Percentile': percentile,
                                     'Vector': vector,
                                     'URL': settings.APIURL['opencve']['url'].replace('/api','')+'/cve/%s' % (id,)
                                 })
@@ -133,7 +149,7 @@ def process(command, channel, username, params, files, conn):
                     if len(cves):
                         cves = sorted(cves, key=lambda v: v['Last Update'], reverse=True)
                         count = 0
-                        fields = ('CVE ID', 'Description', 'CVSS', 'Vector', 'Created At', 'Last Update')
+                        fields = ('CVE ID', 'Description', 'CVSS', 'EPSS', 'Percentile', 'Vector', 'Created At', 'Last Update')
                         if len(cves)>10:
                             text = '**OpenCVE results for `%s %s`: %d found, displaying newest 10**\n' % (querytype,' '.join(params),len(cves))
                         else:
@@ -143,7 +159,7 @@ def process(command, channel, username, params, files, conn):
                             text += '| %s ' % (field,)
                         text += '|\n'
                         for field in fields:
-                            if field in ('CVE ID', 'CVSS', 'Created At', 'Last Update'):
+                            if field in ('CVE ID', 'CVSS', 'EPSS', 'Percentile', 'Created At', 'Last Update'):
                                 text += '| -: '
                             else:
                                 text += '| :- '
