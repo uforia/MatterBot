@@ -12,7 +12,7 @@ APIURL = {
 CONTENTTYPE = 'application/json'
 HELP = {
     'DEFAULT': {
-        'args': None,
+        'args': '<IP address> or <E-mail>',
         'desc': 'Query the ProxyCheck API for an IP or email address.',
     },
 }

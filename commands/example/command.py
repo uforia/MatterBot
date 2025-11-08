@@ -60,7 +60,14 @@
 # 2) Channel:    Channel name were the command was triggered
 # 3) Username:   Username that triggered the command
 # 4) Params:     Parameters to the command, as a Python list()
+# 5) Files:      Attachments that were passed to the bot with the command
+# 6) Conn:       The raw connection object to Mattermost. Check the mattermostdriver
+#                documentation for more information. **WARNING**: It is dangerous to
+#                directly communicate with the Mattermost server if you do not know
+#                what you are doing, and you may experience unexpected crashes or
+#                behaviour. Use this at your own risk!
 
+import re
 from pathlib import Path
 try:
     from commands.example import defaults as settings
@@ -76,6 +83,39 @@ else:
             import settings
 
 def process(command, channel, username, params, files, conn):
-    return {'messages': [
-        {'text': 'It is nice to meet you, %s!' % (username,)}
-    ]}
+    # Common regex that can be used to filter out or replace
+    # characters that cause MarkDown formatting issues.
+    stripchars = r'\[\]\n\r\'\"|'
+    regex = re.compile('[%s]' % stripchars)
+
+    # List of messages that this module replies with.
+    # Normal text messages are:
+    # {'text': '<message>'}
+        # Optionally the list item may also have an 'uploads' key:
+    # {'text': '<message'>, 'uploads': [ ... ]}
+    # The 'uploads' values are dictionary entries containing
+    # a 'filename' and 'bytes' keys:
+    # 'uploads': [{'filename': '<filename'>, 'bytes': bytes}]
+    # Every dictionary item gets added as a file upload to the
+    # text message attachments.
+    messages = []
+
+    # It is highly recommended to use a custom User-Agent to
+    # prevent certain APIs / WAFs from blocking you based on the
+    # Python requests default header.
+    headers = {
+        'Content-Type': settings.CONTENTTYPE,
+        'User-Agent': 'MatterBot integration for Example Module v1.0',
+    }
+
+    # Let's deal with the command now...
+    try:
+        # In this example, we just say hi back to the user!
+        messages.append({'text': f"It is nice to meet you, {username,}!"})
+    except:
+        pass
+    finally:
+        # Yes, this is an unusual and non-compliant code block, but it is there
+        # to ensure that the bot responds to a command and is able to return
+        # errors coming from its submodules using the same 'API'.
+        return {'messages': messages}
