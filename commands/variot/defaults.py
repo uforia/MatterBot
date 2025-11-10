@@ -16,7 +16,7 @@ HELP = {
         'args': '<exploit>, <search> or <vuln>',
         'desc': 'Search the VARIoT database for text or query it for information on a vulnerability '
                 'or exploit. VAR Vulnerability and Exploit Identifiers are formatted as `VAR-YEARMONTH-ENUMERATOR` '
-                'or `VAR-E-YEARMONTH-ENUMERATOR.',
+                'or `VAR-E-YEARMONTH-ENUMERATOR`.',
     },
     'search': {
         'args': '<text> [limit:<limit>]',

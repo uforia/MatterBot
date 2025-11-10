@@ -103,7 +103,7 @@ def query(MAX=settings.ENTRIES):
                                         cvss = cvssdata['data']['score']
                                         vector = cvssdata['data']['vector']
                                         break
-                            content = settings.NAME + f': [{cve}]({link}) - CVSS: `{cvss}`\n>{description}\n'
+                            content = settings.NAME + f": [{cve}]({link}) - CVSS: `{cvss}`\n>{description}\n"
                             if ((isinstance(cvss,float) or isinstance(cvss,int)) and cvss >= settings.THRESHOLD) or settings.NOCVSS:
                                 for channel in settings.CHANNELS:
                                     items.add((channel, content))
