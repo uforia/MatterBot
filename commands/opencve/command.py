@@ -167,10 +167,13 @@ def process(command, channel, username, params, files, conn):
                         while count < 10 and count < len(cves):
                             cve = cves[count]
                             for field in fields:
-                                if field in ('CVE ID'):
+                                if field in ('CVE ID',):
                                     text += '| [%s](%s) ' % (cve[field],cve['URL'])
                                 else:
-                                    text += '| `%s` ' % (cve[field],)
+                                    if field in cve:
+                                        text += '| `%s` ' % (cve[field],)
+                                    else:
+                                        text += '| `-` '
                             text += '|\n'
                             count += 1
                         text += '\n\n'
