@@ -73,6 +73,7 @@ def process(command, channel, username, params, files, conn):
                                             updated = cve['updated_at']
                                             desc = regex.sub('',cve['description'])
                                             vector = None
+                                            epss = "-"
                                             cveurl = settings.APIURL['opencve']['url']+'/cve/%s' % (id,)
                                             with session.get(cveurl, headers=headers) as response:
                                                 cvedetails = response.json()
@@ -85,12 +86,22 @@ def process(command, channel, username, params, files, conn):
                                                             cvss = cvssdata['data']['score']
                                                             vector = cvssdata['data']['vector']
                                                             break
+                                            epssurl = f"https://api.first.org/data/v1/epss?cve={cve}"
+                                            with session.get(epssurl, headers=headers) as epssresponse:
+                                                if epssresponse.status_code == 200:
+                                                    epssdetails = epssresponse.json()
+                                                    if 'status-code' in epssdetails:
+                                                        if epssdetails['status-code'] == 200:
+                                                            epss = str(round(float(epssdetails['data'][0]['epss']),4)*100)+"%"
+                                                            percentile = str(round(float(epssdetails['data'][0]['percentile']),4)*100)+"%"
                                             cves.append({
                                                 'CVE ID': id,
                                                 'Created At': creation,
                                                 'Last Update': updated,
                                                 'Description': desc,
                                                 'CVSS': cvss,
+                                                'EPSS': epss,
+                                                'Percentile': percentile,
                                                 'Vector': vector,
                                                 'URL': settings.APIURL['opencve']['url'].replace('/api','')+'/cve/%s' % (id,)
                                             })
@@ -182,7 +193,7 @@ def process(command, channel, username, params, files, conn):
                             opencvecsv += '"'+'","'.join(fields)+'"\n'
                             for cve in cves:
                                 for field in fields:
-                                    if field in ('CVE ID'):
+                                    if field in ('CVE ID',):
                                         opencvecsv += '"=HYPERLINK(""%s"";""%s"")",' % (cve['URL'],cve[field])
                                     else:
                                         if field in cve:
