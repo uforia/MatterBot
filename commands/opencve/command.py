@@ -185,7 +185,10 @@ def process(command, channel, username, params, files, conn):
                                     if field in ('CVE ID'):
                                         opencvecsv += '"=HYPERLINK(""%s"";""%s"")",' % (cve['URL'],cve[field])
                                     else:
-                                        opencvecsv += '"%s",' % (cve[field],)
+                                        if field in cve:
+                                            opencvecsv += '"%s",' % (cve[field],)
+                                        else:
+                                            opencvecsv += '"-",'
                                 opencvecsv = opencvecsv.strip(',')+'\n'
                             messages.append({'text': text, 'uploads': [{'filename': 'opencve-'+querytype+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.csv', 'bytes': opencvecsv}]})
                         else:
