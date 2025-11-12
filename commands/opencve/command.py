@@ -86,14 +86,16 @@ def process(command, channel, username, params, files, conn):
                                                             cvss = cvssdata['data']['score']
                                                             vector = cvssdata['data']['vector']
                                                             break
-                                            epssurl = f"https://api.first.org/data/v1/epss?cve={cve}"
+                                            epssurl = f"https://api.first.org/data/v1/epss?cve={id}"
                                             with session.get(epssurl, headers=headers) as epssresponse:
                                                 if epssresponse.status_code == 200:
                                                     epssdetails = epssresponse.json()
+                                                    print(epssdetails)
                                                     if 'status-code' in epssdetails:
                                                         if epssdetails['status-code'] == 200:
-                                                            epss = str(round(float(epssdetails['data'][0]['epss']),4)*100)+"%"
-                                                            percentile = str(round(float(epssdetails['data'][0]['percentile']),4)*100)+"%"
+                                                            if len(epssdetails['data']):
+                                                                epss = str(round(float(epssdetails['data'][0]['epss']),4)*100)+"%"
+                                                                percentile = str(round(float(epssdetails['data'][0]['percentile']),4)*100)+"%"
                                             cves.append({
                                                 'CVE ID': id,
                                                 'Created At': creation,
@@ -134,14 +136,15 @@ def process(command, channel, username, params, files, conn):
                                         cvssdata = cvedetails['metrics'][cvssversion]
                                         if len(cvssdata['data']):
                                             cvss = cvssdata['data']['score']
-                                            epssurl = f"https://api.first.org/data/v1/epss?cve={cve}"
+                                            epssurl = f"https://api.first.org/data/v1/epss?cve={id}"
                                             with session.get(epssurl, headers=headers) as epssresponse:
                                                 if epssresponse.status_code == 200:
                                                     epssdetails = epssresponse.json()
                                                     if 'status-code' in epssdetails:
                                                         if epssdetails['status-code'] == 200:
-                                                            epss = str(round(float(epssdetails['data'][0]['epss']),4)*100)+"%"
-                                                            percentile = str(round(float(epssdetails['data'][0]['percentile']),4)*100)+"%"
+                                                            if len(epssdetails['data']):
+                                                                epss = str(round(float(epssdetails['data'][0]['epss']),4)*100)+"%"
+                                                                percentile = str(round(float(epssdetails['data'][0]['percentile']),4)*100)+"%"
                                             vector = cvssdata['data']['vector']
                                             break
                                 cves.append({
