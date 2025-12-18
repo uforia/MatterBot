@@ -59,7 +59,7 @@ def process(command, channel, username, params, files, conn):
                                                 message += f"\n| {time} "
                                                 for field in fields:
                                                     if field in result['page']:
-                                                        message += f"| {result['page'][field].replace('.','[.]',1).replace(':','[:]',1).replace('http','hxxp').replace('|','-')} "
+                                                        message += f"| `{result['page'][field].replace('.','[.]',1).replace(':','[:]',1).replace('http','hxxp').replace('|','-')}` "
                                                     else:
                                                         message += f"| - "
                                                 verdicturl = result["result"]
