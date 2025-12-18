@@ -58,7 +58,10 @@ def process(command, channel, username, params, files, conn):
                                                 time = result["task"]["time"]
                                                 message += f"\n| {time} "
                                                 for field in fields:
-                                                    message += f"| {result['page'][field].replace('.','[.]',1).replace(':','[:]',1).replace('http','hxxp').replace('|','-')} "
+                                                    if field in result['page']:
+                                                        message += f"| `{result['page'][field].replace('.','[.]',1).replace(':','[:]',1).replace('http','hxxp').replace('|','-')}` "
+                                                    else:
+                                                        message += f"| - "
                                                 verdicturl = result["result"]
                                                 with requests.get(verdicturl, headers=headers) as verdictresponse:
                                                     if not response.status_code in (200, 206):
