@@ -17,15 +17,15 @@ import feedparser
 import re
 from pathlib import Path
 try:
-    from modules.sophos import defaults as settings
+    from modules.cloudseclist import defaults as settings
 except ModuleNotFoundError: # local test run
     import defaults as settings
     if Path('settings.py').is_file():
         import settings
 else:
-    if Path('modules/sophos/settings.py').is_file():
+    if Path('modules/cloudseclist/settings.py').is_file():
         try:
-            from modules.sophos import settings
+            from modules.cloudseclist import settings
         except ModuleNotFoundError: # local test run
             import settings
 
@@ -35,22 +35,18 @@ def query(MAX=settings.ENTRIES):
     count = 0
     stripchars = '`\\[\\]\'\"'
     regex = re.compile('[%s]' % stripchars)
-    category = "Threat Research"
     while count < MAX:
         try:
-            tags = feed.entries[count].tags
-            for tag in tags:
-                if category in tag['term']:
-                    title = feed.entries[count].title
-                    link = feed.entries[count].link
-                    content = settings.NAME + ': [' + title + '](' + link + ')'
-                    if len(feed.entries[count].description):
-                        description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
-                        if len(description)>400:
-                            description = description[:396]+' ...'
-                        content += '\n>'+description+'\n'
-                    for channel in settings.CHANNELS:
-                        items.append([channel, content])
+            title = feed.entries[count].title
+            link = feed.entries[count].link
+            content = settings.NAME + ': [Cloudseclist ' + title[21:] + '](' + link + ')'
+            if len(feed.entries[count].description):
+                description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
+                if len(description)>400:
+                    description = description[:396]+' ...'
+                content += '\n>'+description+'\n'
+            for channel in settings.CHANNELS:
+                items.append([channel, content])
             count+=1
         except IndexError:
             return items # No more items
