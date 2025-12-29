@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
-NAME = "Sophos Threat Research"
-URL = "https://news.sophos.com/feed/"
+NAME = "Asec Ahnlab Threat Intelligence"
+URL = "https://asec.ahnlab.com/en/feed/"
 CHANNELS = (
     "newsfeed",
 )
 TOPICS = (
+    "General",
     "CTI",
-    "Vulnerabilities"
 )
 ADMIN_ONLY = False
 ENTRIES = 10

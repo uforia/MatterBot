@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
-NAME = "Sophos Threat Research"
-URL = "https://news.sophos.com/feed/"
+NAME = "ABB Advisories"
+URL = "https://psirt.abb.com/rss/abbrssfeed.xml"
 CHANNELS = (
     "newsfeed",
 )
 TOPICS = (
-    "CTI",
+    "Advisories",
+    "Vendor",
     "Vulnerabilities"
 )
 ADMIN_ONLY = False

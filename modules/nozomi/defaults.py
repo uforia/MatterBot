@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
-NAME = "Sophos Threat Research"
-URL = "https://news.sophos.com/feed/"
+NAME = "Nozomi Networks Advisories"
+URL = "https://security.nozominetworks.com/rss.xml"
 CHANNELS = (
     "newsfeed",
 )
 TOPICS = (
-    "CTI",
+    "Advisories",
+    "Vendor",
     "Vulnerabilities"
 )
 ADMIN_ONLY = False

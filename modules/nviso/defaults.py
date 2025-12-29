@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
-NAME = "Sophos Threat Research"
-URL = "https://news.sophos.com/feed/"
+NAME = "NVISO Blog"
+URL = "https://blog.nviso.eu/feed/"
 CHANNELS = (
     "newsfeed",
 )
 TOPICS = (
+    "General",
     "CTI",
-    "Vulnerabilities"
 )
 ADMIN_ONLY = False
 ENTRIES = 10
