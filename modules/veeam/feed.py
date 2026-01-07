@@ -65,6 +65,7 @@ def query(MAX=settings.ENTRIES):
         try:
             title = feed.entries[count].title
             link = feed.entries[count].link
+            content = None # Make sure iteration can continue if no match is present
             if settings.FILTER:
                 THRESHOLD = importScore()
                 matches = checkPage(link)
