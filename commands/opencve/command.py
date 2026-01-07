@@ -90,7 +90,6 @@ def process(command, channel, username, params, files, conn):
                                             with session.get(epssurl, headers=headers) as epssresponse:
                                                 if epssresponse.status_code == 200:
                                                     epssdetails = epssresponse.json()
-                                                    print(epssdetails)
                                                     if 'status-code' in epssdetails:
                                                         if epssdetails['status-code'] == 200:
                                                             if len(epssdetails['data']):
