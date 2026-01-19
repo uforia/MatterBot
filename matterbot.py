@@ -332,7 +332,14 @@ class MattermostManager(object):
             memberlist = []
             for channame in self.commands[module]['chans']:
                 try:
-                    memberlist.extend([_['user_id'] for _ in self.mmDriver.channels.get_channel_members(self.channame_to_chanid(channame))])
+                    page=0
+                    while True:
+                        channel_info = self.mmDriver.channels.get_channel_members(self.channame_to_chanid(channame), params={'page': page, 'per_page':200})
+                        for channel in channel_info:
+                            memberlist.append(channel['user_id'])
+                        page+=1
+                        if len(channel_info) == 0:
+                            break
                     if userid in memberlist:
                         return True
                 except Exception as e:
