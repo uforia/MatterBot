@@ -17,38 +17,18 @@ import requests
 import shelve
 import traceback
 
-### Dynamic configuration loader (do not change/edit)
-from importlib import import_module
-from types import SimpleNamespace
-from pathlib import Path
-_pkg = __package__ or Path(__file__).parent.name
-def _load(module_name):
-    try:
-        return import_module(f".{module_name}", package=_pkg)
-    except ModuleNotFoundError:
-        try:
-            return import_module(module_name)
-        except ModuleNotFoundError:
-            return None
-_defaults = _load("defaults")
-_settings = _load("settings")
-_settings_dict = {
-    k: v
-    for mod in (_defaults, _settings)
-    if mod
-    for k, v in vars(mod).items()
-    if not k.startswith("__")
-}
-settings = SimpleNamespace(**_settings_dict)
-### Loader end, actual module functionality starts here
-
 def read_data_from_file(file_path):
     with open(file_path, 'r') as file:
         data = file.read()
     return data
 
-def query(MAX=settings.ENTRIES):
-    items = []
+def query(settings=None):
+    if settings:
+        try:
+            from types import SimpleNamespace
+            settings = SimpleNamespace(**settings['SETTINGS'])
+        except:
+            return None
     data = None
     count = 0
     stripchars = r'`\\[\\]\'\"\(\)'

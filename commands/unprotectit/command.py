@@ -31,7 +31,7 @@ _settings_dict = {
 }
 settings = SimpleNamespace(**_settings_dict)
 ### Loader end, actual module functionality starts here
-
+ 
 def buildcache(messages):
     try:
         cache = {}

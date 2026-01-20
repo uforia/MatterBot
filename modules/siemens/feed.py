@@ -17,31 +17,6 @@ import sys
 import requests
 import traceback
 
-### Dynamic configuration loader (do not change/edit)
-from importlib import import_module
-from types import SimpleNamespace
-from pathlib import Path
-_pkg = __package__ or Path(__file__).parent.name
-def _load(module_name):
-    try:
-        return import_module(f".{module_name}", package=_pkg)
-    except ModuleNotFoundError:
-        try:
-            return import_module(module_name)
-        except ModuleNotFoundError:
-            return None
-_defaults = _load("defaults")
-_settings = _load("settings")
-_settings_dict = {
-    k: v
-    for mod in (_defaults, _settings)
-    if mod
-    for k, v in vars(mod).items()
-    if not k.startswith("__")
-}
-settings = SimpleNamespace(**_settings_dict)
-### Loader end, actual module functionality starts here
-
 def importScore():
     running = os.path.abspath(__file__)
     cwd = os.path.abspath(os.path.join(os.path.dirname(running), '..'))
@@ -50,8 +25,13 @@ def importScore():
     from opencve.defaults import ADVISORYTHRESHOLD # Import threshold score from opencve module
     return ADVISORYTHRESHOLD
 
-def query(MAX=settings.ENTRIES):
-    items = []
+def query(settings=None):
+    if settings:
+        try:
+            from types import SimpleNamespace
+            settings = SimpleNamespace(**settings['SETTINGS'])
+        except:
+            return None
     stripchars = '`\\[\\]\'\"'
     count = 0
     headers = {

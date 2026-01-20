@@ -29,7 +29,7 @@ _settings_dict = {
 }
 settings = SimpleNamespace(**_settings_dict)
 ### Loader end, actual module functionality starts here
-
+ 
 def process(command, channel, username, params, files, conn):
     # Methods to query the current API account info (credits etc.)
     stripchars = '`\n\r\'\"'

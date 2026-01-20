@@ -188,12 +188,15 @@ class MattermostManager(object):
                             'CHANNELS': [],
                             'TOPICS': [],
                             'ADMIN_ONLY': True,
+                            'SETTINGS': list(settings.__dict__.keys()),
                         }
                     # Create the appropriate subnodes if non-existent
                     if not 'TOPICS' in self.feedmap:
                         self.feedmap['TOPICS'] = {}
                     if not 'CHANNELS' in self.feedmap['MODULES'][module_name]:
                         self.feedmap['MODULES'][module_name]['CHANNELS'] = []
+                    if not 'SETTINGS' in self.feedmap['MODULES'][module_name]:
+                        self.feedmap['MODULES'][module_name]['SETTINGS'] = list(settings.__dict__.keys())
                     if not 'TOPICS' in self.feedmap['MODULES'][module_name]:
                         self.feedmap['MODULES'][module_name]['TOPICS'] = []
                     # Set the default values from the config in the modules if non-existent
@@ -311,7 +314,7 @@ class MattermostManager(object):
                 first_run = False
             if options.debug:
                 self.log.info(f"Found    : {module_name} post history cache ...")
-            items = self.callModule(module_name)
+            items = self.callModule(module_name, self.feedmap['MODULES'][module_name]['SETTINGS'])
             if items:
                 posts = []
                 for newspost in items:
@@ -357,7 +360,7 @@ class MattermostManager(object):
                 history.sync()
                 history.close()
 
-    def callModule(self, module_name, function_name = 'query', *args, **kwargs):
+    def callModule(self, module_name, *args, **kwargs):
         spec = None
         try:
             # Load the module
@@ -375,9 +378,9 @@ class MattermostManager(object):
                 spec.loader.exec_module(module)
             except Exception as e:
                 raise ImportError(f"Module {module_name} could not be executed...")
-            func = getattr(module, function_name)
+            func = getattr(module, 'query')
             if not callable(func):
-                raise AttributeError(f"{function_name} is not callable in {module_name} ...")
+                raise AttributeError(f"The 'query' function is not callable in {module_name} ...")
 
             # Return a handle to the module query function entry point
             return func(*args, **kwargs)

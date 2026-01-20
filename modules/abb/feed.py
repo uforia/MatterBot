@@ -16,37 +16,13 @@ import bs4
 import feedparser
 import re
 
-### Dynamic configuration loader (do not change/edit)
-import importlib
-import sys
-from pathlib import Path
-settings = None
-_pkg_name = Path(__file__).parent.name
-_module_dir = Path(__file__).parent
-if str(_module_dir) not in sys.path:
-    sys.path.insert(0, str(_module_dir))
-try:
-    defaults_mod = importlib.import_module(f'commands.{_pkg_name}.defaults')
-except ModuleNotFoundError:
-    try:
-        defaults_mod = importlib.import_module('defaults')
-    except ModuleNotFoundError:
-        print(f"Module {_pkg_name} could not be loaded due to a missing default configuration.")
-try:
-    settings_mod = importlib.import_module(f'commands.{_pkg_name}.settings')
-except ModuleNotFoundError:
-    try:
-        settings_mod = importlib.import_module('settings')
-    except ModuleNotFoundError:
-        settings_mod = None
-settings = {k: v for k, v in vars(defaults_mod).items() if not k.startswith('__')}
-if settings_mod:
-    settings.update({k: v for k, v in vars(settings_mod).items() if not k.startswith('__')})
-from types import SimpleNamespace
-settings = SimpleNamespace(**settings)
-### Loader end, actual module functionality starts here
-
-def query(MAX=settings.ENTRIES):
+def query(settings=None):
+    if settings:
+        try:
+            from types import SimpleNamespace
+            settings = SimpleNamespace(**settings['SETTINGS'])
+        except:
+            return None
     items = []
     feed = feedparser.parse(settings.URL, agent='MatterBot RSS Automation 1.0')
     count = 0
