@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
-from datetime import datetime
-year = datetime.now().year
 NAME = "Zero Day Initiative Upcoming Vulnerabilities"
 URLS = (
     "https://www.zerodayinitiative.com/rss/upcoming/",
-    f"https://www.zerodayinitiative.com/rss/published/{year}/"
+    f"https://www.zerodayinitiative.com/rss/published/"
     )
 CHANNELS = (
     "newsfeed",

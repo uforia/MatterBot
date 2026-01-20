@@ -18,8 +18,6 @@ import os
 import re
 import sys
 
-
-
 def importScore():
     running = os.path.abspath(__file__)
     cwd = os.path.abspath(os.path.join(os.path.dirname(running), '..'))
@@ -43,8 +41,10 @@ def query(settings=None):
         except ImportError:
             pass
     items = []
+    from datetime import datetime
+    year = datetime.now().year
     for URL in settings.URLS:
-        feed = feedparser.parse(URL, agent='MatterBot RSS Automation 1.0')
+        feed = feedparser.parse(URL+f"year/", agent='MatterBot RSS Automation 1.0')
         count = 0
         stripchars = '`\\[\\]\'\"'
         regex = re.compile('[%s]' % stripchars)

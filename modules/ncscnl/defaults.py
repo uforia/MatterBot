@@ -26,29 +26,30 @@ ADVISORYCHANS = {
 # History file used to prevent double-posting.
 HISTORY = "history.cache"
 # Filter to base the history on (part that gets stored in the history file)
-HISTORYFILTER = (
-    r'NCSC-\d{1,4}-\d{1,4} \[\d{1}\.\d{1,2}] \[[hHmMlL]/[hHmMlL]\]',
-)
+HISTORYFILTER = [
+    r"NCSC-\d{1,4}-\d{1,4} \[\d{1}\.\d{1,2}] \[[hHmMlL]/[hHmMlL]\]",
+]
 # Title filter: remove all parts of the title with this part in it. Useful
-# for removing generic terms such as 'products', in order to improve asset
+# for removing generic terms such as "products", in order to improve asset
 # management query accuracy. Can be a regular expression as well!
-TITLEFILTER = (
-)
+TITLEFILTER = [
+    r"",
+]
 # List of e.g. chance/impact levels to check up (or not). This is probably
 # fine in its default configuration, if you are only looking at severities.
 # You could also use other strings to wildcard match on here; they are
-# tested against the RSS entry's title.
-LOOKUPVALUES = (
-    r'\[[hH]/[hH]\]',
-    r'\[[hH]/[mM]\]',
-    r'\[[mM]/[hH]\]',
-    r'\[[hH]/[lL]\]',
-    r'\[[lL]/[hH]\]',
-)
+# tested against the RSS entry"s title.
+LOOKUPVALUES = [
+    r"\[[hH]/[hH]\]",
+    r"\[[hH]/[mM]\]",
+    r"\[[mM]/[hH]\]",
+    r"\[[hH]/[lL]\]",
+    r"\[[lL]/[hH]\]",
+]
 # Usually, the titles will be in a somewhat syntactically consistent format.
 # For NCSC NL feeds, the relevant product names always seem to appear in the
-# RSS entry's title, after 'Kwetsbaarheid' or 'Kwetsbaarheden' 'verholpen in'.
+# RSS entry"s title, after "Kwetsbaarheid" or "Kwetsbaarheden" "verholpen in".
 PRODUCTSPLIT = [
-    'Kwetsbaarheid verholpen in ',
-    'Kwetsbaarheden verholpen in ',
+    r"Kwetsbaarheid verholpen in ",
+    r"Kwetsbaarheden verholpen in ",
 ]
