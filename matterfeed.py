@@ -197,7 +197,8 @@ class MattermostManager(object):
                     if not 'CHANNELS' in self.feedmap['MODULES'][module_name]:
                         self.feedmap['MODULES'][module_name]['CHANNELS'] = []
                     if not 'SETTINGS' in self.feedmap['MODULES'][module_name]:
-                        self.feedmap['MODULES'][module_name]['SETTINGS'] = settings
+                        settings_dict = {k: v for k, v in vars(settings).items() if not k.startswith('__')}
+                        self.feedmap['MODULES'][module_name]['SETTINGS'] = settings_dict
                     if not 'TOPICS' in self.feedmap['MODULES'][module_name]:
                         self.feedmap['MODULES'][module_name]['TOPICS'] = []
                     # Set the default values from the config in the modules if non-existent
