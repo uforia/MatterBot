@@ -37,7 +37,7 @@ def query(settings=None):
         count = 0
         stripchars = '`\\[\\]\'\"'
         regex = re.compile('[%s]' % stripchars)
-        while count < MAX:
+        while count < settings.ENTRIES:
             try:
                 link = feed.entries[count].link
                 content = settings.NAME + ': [' + title + '](' + link + ')'

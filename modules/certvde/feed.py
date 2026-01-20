@@ -26,7 +26,7 @@ def query(settings=None):
     feed = feedparser.parse(settings.URL, agent='MatterBot RSS Automation 1.0')
     count = 0
     stripchars = '`\\[\\]\'\"'
-    while count < MAX:
+    while count < settings.ENTRIES:
         try:
             title = feed.entries[count].title
             link = feed.entries[count].link

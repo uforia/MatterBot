@@ -31,7 +31,7 @@ def query(settings=None):
         feedurl = "https://us-cert.cisa.gov/"+category+".xml"
         feed = feedparser.parse(feedurl, agent='MatterBot RSS Automation 1.0')
         count = 0
-        while count < MAX:
+        while count < settings.ENTRIES:
             try:
                 title = feed.entries[count].title
                 link = feed.entries[count].link

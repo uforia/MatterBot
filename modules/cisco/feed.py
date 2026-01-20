@@ -30,7 +30,7 @@ def query(settings=None):
     category = "Security Impact Rating:  Critical"
     stripchars = '`\\[\\]\'\"'
     regex = re.compile('[%s]' % stripchars)
-    while count < MAX:
+    while count < settings.ENTRIES:
         try:
             if len(feed.entries[count].description):
                 description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')

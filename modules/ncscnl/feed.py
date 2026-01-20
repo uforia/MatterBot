@@ -49,7 +49,7 @@ def query(settings=None):
         print(traceback.format_exc())
         raise
     if history:
-        while count < MAX:
+        while count < settings.ENTRIES:
             try:
                 title = feed.entries[count].title
                 link = feed.entries[count].link

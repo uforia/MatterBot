@@ -30,7 +30,7 @@ def query(settings=None):
     stripchars = '`\\[\\]\'\"'
     regex = re.compile('[%s]' % stripchars)
     pattern = r'<a\s[>]*href\s*=["](.*?)["][>]*>(.*)<\/a>' # Filter for external references
-    while count < MAX:
+    while count < settings.ENTRIES:
         try:
             title = feed.entries[count].title
             content = settings.NAME + ': [' + title + ']'

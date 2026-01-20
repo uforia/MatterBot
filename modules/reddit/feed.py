@@ -30,7 +30,7 @@ def query(settings=None):
     for subreddit in settings.SUBREDDITS:
         feed = feedparser.parse("https://www.reddit.com/r/"+subreddit+"/.rss", agent='MatterBot RSS Automation 1.0')
         count = 0
-        while count < MAX:
+        while count < settings.ENTRIES:
             try:
                 title = feed.entries[count].title
                 link = feed.entries[count].link

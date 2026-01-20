@@ -51,7 +51,7 @@ def query(settings=None):
             return None
     feed = feedparser.parse(settings.URL, agent='MatterBot RSS Automation 1.0')
     count = 0
-    while count < MAX:
+    while count < settings.ENTRIES:
         try:
             content = None
             title = feed.entries[count].title[:-8] # Remove standard 'exploit' str from title

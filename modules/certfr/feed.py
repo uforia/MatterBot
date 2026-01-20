@@ -30,7 +30,7 @@ def query(settings=None):
     count = 0
     stripchars = '`\\[\\]\'\"'
     regex = re.compile('[%s]' % stripchars)
-    while count < MAX:
+    while count < settings.ENTRIES:
         try:
             title = reversedFeed[count].title
             if settings.TRANSLATION:

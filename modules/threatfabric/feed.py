@@ -30,7 +30,7 @@ def query(settings=None):
     categories = "Research", "Blog"
     stripchars = '`\\[\\]\'\"'
     regex = re.compile('[%s]' % stripchars)
-    while count < MAX:
+    while count < settings.ENTRIES:
         try:
             tags = feed.entries[count].tags
             for category in categories:

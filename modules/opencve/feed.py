@@ -55,7 +55,7 @@ def query(settings=None):
                 json_response = response.json()
     if json_response:
         filtered = False
-        while count < MAX:
+        while count < settings.ENTRIES:
             productlist = set()
             try:
                 entry = json_response['results'][count]

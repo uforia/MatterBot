@@ -39,7 +39,7 @@ def query(settings=None):
         'Content-Type': 'application/json',
         'User-Agent': 'MatterBot Feed Automation 1.0',
     }
-    while count < MAX:
+    while count < settings.ENTRIES:
         try:
             with requests.get(settings.URL, headers=headers) as response: # Request advisories
                 if response.status_code in (200,204):
