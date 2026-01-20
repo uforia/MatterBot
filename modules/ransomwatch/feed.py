@@ -17,32 +17,28 @@ import requests
 import shelve
 
 ### Dynamic configuration loader (do not change/edit)
-import importlib
-import sys
-from pathlib import Path
-_pkg_name = Path(__file__).parent.name
-_module_dir = Path(__file__).parent
-if str(_module_dir) not in sys.path:
-    sys.path.insert(0, str(_module_dir))
-try:
-    defaults_mod = importlib.import_module(f'commands.{_pkg_name}.defaults')
-except ModuleNotFoundError:
-    try:
-        defaults_mod = importlib.import_module('defaults')
-    except ModuleNotFoundError:
-        print(f"Module {_pkg_name} could not be loaded due to a missing default configuration.")
-try:
-    settings_mod = importlib.import_module(f'commands.{_pkg_name}.settings')
-except ModuleNotFoundError:
-    try:
-        settings_mod = importlib.import_module('settings')
-    except ModuleNotFoundError:
-        settings_mod = None
-settings = {k: v for k, v in vars(defaults_mod).items() if not k.startswith('__')}
-if settings_mod:
-    settings.update({k: v for k, v in vars(settings_mod).items() if not k.startswith('__')})
+from importlib import import_module
 from types import SimpleNamespace
-settings = SimpleNamespace(**settings)
+from pathlib import Path
+_pkg = __package__ or Path(__file__).parent.name
+def _load(module_name):
+    try:
+        return import_module(f".{module_name}", package=_pkg)
+    except ModuleNotFoundError:
+        try:
+            return import_module(module_name)
+        except ModuleNotFoundError:
+            return None
+_defaults = _load("defaults")
+_settings = _load("settings")
+_settings_dict = {
+    k: v
+    for mod in (_defaults, _settings)
+    if mod
+    for k, v in vars(mod).items()
+    if not k.startswith("__")
+}
+settings = SimpleNamespace(**_settings_dict)
 ### Loader end, actual module functionality starts here
 
 def query(MAX=settings.ENTRIES):

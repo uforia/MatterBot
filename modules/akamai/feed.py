@@ -20,6 +20,7 @@ import re
 import importlib
 import sys
 from pathlib import Path
+settings = None
 _pkg_name = Path(__file__).parent.name
 _module_dir = Path(__file__).parent
 if str(_module_dir) not in sys.path:
