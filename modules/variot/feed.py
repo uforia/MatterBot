@@ -23,6 +23,9 @@ import unicodedata
 import importlib
 from pathlib import Path
 _pkg_name = Path(__file__).parent.name
+_module_dir = Path(__file__).parent
+if str(_module_dir) not in sys.path:
+    sys.path.insert(0, str(_module_dir))
 try:
     defaults_mod = importlib.import_module(f'commands.{_pkg_name}.defaults')
 except ModuleNotFoundError:
