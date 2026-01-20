@@ -37,6 +37,7 @@ def query(settings=None):
         except ImportError:
             pass
     announcements = []
+    messages = []
     stripchars = r'`\t\n\r\'\"\|'
     regex = re.compile('[%s]' % stripchars)
     if settings.AUTH['username'] and settings.AUTH['password']:
