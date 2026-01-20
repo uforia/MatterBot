@@ -16,6 +16,7 @@ import re
 import requests
 import shelve
 import traceback
+from pathlib import Path
 
 def read_data_from_file(file_path):
     with open(file_path, 'r') as file:
@@ -36,6 +37,7 @@ def query(settings=None):
             settings.__dict__.update({k: v for k, v in vars(_override).items() if not k.startswith('__')})
         except ImportError:
             pass
+    items = []
     data = None
     count = 0
     stripchars = r'`\\[\\]\'\"\(\)'
