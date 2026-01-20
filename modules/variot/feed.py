@@ -18,14 +18,23 @@ import requests
 import shelve
 import traceback
 import unicodedata
+from pathlib import Path
 
 def query(settings=None):
     if settings:
         try:
             from types import SimpleNamespace
-            settings = SimpleNamespace(**settings['SETTINGS'])
+            settings = SimpleNamespace(**settings)
         except:
-            return None
+            pass
+    else:
+        import defaults as settings
+        try:
+            import settings as _override
+            settings.__dict__.update({k: v for k, v in vars(_override).items() if not k.startswith('__')})
+        except ImportError:
+            pass
+    items = []
     count = 0
     stripchars = r'\_\+\=\/\"\'\\\/'
     regex = re.compile('[%s]' % stripchars)

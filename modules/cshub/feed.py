@@ -24,13 +24,21 @@ def query(settings=None):
     if settings:
         try:
             from types import SimpleNamespace
-            settings = SimpleNamespace(**settings['SETTINGS'])
+            settings = SimpleNamespace(**settings)
         except:
-            return None
+            pass
+    else:
+        import defaults as settings
+        try:
+            import settings as _override
+            settings.__dict__.update({k: v for k, v in vars(_override).items() if not k.startswith('__')})
+        except ImportError:
+            pass
     headers = {
         'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:15.0) Gecko/20100101 Firefox/15.0.1',
         'Content-type': 'application/rss+xml',
     }
+    items = []
     for category in settings.CATEGORIES:
         try:
             with requests.get("https://www.cshub.com/rss/categories/"+category,headers=headers) as response:

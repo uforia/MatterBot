@@ -22,9 +22,17 @@ def query(settings=None):
     if settings:
         try:
             from types import SimpleNamespace
-            settings = SimpleNamespace(**settings['SETTINGS'])
+            settings = SimpleNamespace(**settings)
         except:
-            return None
+            pass
+    else:
+        import defaults as settings
+        try:
+            import settings as _override
+            settings.__dict__.update({k: v for k, v in vars(_override).items() if not k.startswith('__')})
+        except ImportError:
+            pass
+    items = []
     feed = feedparser.parse(settings.URL, agent='MatterBot RSS Automation 1.0')
     count = 0
     categories = 'malware', 'threat intelligence'

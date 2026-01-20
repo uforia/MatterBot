@@ -183,12 +183,13 @@ class MattermostManager(object):
                             del self.feedmap[module_name]
                     # New module, create an entry for it
                     if not module_name in self.feedmap['MODULES']:
+                        settings_dict = {k: v for k, v in vars(settings).items() if not k.startswith('__')}
                         self.feedmap['MODULES'][module_name] = {
                             'NAME': getattr(settings,'NAME'),
                             'CHANNELS': [],
                             'TOPICS': [],
                             'ADMIN_ONLY': True,
-                            'SETTINGS': list(settings.__dict__.keys()),
+                            'SETTINGS': settings_dict,
                         }
                     # Create the appropriate subnodes if non-existent
                     if not 'TOPICS' in self.feedmap:
@@ -196,7 +197,7 @@ class MattermostManager(object):
                     if not 'CHANNELS' in self.feedmap['MODULES'][module_name]:
                         self.feedmap['MODULES'][module_name]['CHANNELS'] = []
                     if not 'SETTINGS' in self.feedmap['MODULES'][module_name]:
-                        self.feedmap['MODULES'][module_name]['SETTINGS'] = list(settings.__dict__.keys())
+                        self.feedmap['MODULES'][module_name]['SETTINGS'] = settings
                     if not 'TOPICS' in self.feedmap['MODULES'][module_name]:
                         self.feedmap['MODULES'][module_name]['TOPICS'] = []
                     # Set the default values from the config in the modules if non-existent

@@ -16,35 +16,43 @@ import bs4
 import feedparser
 import re
 
-
-
 def query(settings=None):
     if settings:
         try:
             from types import SimpleNamespace
-            settings = SimpleNamespace(**settings['SETTINGS'])
+            settings = SimpleNamespace(**settings)
         except:
-            return None
+            pass
+    else:
+        import defaults as settings
+        try:
+            import settings as _override
+            settings.__dict__.update({k: v for k, v in vars(_override).items() if not k.startswith('__')})
+        except ImportError:
+            pass
+    items = []
     feed = feedparser.parse(settings.URL, agent='MatterBot RSS Automation 1.0')
     count = 0
     stripchars = '`\\[\\]\'\"'
     regex = re.compile('[%s]' % stripchars)
-    category = "Threat Research"
+    categories = "Threat Research"
     while count < settings.ENTRIES:
         try:
-            tags = feed.entries[count].tags
-            for tag in tags:
-                if category in tag['term']:
-                    title = feed.entries[count].title
-                    link = feed.entries[count].link
-                    content = settings.NAME + ': [' + title + '](' + link + ')'
-                    if len(feed.entries[count].description):
-                        description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
-                        if len(description)>400:
-                            description = description[:396]+' ...'
-                        content += '\n>'+description+'\n'
-                    for channel in settings.CHANNELS:
-                        items.append([channel, content])
+            entry = feed.entries[count]
+            for category in categories:
+                if 'tags' in entry:
+                    for tag in entry['tags']:
+                        if category in tag['term']:
+                            title = feed.entries[count].title
+                            link = feed.entries[count].link
+                            content = settings.NAME + ': [' + title + '](' + link + ')'
+                            if len(feed.entries[count].description):
+                                description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
+                                if len(description)>400:
+                                    description = description[:396]+' ...'
+                                content += '\n>'+description+'\n'
+                            for channel in settings.CHANNELS:
+                                items.append([channel, content])
             count+=1
         except IndexError:
             return items # No more items

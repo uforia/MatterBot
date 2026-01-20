@@ -20,9 +20,10 @@ def query(settings=None):
     if settings:
         try:
             from types import SimpleNamespace
-            settings = SimpleNamespace(**settings['SETTINGS'])
+            settings = SimpleNamespace(**settings)
         except:
-            return None
+            raise
+    items = []
     feed = feedparser.parse(settings.URL, agent='MatterBot RSS Automation 1.0')
     count = 0
     stripchars = '`\\[\\]\'\"'
