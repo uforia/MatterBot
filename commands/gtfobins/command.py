@@ -30,7 +30,7 @@ _settings_dict = {
 settings = SimpleNamespace(**_settings_dict)
 ### Loader end, actual module functionality starts here
 
-edef process(command, channel, username, params, files, conn):
+def process(command, channel, username, params, files, conn):
     messages = []
     try:
         if len(params):
