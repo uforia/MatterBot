@@ -3,7 +3,6 @@ import os
 import requests
 import logging
 from time import sleep
-from . import settings
 
 """
 Util section
