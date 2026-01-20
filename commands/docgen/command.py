@@ -4,6 +4,7 @@ import base64
 import csv
 import datetime
 from io import BytesIO
+from io import StringIO
 import json
 import numpy
 import os
@@ -11,25 +12,34 @@ import pandas
 import pypandoc
 import re
 import requests
-import sys
 import textwrap
 import traceback
 import weasyprint
-from io import StringIO
-from pathlib import Path
-try:
-    from commands.docgen import defaults as settings
-except ModuleNotFoundError: # local test run
-    import defaults as settings
-    if Path('settings.py').is_file():
-        import settings
-else:
-    if Path('commands/docgen/settings.py').is_file():
-        try:
-            from commands.docgen import settings
-        except ModuleNotFoundError: # local test run
-            import settings
 
+### Dynamic configuration loader (do not change/edit)
+import importlib
+from pathlib import Path
+_pkg_name = Path(__file__).parent.name
+try:
+    defaults_mod = importlib.import_module(f'commands.{_pkg_name}.defaults')
+except ModuleNotFoundError:
+    try:
+        defaults_mod = importlib.import_module('defaults')
+    except ModuleNotFoundError:
+        print(f"Module {_pkg_name} could not be loaded due to a missing default configuration.")
+try:
+    settings_mod = importlib.import_module(f'commands.{_pkg_name}.settings')
+except ModuleNotFoundError:
+    try:
+        settings_mod = importlib.import_module('settings')
+    except ModuleNotFoundError:
+        settings_mod = None
+settings = {k: v for k, v in vars(defaults_mod).items() if not k.startswith('__')}
+if settings_mod:
+    settings.update({k: v for k, v in vars(settings_mod).items() if not k.startswith('__')})
+from types import SimpleNamespace
+settings = SimpleNamespace(**settings)
+### Loader end, actual module functionality starts here
 
 def process(command, channel, username, params, files, conn):
     try:

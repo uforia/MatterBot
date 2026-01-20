@@ -1,30 +1,34 @@
 #!/usr/bin/env python3
 import re
-import requests
 import tldextract
-from pathlib import Path
 from datetime import datetime
-from . import cyberthreat
 
+### Dynamic configuration loader (do not change/edit)
+import importlib
+from pathlib import Path
+_pkg_name = Path(__file__).parent.name
 try:
-    from commands.cyberthreat import defaults as settings
-except ModuleNotFoundError: # local test run
-    import defaults as settings # things that doesnt work
-    if Path('settings.py').is_file():
-        import settings
-else:
-    if Path('commands/cyberthreat/settings.py').is_file():
-        try:
-            from commands.cyberthreat import settings
-        except ModuleNotFoundError: # local test run
-            import settings
+    defaults_mod = importlib.import_module(f'commands.{_pkg_name}.defaults')
+except ModuleNotFoundError:
+    try:
+        defaults_mod = importlib.import_module('defaults')
+    except ModuleNotFoundError:
+        print(f"Module {_pkg_name} could not be loaded due to a missing default configuration.")
+try:
+    settings_mod = importlib.import_module(f'commands.{_pkg_name}.settings')
+except ModuleNotFoundError:
+    try:
+        settings_mod = importlib.import_module('settings')
+    except ModuleNotFoundError:
+        settings_mod = None
+settings = {k: v for k, v in vars(defaults_mod).items() if not k.startswith('__')}
+if settings_mod:
+    settings.update({k: v for k, v in vars(settings_mod).items() if not k.startswith('__')})
+from types import SimpleNamespace
+settings = SimpleNamespace(**settings)
+### Loader end, actual module functionality starts here
 
-"""
-Got some problems with the above way of importing settings. Throws an error is there is no settings module, just defaults
-"""
-
-
-#print(f"Locals: {locals()}")
+from . import cyberthreat
 results = cyberthreat.wget('actors')
 
 actorlist = dict()
