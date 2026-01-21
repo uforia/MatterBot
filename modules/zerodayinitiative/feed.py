@@ -17,6 +17,7 @@ import feedparser
 import os
 import re
 import sys
+from datetime import datetime
 
 def importScore():
     running = os.path.abspath(__file__)
@@ -41,10 +42,11 @@ def query(settings=None):
         except ImportError:
             pass
     items = []
-    from datetime import datetime
     year = datetime.now().year
-    for URL in settings.URLS:
-        feed = feedparser.parse(URL+f"year/", agent='MatterBot RSS Automation 1.0')
+    for i, URL in enumerate(settings.URLS):
+        if i == 1:
+            URL = URL + f"{year}/"
+        feed = feedparser.parse(URL, agent='MatterBot RSS Automation 1.0')
         count = 0
         stripchars = '`\\[\\]\'\"'
         regex = re.compile('[%s]' % stripchars)

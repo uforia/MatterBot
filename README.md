@@ -56,7 +56,7 @@ Matterfeed reports news updates on a set schedule. The currently supported sourc
 | CERT Republika Slovenija                                                                         | RSS            | No               | No                |
 | CERT République Française                                                                        | RSS            | No               | No                |
 | CERT Rzeczpospolita Polska                                                                       | RSS            | No               | No                |
-| CERT CERT Slovenská republika                                                                    | RSS            | No               | No                |
+| CERT Slovenská republika                                                                         | RSS            | No               | No                |
 | CERT Türkiye Cumhuriyeti (USOM)                                                                  | RSS            | No               | No                |
 | CERT VDE Industrial Advisories                                                                   | RSS            | No               | No                |
 | CERT Репу̀блика Бълга̀рия (BG)                                                                     | RSS            | No               | No                |
