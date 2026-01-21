@@ -314,7 +314,7 @@ class MattermostManager(object):
                 first_run = True
             else:
                 first_run = False
-            if options.debug:
+            if history:
                 self.log.info(f"Found    : {module_name} post history cache ...")
             items = self.callModule(module_name, self.feedmap['MODULES'][module_name]['SETTINGS'])
             if items:
