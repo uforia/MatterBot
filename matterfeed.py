@@ -347,6 +347,9 @@ class MattermostManager(object):
                                 except Exception as e:
                                     if options.debug:
                                         self.log.error(f"Error   : {module_name}\nTraceback: {str(e)}\n{traceback.format_exc()}")
+                            else:
+                                if options.debug:
+                                    self.log.info(f"DbgMsg   : Already in post history for {module_name}: {channel} => {logcontent} ...")
                         if not post in history[module_name]:
                             if not options.debug:
                                 history[module_name].append(post)
