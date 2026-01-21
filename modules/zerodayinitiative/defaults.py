@@ -2,7 +2,7 @@
 NAME = "Zero Day Initiative Upcoming Vulnerabilities"
 URLS = (
     "https://www.zerodayinitiative.com/rss/upcoming/",
-    f"https://www.zerodayinitiative.com/rss/published/"
+    "https://www.zerodayinitiative.com/rss/published/"
     )
 CHANNELS = (
     "newsfeed",
