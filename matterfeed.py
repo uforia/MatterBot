@@ -315,7 +315,7 @@ class MattermostManager(object):
             else:
                 first_run = False
             if history:
-                self.log.info(f"Found    : {module_name} post history cache ...")
+                self.log.info(f"Found    : {module_name} post history cache: {self.modules[module_name]['cache']} ...")
             items = self.callModule(module_name, self.feedmap['MODULES'][module_name]['SETTINGS'])
             if items:
                 posts = []
