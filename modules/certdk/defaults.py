@@ -2,7 +2,7 @@
 
 NAME = "DeiC Sikkerhed/DKCERT"
 URLS = (
-    "https://www.cfcs.dk/da/servicemappe/rss-feed/",
+    "https://www.cert.dk/rss.xml",
     "https://www.cert.dk/news/rss"
     )
 CHANNELS = (
