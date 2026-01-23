@@ -208,11 +208,11 @@ class MattermostManager(object):
             lines = text.split("\n")
             blocks = []
             i = 0
-            header = re.compile(r'^\s*\|?\s*[^|]+(?:\s*\|\s*[^|]+)+\s*\|?\s*$')
-            separator = re.compile(r'^\s*\|?\s*[:\-]+(?:\s*\|\s*[:\-]+)+\s*\|?\s*$')
+            header_rx = re.compile(r'^\s*\|?\s*[^|]+(?:\s*\|\s*[^|]+)+\s*\|?\s*$')
+            separator_rx = re.compile(r'^\s*\|?\s*[:\-]+(?:\s*\|\s*[:\-]+)+\s*\|?\s*$')
             while i < len(lines):
                 line = lines[i]
-                if header.match(line) and i + 1 < len(lines) and separator.match(lines[i + 1]):
+                if header_rx.match(line) and i + 1 < len(lines) and separator_rx.match(lines[i + 1]):
                     header = line.rstrip()
                     separator = lines[i + 1].rstrip()
                     i += 2
