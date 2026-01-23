@@ -2,6 +2,7 @@
 
 BINDS = ['@dice', '@roll']
 CHANS = ['debug']
+CONTENTTYPE = 'application/json'
 HELP = {
     'DEFAULT': {
         'args': '<#1>d<#2>',

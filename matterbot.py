@@ -9,8 +9,8 @@ import json
 import logging
 import os
 import pathlib
+import re
 import sys
-import time
 import traceback
 import configargparse
 from mattermostdriver import Driver
@@ -200,36 +200,47 @@ class MattermostManager(object):
         except:
             raise
 
-    async def send_message(self, chanid, text, postid=None):
+    async def send_message(self, chanid, text, postid=None, uploads=None):
         try:
             channame = self.chanid_to_chaninfo(chanid)['name']
-            log.info('Channel:' + channame + ' <- Message: (' + str(len(text)) + ' chars)')
-
-            if len(text) > options.Matterbot['msglength']: # Mattermost message limit
-                blocks = []
-                lines = text.split('\n')
-                blocksize = 0
-                block = ''
-                for line in lines:
-                    lensize = len(line)
-                    if (blocksize + lensize) < options.Matterbot['msglength']:
-                        blocksize += lensize
-                        block += line + '\n'
+            log.info(f'Channel:{channame} <- Message: ({len(text)} chars)')
+            max_len = options.Matterbot["msglength"]
+            lines = text.split("\n")
+            blocks = []
+            i = 0
+            header = re.compile(r'^\s*\|?\s*[^|]+(?:\s*\|\s*[^|]+)+\s*\|?\s*$')
+            separator = re.compile(r'^\s*\|?\s*[:\-]+(?:\s*\|\s*[:\-]+)+\s*\|?\s*$')
+            while i < len(lines):
+                line = lines[i]
+                if header.match(line) and i + 1 < len(lines) and separator.match(lines[i + 1]):
+                    header = line.rstrip()
+                    separator = lines[i + 1].rstrip()
+                    i += 2
+                    table_block = f"{header}\n{separator}"
+                    while i < len(lines) and lines[i].strip() != "":
+                        table_block += f"\n{lines[i].rstrip()}"
+                        i += 1
+                    while len(table_block) > max_len:
+                        split_point = table_block.rfind("\n", 0, max_len)
+                        if split_point == -1:
+                            split_point = max_len
+                        part = table_block[:split_point]
+                        blocks.append(part)
+                        table_block = f"{header}\n{separator}\n{table_block[split_point:].lstrip()}"
+                    blocks.append(table_block)
+                else:
+                    if not blocks or len(blocks[-1]) + len(line) + 1 > max_len:
+                        blocks.append(line.rstrip())
                     else:
-                        blocks.append(block.strip())
-                        blocksize = 0
-                        block = ''
-                blocks.append(block.strip())
-            else:
-                blocks = [text]
-            for block in blocks:
-                self.mmDriver.posts.create_post(
-                    options={
-                    'channel_id': chanid,
-                    'message': block,
-                    'root_id': postid,
-                    })
-        except:
+                        blocks[-1] += "\n" + line.rstrip()
+                    i += 1
+            for idx, block in enumerate(blocks):
+                opts = {"channel_id": chanid, "message": block, "root_id": postid}
+                if idx == len(blocks) - 1 and uploads:
+                    opts["file_ids"] = uploads
+                self.mmDriver.posts.create_post(options=opts)
+        except Exception:
+            log.exception("Failed to send message")
             raise
 
     def channame_to_chanid(self, channame, teamid=None):
@@ -657,11 +668,12 @@ class MattermostManager(object):
             # Command logging: see config.defaults.yaml for clarification
             if result and 'messages' in result:
                 for message in result['messages']:
+                    uploads = []
                     if 'text' in message:
                         text = message['text']
                     if 'uploads' in message:
                         if message['uploads'] != None:
-                            file_ids = []
+                            uploads = []
                             for upload in message['uploads']:
                                 filename = upload['filename']
                                 payload = upload['bytes']
@@ -671,18 +683,8 @@ class MattermostManager(object):
                                     channel_id=chanid,
                                     files={'files': (filename, payload)}
                                 )['file_infos'][0]['id']
-                                file_ids.append(file_id)
-                            conn.posts.create_post(
-                                options={
-                                    'channel_id': chanid,
-                                    'message': text,
-                                    'root_id': rootid,
-                                    'file_ids': file_ids,
-                                    })
-                        else:
-                            await self.send_message(chanid, text, rootid)
-                    else:
-                        await self.send_message(chanid, text, rootid)
+                                uploads.append(file_id)
+                    await self.send_message(chanid, text, rootid, uploads or None)
         except Exception as e:
             text = "An error occurred during the %s module call: %s" % (str(module),traceback.format_exc())
             await self.send_message(chanid, text, rootid)

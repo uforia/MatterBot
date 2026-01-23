@@ -2,6 +2,7 @@
 
 BINDS = ['hello', 'hi', 'hiya', 'howdi', 'greetings']
 CHANS = ['debug']
+CONTENTTYPE = 'application/json'
 HELP = {
     'DEFAULT': {
         'args': None,
