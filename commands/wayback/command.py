@@ -44,7 +44,7 @@ def process(command, channel, username, params, files, conn):
             query = params[0]
             if ('http' and '://') in query:
                 host = query.replace('[.]','.').replace('http://','').replace('https://','')
-                if re.search(r"^(((?!\-))(xn\-\-)?[a-z0-9\-_]{0,61}[a-z0-9]{1,1}\.)*(xn\-\-)?([a-z0-9\-]{1,61}|[a-z0-9\-]{1,30})\.[a-z]{2,}$", host):
+                if re.search(r"^(((?!\-))(xn\-\-)?[a-z0-9\-_]{0,61}[a-z0-9]{1,1}\.)*(xn\-\-)?([a-z0-9\-]{1,61}|[a-z0-9\-]{1,30})\.[a-z]{2,}(\/)?$", host):
                     session = requests.Session()
                     url = settings.APIURL['wayback']['url']+f"{query}"
                     with session.get(url=url, headers=headers) as response:
