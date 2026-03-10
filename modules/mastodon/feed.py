@@ -14,6 +14,7 @@
 
 import bs4
 import feedparser
+import html
 import re
 import requests
 
@@ -39,18 +40,19 @@ def query(settings=None):
         'Content-Type': 'text/json',
         'User-Agent': f"{user_agent}",
     }
+    MAXENTRIES = settings.ENTRIES * len(settings.URLS)
     for url in settings.URLS:
         title = url
         feed = feedparser.parse(settings.URLS[url], agent=user_agent)
         count = 0
-        stripchars = '`\\[\\]\'\"'
+        stripchars = '\\[\\]\'\"'
         regex = re.compile('[%s]' % stripchars)
         while count < settings.ENTRIES:
             try:
                 link = feed.entries[count].link
-                content = settings.NAME + ': [' + title + '](' + link + ')'
+                content = bs4.BeautifulSoup(html.unescape(settings.NAME), 'html.parser').get_text() + ': [' + title + '](' + link + ')'
                 if len(feed.entries[count].description):
-                    description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
+                    description = regex.sub('',bs4.BeautifulSoup(html.unescape(feed.entries[count].description),'html.parser').get_text()).replace('```json','\n```json\n')
                     if len(description)>400:
                         description = description[:396]+' ...'
                     content += '\n>'+description+'\n'
