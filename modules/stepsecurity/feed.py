@@ -33,26 +33,25 @@ def query(settings=None):
         except ImportError:
             pass
     items = []
-    for URL in settings.URLS:
-        feed = feedparser.parse(URL, agent='MatterBot RSS Automation 1.0')
-        count = 0
-        stripchars = '`\\[\\]\'\"'
-        regex = re.compile('[%s]' % stripchars)
-        while count < settings.ENTRIES:
-            try:
-                title = feed.entries[count].title
-                link = feed.entries[count].link
-                content = settings.NAME + ': [' + title + '](' + link + ')'
-                if len(feed.entries[count].description):
-                    description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
-                    if len(description)>400:
-                        description = description[:396]+' ...'
-                    content += '\n>'+description+'\n'
-                for channel in settings.CHANNELS:
-                    items.append([channel, content])
-                count+=1
-            except IndexError:
-                return items # No more items
+    feed = feedparser.parse(settings.URL, agent='MatterBot RSS Automation 1.0')
+    count = 0
+    stripchars = '`\\[\\]\'\"'
+    regex = re.compile('[%s]' % stripchars)
+    while count < settings.ENTRIES:
+        try:
+            title = feed.entries[count].title
+            link = feed.entries[count].link
+            content = settings.NAME + ': [' + title + '](' + link + ')'
+            if len(feed.entries[count].description):
+                description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
+                if len(description)>400:
+                    description = description[:396]+' ...'
+                content += '\n>'+description+'\n'
+            for channel in settings.CHANNELS:
+                items.append([channel, content])
+            count+=1
+        except IndexError:
+            return items # No more items
     return items
 
 if __name__ == "__main__":
