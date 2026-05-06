@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
 NAME = "watchTowr Offensive Security Blog"
-URL = "https://labs.watchtowr.com/rss/"
+URLS = (
+    "https://watchtowr.com/feed/",
+    "https://labs.watchtowr.com/rss/"
+    )
 CHANNELS = (
     "newsfeed",
 )
