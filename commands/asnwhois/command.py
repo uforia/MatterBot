@@ -42,7 +42,7 @@ def process(command, channel, username, params, files, conn):
                     'User-Agent': 'MatterBot integration for ASNWHOIS v0.1'
                 }
                 url = settings.APIURL['asnwhois']['url']+f"{data}"
-                with requests.get(settings.APIURL['asnwhois']['url']+f"{data}", headers=headers) as response:
+                with requests.get(settings.APIURL['asnwhois']['url']+f"{data}", headers=headers, timeout=(10, 30)) as response:
                     json_response = response.json()
                     message = 'ASN WHOIS lookup for `%s`: ' % (data,)
                     if 'data' in json_response:
@@ -60,7 +60,7 @@ def process(command, channel, username, params, files, conn):
                             lat = str(jsondata['latitude'])
                             long = str(jsondata['longitude'])
                             gpsurl = settings.APIURL['osmdata']['url']+f"lat={lat}&lon={long}&format=json"
-                            with requests.get(gpsurl, headers=headers) as response:
+                            with requests.get(gpsurl, headers=headers, timeout=(10, 30)) as response:
                                 json_response = response.json()
                                 if 'display_name' in json_response:
                                     address = json_response['display_name']

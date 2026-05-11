@@ -63,7 +63,7 @@ def process(command, channel, username, params, files, conn):
             }
             if querytype == 'ping':
                 APIENDPOINT += querytypes[querytype]
-                with requests.get(APIENDPOINT, headers=headers) as response:
+                with requests.get(APIENDPOINT, headers=headers, timeout=(10, 30)) as response:
                     json_response = response.json()
                     if 'message' in json_response:
                         if json_response['message'] == 'pong':
@@ -88,7 +88,7 @@ def process(command, channel, username, params, files, conn):
                     if querytype == 'community':
                         query = query[0].strip()
                         APIENDPOINT += urllib.parse.quote(querytypes[querytype]+'%s' % (query,))
-                        with requests.get(APIENDPOINT, headers=headers) as response:
+                        with requests.get(APIENDPOINT, headers=headers, timeout=(10, 30)) as response:
                             json_response = response.json()
                             if response.status_code in (200,404):
                                 message =  '\n| **GreyNoise** Lookup Type | `%s` |' % (querytype)
@@ -107,7 +107,7 @@ def process(command, channel, username, params, files, conn):
                     if querytype == 'ipcontext':
                         query = query[0].strip()
                         APIENDPOINT += urllib.parse.quote(querytypes[querytype]+'%s' % (query,))
-                        with requests.get(APIENDPOINT, headers=headers) as response:
+                        with requests.get(APIENDPOINT, headers=headers, timeout=(10, 30)) as response:
                             json_response = response.json()
                             if response.status_code == 200:
                                 message =  '\n| **GreyNoise** Lookup Type | `%s` |' % (querytype)
@@ -211,7 +211,7 @@ def process(command, channel, username, params, files, conn):
                     if querytype == 'ipquick':
                         query = query[0].strip()
                         APIENDPOINT += urllib.parse.quote(querytypes[querytype]+'%s' % (query,))
-                        with requests.get(APIENDPOINT, headers=headers) as response:
+                        with requests.get(APIENDPOINT, headers=headers, timeout=(10, 30)) as response:
                             json_response = response.json()
                             if response.status_code == 200:
                                 codemap = {
@@ -249,7 +249,7 @@ def process(command, channel, username, params, files, conn):
                     if querytype == 'riot':
                         query = query[0].strip()
                         APIENDPOINT += urllib.parse.quote(querytypes[querytype]+'%s' % (query,))
-                        with requests.get(APIENDPOINT, headers=headers) as response:
+                        with requests.get(APIENDPOINT, headers=headers, timeout=(10, 30)) as response:
                             json_response = response.json()
                             if response.status_code in (200,404):
                                 message =  '\n| **GreyNoise** Lookup Type | `%s` |' % (querytype)
@@ -326,7 +326,7 @@ def process(command, channel, username, params, files, conn):
                                 APIENDPOINT += urllib.parse.quote('%s' % (filterdict[field],))
                                 APIENDPOINT += '&'
                             APIENDPOINT = APIENDPOINT.strip('&')
-                            with requests.get(APIENDPOINT, headers=headers) as response:
+                            with requests.get(APIENDPOINT, headers=headers, timeout=(10, 30)) as response:
                                 json_response = response.json()
                                 if 'message' in json_response:
                                     if json_response['message'] == 'Forbidden':
@@ -336,7 +336,7 @@ def process(command, channel, username, params, files, conn):
                     if querytype == 'similarity':
                         query = query[0].strip()
                         APIENDPOINT += urllib.parse.quote(querytypes[querytype]+'%s' % (query,))
-                        with requests.get(APIENDPOINT, headers=headers) as response:
+                        with requests.get(APIENDPOINT, headers=headers, timeout=(10, 30)) as response:
                             json_response = response.json()
                             if 'message' in json_response:
                                 if json_response['message'] == 'Forbidden':

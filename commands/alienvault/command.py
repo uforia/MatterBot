@@ -78,7 +78,7 @@ def process(command, channel, username, params, files, conn):
                     endpoints = ('url/'+query+'/url_list',)
                 for endpoint in endpoints:
                     APIENDPOINT = settings.APIURL['alienvault']['url']+endpoint+'?limit=10'
-                    with requests.get(APIENDPOINT, headers=headers) as response:
+                    with requests.get(APIENDPOINT, headers=headers, timeout=(10, 30)) as response:
                         message = ''
                         try:
                             json_response = response.json()

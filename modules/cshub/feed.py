@@ -41,7 +41,7 @@ def query(settings=None):
     items = []
     for category in settings.CATEGORIES:
         try:
-            with requests.get("https://www.cshub.com/rss/categories/"+category,headers=headers) as response:
+            with requests.get("https://www.cshub.com/rss/categories/"+category,headers=headers, timeout=(10, 30)) as response:
                 feed = feedparser.parse(response.content)
                 count = 0
                 stripchars = '`\\[\\]\'\"'

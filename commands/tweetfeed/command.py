@@ -43,7 +43,7 @@ def process(command, channel, username, params, files, conn):
             regex = re.compile('[%s]' % stripchars)
             params = regex.sub('',params).replace('hxxp','http')
             APIENDPOINT = settings.APIURL['tweetfeed']['url']
-            with requests.get(APIENDPOINT, headers=headers) as response:
+            with requests.get(APIENDPOINT, headers=headers, timeout=(10, 30)) as response:
                 json_response = response.json()
                 if len(json_response):
                     count = 0

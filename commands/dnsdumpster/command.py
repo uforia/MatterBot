@@ -60,7 +60,7 @@ def process(command, channel, username, params, files, conn):
         }
 
         # Request data from the API
-        response = requests.get(api_url, headers=headers)
+        response = requests.get(api_url, headers=headers, timeout=(10, 30))
         # Ensure we raise an error for bad status codes
         response.raise_for_status()
         # Assign response to variable

@@ -34,11 +34,11 @@ def wget(url: str) -> dict:
                     "Authorization": f'Token {getapikey()}'}
 
         logging.debug(f"GET: {url}")
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=(10, 30))
         if response.status_code >= 500:
             logging.info("Error. Sleeping for 5 seconds.")
             sleep(5)
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, timeout=(10, 30))
 
     except requests.exceptions.Timeout:
         raise Exception('Timeout')

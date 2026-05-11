@@ -56,7 +56,7 @@ def process(command, channel, username, params, files, conn):
                 }
                 if querytype in ('matrices', 'config'):
                     APIENDPOINT = settings.APIURL['attackmatrix']['url']+'/explore/'
-                    with requests.get(APIENDPOINT, headers=headers) as response:
+                    with requests.get(APIENDPOINT, headers=headers, timeout=(10, 30)) as response:
                         json_response = response.json()
                         if len(json_response):
                             table = 'ATT&CK Matrix API endpoint currently has ' + str(len(json_response['Metadata']['matrices'])) + ' databases loaded:'
@@ -72,7 +72,7 @@ def process(command, channel, username, params, files, conn):
                 if querytype == 'search':
                     searchterms = '&params='.join([urllib.parse.quote(_) for _ in keywords])
                     APIENDPOINT = settings.APIURL['attackmatrix']['url']+'/search?params='+searchterms
-                    with requests.get(APIENDPOINT, headers=headers) as response:
+                    with requests.get(APIENDPOINT, headers=headers, timeout=(10, 30)) as response:
                         json_response = response.json()
                         if json_response != 'null':
                             if 'count' in json_response:
@@ -105,7 +105,7 @@ def process(command, channel, username, params, files, conn):
                     mitreid = keywords[0].upper().strip()
                     for category in categories:
                         APIENDPOINT = settings.APIURL['attackmatrix']['url']+'/explore/'+category+'/'+mitreid
-                        with requests.get(APIENDPOINT, headers=headers) as response:
+                        with requests.get(APIENDPOINT, headers=headers, timeout=(10, 30)) as response:
                             json_response = response.json()
                             result = False
                             if len(json_response)>0:
@@ -146,7 +146,7 @@ def process(command, channel, username, params, files, conn):
                     if re.search(r"[\w\s,.\+\-]+", searchterms):
                         text = None
                         APIENDPOINT = settings.APIURL['attackmatrix']['url']+'/actoroverlap?actors='+searchterms
-                        with requests.get(APIENDPOINT, headers=headers) as response:
+                        with requests.get(APIENDPOINT, headers=headers, timeout=(10, 30)) as response:
                             json_response = response.json()
                             if len(json_response)>0:
                                 if 'error' in json_response:
@@ -180,7 +180,7 @@ def process(command, channel, username, params, files, conn):
                                     for actor in keywords:
                                         actorttps[actor] = {}
                                         APIENDPOINT = settings.APIURL['attackmatrix']['url']+'/explore/Actors/'+actor
-                                        with requests.get(APIENDPOINT, headers=headers) as response:
+                                        with requests.get(APIENDPOINT, headers=headers, timeout=(10, 30)) as response:
                                             json_response = response.json()
                                             for commonttpcategory in commonttps:
                                                 if commonttpcategory in commonttps:
@@ -265,7 +265,7 @@ def process(command, channel, username, params, files, conn):
                     if re.search(r"[\w\s,.\+\-]+", searchterms):
                         text = None
                         APIENDPOINT = settings.APIURL['attackmatrix']['url']+'/ttpoverlap?ttps='+searchterms
-                        with requests.get(APIENDPOINT, headers=headers) as response:
+                        with requests.get(APIENDPOINT, headers=headers, timeout=(10, 30)) as response:
                             json_response = response.json()
                             if len(json_response)>0:
                                 count = len(json_response)
@@ -416,7 +416,7 @@ def process(command, channel, username, params, files, conn):
                     if len(keywords)>2:
                         if re.search(r"[\w\s,.\+\-]+", searchterms):
                             APIENDPOINT = settings.APIURL['attackmatrix']['url']+'/findactor?ttps='+searchterms
-                            with requests.get(APIENDPOINT, headers=headers) as response:
+                            with requests.get(APIENDPOINT, headers=headers, timeout=(10, 30)) as response:
                                 json_response = response.json()
                                 if len(json_response)>0:
                                     count = json_response['count']

@@ -50,7 +50,7 @@ def process(command, channel, username, params, files, conn):
             if hash_algo:
                 apipath = 'get/sample/%s/zip' % (params,)
                 uploads = None
-                with requests.get(settings.APIURL['malpedia']['url'] + apipath, headers=headers) as response:
+                with requests.get(settings.APIURL['malpedia']['url'] + apipath, headers=headers, timeout=(10, 30)) as response:
                     json_response = response.json()
                     if 'detail' in json_response:
                         # You don't have a registered account/API key to get samples!
@@ -68,10 +68,10 @@ def process(command, channel, username, params, files, conn):
                     messages.append({'text': text, 'uploads': uploads})
             if re.search(r"^[A-Za-z0-9]+$", params):
                 apipath = 'find/actor/%s' % (params,)
-                with requests.get(settings.APIURL['malpedia']['url'] + apipath, headers=headers) as response:
+                with requests.get(settings.APIURL['malpedia']['url'] + apipath, headers=headers, timeout=(10, 30)) as response:
                     actors = response.json()
                 apipath = 'find/family/%s' % (params,)
-                with requests.get(settings.APIURL['malpedia']['url'] + apipath, headers=headers) as response:
+                with requests.get(settings.APIURL['malpedia']['url'] + apipath, headers=headers, timeout=(10, 30)) as response:
                     families = response.json()
                 if actors:
                     items = {}
@@ -87,7 +87,7 @@ def process(command, channel, username, params, files, conn):
                         text += '\n**Actor names/synonyms**: `' + '`, `'.join(sorted(actornames, key=str.lower)) + '`'
                         for actorname in actornames:
                             if re.search(r"^G[0-9]{4}$", actorname):
-                                with requests.get(settings.APIURL['mitre']['url'] + 'Actors/' + actorname, headers=headers) as response:
+                                with requests.get(settings.APIURL['mitre']['url'] + 'Actors/' + actorname, headers=headers, timeout=(10, 30)) as response:
                                     mitre = response.json()
                                     if mitre:
                                         for subtree in subtrees:

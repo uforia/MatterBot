@@ -53,7 +53,7 @@ def process(command, channel, username, params, files, conn):
         if not isMac(address):
             return messages.append({'text': f"`{address}` is not a valid address format"})
         api_url = f"{settings.APIURL['macvendors']['url']}{urllib.parse.quote(address)}"         # API URL for fetching data
-        response = requests.get(api_url)
+        response = requests.get(api_url, timeout=(10, 30))
         if response.status_code == 200:
             messages.append({'text': f"Vendor: `{response.text}`"})
         else:

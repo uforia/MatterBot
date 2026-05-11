@@ -42,7 +42,7 @@ def query(settings=None):
     try:
         for category in settings.CATEGORIES:
             feedurl = settings.CATEGORIES[category]
-            with requests.get(feedurl, headers=headers) as response:
+            with requests.get(feedurl, headers=headers, timeout=(10, 30)) as response:
                 if response.status_code in (200,204):
                     json_response = response.json()
                     for vulnerability in json_response:

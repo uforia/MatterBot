@@ -58,7 +58,7 @@ def process(command, channel, username, params, files, conn):
                     'hash': params,
                 }
             if data:
-                with requests.post(settings.APIURL['threatfox']['url'], json=data, headers=headers) as response:
+                with requests.post(settings.APIURL['threatfox']['url'], json=data, headers=headers, timeout=(10, 30)) as response:
                     if response.status_code in (401,):
                         message = "Incorrect ThreatFox API key or not configured!"
                     else:

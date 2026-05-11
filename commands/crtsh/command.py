@@ -49,7 +49,7 @@ def process(command, channel, username, params, files, conn):
             }
             api_url = f"{settings.APIURL['crtsh']['url']}{param}"
             # Request data from the API
-            response = requests.get(api_url, headers=headers)
+            response = requests.get(api_url, headers=headers, timeout=(10, 30))
             response.raise_for_status()  # Ensure we raise an error for bad status codes
             json_response = response.json()
             if len(json_response):

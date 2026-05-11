@@ -152,7 +152,7 @@ def getDownloads(ids):
     for id in ids:
         url = settings.APIURL['mwdb']['url']+f"file/{id}/download/zip"
         try:
-            with requests.get(url, headers=headers) as response:
+            with requests.get(url, headers=headers, timeout=(10, 30)) as response:
                 if response.status_code == 404:
                     return None
                 if response.status_code == 200:
@@ -224,7 +224,7 @@ def process(command, channel, username, params, files, conn):
                 if querytype == 'multi':
                     url = settings.APIURL['mwdb']['url']+f"blob?query=multi:{query}"
                     try:
-                        with requests.get(url, headers=headers) as response:
+                        with requests.get(url, headers=headers, timeout=(10, 30)) as response:
                             json_response = response.json()
                             if 'blobs' in json_response:
                                 if len(json_response['blobs']):

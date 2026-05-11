@@ -47,7 +47,7 @@ def query(settings=None):
             authentication = (settings.AUTH['username'],settings.AUTH['password'])
         else:
             authentication = ()
-        with requests.get(settings.SUSLOG, auth=authentication) as response:
+        with requests.get(settings.SUSLOG, auth=authentication, timeout=(10, 30)) as response:
             if response.status_code in (200,301,302,303,307,308):
                 data = response.content.decode('utf-8').split('\n')
             else:

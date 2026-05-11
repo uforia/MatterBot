@@ -39,11 +39,11 @@ def buildcache(messages):
             'Content-Type': settings.CONTENTTYPE,
         }
         page = 1
-        with requests.get(settings.APIURL['unprotectit']['url'], headers=headers) as cat_response:
+        with requests.get(settings.APIURL['unprotectit']['url'], headers=headers, timeout=(10, 30)) as cat_response:
             cat_json_response = cat_response.json()
             for category in cat_json_response:
                 cache[category] = {}
-                with requests.get(cat_json_response[category], headers=headers) as response:
+                with requests.get(cat_json_response[category], headers=headers, timeout=(10, 30)) as response:
                     json_response = response.json()
                     if 'count' in json_response:
                         if 'results' in json_response:
@@ -56,7 +56,7 @@ def buildcache(messages):
                         if 'next' in json_response:
                             nextpage = json_response['next']
                             while nextpage:
-                                with requests.get(nextpage, headers=headers) as response:
+                                with requests.get(nextpage, headers=headers, timeout=(10, 30)) as response:
                                     json_response = response.json()
                                     if 'count' in json_response:
                                         if 'results' in json_response:

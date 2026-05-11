@@ -37,7 +37,7 @@ def query(settings=None):
             headers = { 'Authorization': 'Bearer ' + settings.TOKEN,
                         'Content-Type': 'application/json',
                       },
-        )
+        timeout=(10, 30))
         if response.status_code == 200:
             items = []
             json = response.json()['data']['pages']['list']

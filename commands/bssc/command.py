@@ -35,7 +35,7 @@ def getToken():
         'Content-Type': 'application/x-www-form-urlencoded',
     }
     try:
-        with requests.post(settings.APIURL['bssc']['token'], headers=auth) as response:
+        with requests.post(settings.APIURL['bssc']['token'], headers=auth, timeout=(10, 30)) as response:
             json_response = response.json()
             if 'access_token' in json_response and 'token_type' in json_response:
                 return json_response['access_token']
@@ -77,7 +77,7 @@ def process(command, channel, username, params, files, conn):
                         'Authorization': 'Bearer %s' % token,
                         'Content-Type': settings.CONTENTTYPE,
                     }
-                    with requests.get(endpoint, headers=headers) as response:
+                    with requests.get(endpoint, headers=headers, timeout=(10, 30)) as response:
                         data = ''
                         json_response = response.json()
                         for outputField in outputFields.keys():

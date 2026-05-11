@@ -49,7 +49,7 @@ def query(settings=None):
     }
     while count < settings.ENTRIES:
         try:
-            with requests.get(settings.URL, headers=headers) as response: # Request advisories
+            with requests.get(settings.URL, headers=headers, timeout=(10, 30)) as response: # Request advisories
                 if response.status_code in (200,204):
                     jsonFeed = response.json()
                     detailURL = None
@@ -59,7 +59,7 @@ def query(settings=None):
                             break
                     if not detailURL:
                         raise ValueError("No link found")
-                    with requests.get(detailURL, headers=headers) as response:
+                    with requests.get(detailURL, headers=headers, timeout=(10, 30)) as response:
                         if response.status_code in (200,204):
                             jsonAdvisory = response.json()
                             link = next((

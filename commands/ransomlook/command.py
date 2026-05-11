@@ -75,7 +75,7 @@ def process(command, channel, username, params, files, conn):
             if querytype == 'group':
                 if query:
                     endpoint = settings.APIURL['ransomlook']['url']+'groups'
-                    with requests.get(url=endpoint, headers=headers) as response:
+                    with requests.get(url=endpoint, headers=headers, timeout=(10, 30)) as response:
                         json_response = response.json()
                         if len(json_response):
                             candidates = []
@@ -87,7 +87,7 @@ def process(command, channel, username, params, files, conn):
                             messages.append({'text': message})
                         else:
                             endpoint = settings.APIURL['ransomlook']['url']+f"group/{candidates[0]}"
-                            with requests.get(url=endpoint, headers=headers) as response:
+                            with requests.get(url=endpoint, headers=headers, timeout=(10, 30)) as response:
                                 groupinfo = response.json()[0]
                                 if len(response.json())>1:
                                     posts = response.json()[1]
@@ -172,7 +172,7 @@ def process(command, channel, username, params, files, conn):
                     messages.append({'text': message})
             if querytype == 'groups':
                 endpoint = settings.APIURL['ransomlook']['url']+'groups'
-                with requests.get(url=endpoint, headers=headers) as response:
+                with requests.get(url=endpoint, headers=headers, timeout=(10, 30)) as response:
                     json_response = response.json()
                     if len(json_response):
                         count = 1
@@ -189,7 +189,7 @@ def process(command, channel, username, params, files, conn):
             if querytype == 'market':
                 if query:
                     endpoint = settings.APIURL['ransomlook']['url']+'markets'
-                    with requests.get(url=endpoint, headers=headers) as response:
+                    with requests.get(url=endpoint, headers=headers, timeout=(10, 30)) as response:
                         json_response = response.json()
                         if len(json_response):
                             candidates = []
@@ -201,7 +201,7 @@ def process(command, channel, username, params, files, conn):
                             messages.append({'text': message})
                         else:
                             endpoint = settings.APIURL['ransomlook']['url']+f"market/{candidates[0]}"
-                            with requests.get(url=endpoint, headers=headers) as response:
+                            with requests.get(url=endpoint, headers=headers, timeout=(10, 30)) as response:
                                 marketinfo = response.json()[0]
                                 if len(response.json())>1:
                                     posts = response.json()[1]
@@ -286,7 +286,7 @@ def process(command, channel, username, params, files, conn):
                     messages.append({'text': message})
             if querytype == 'markets':
                 endpoint = settings.APIURL['ransomlook']['url']+'markets'
-                with requests.get(url=endpoint, headers=headers) as response:
+                with requests.get(url=endpoint, headers=headers, timeout=(10, 30)) as response:
                     json_response = response.json()
                     if len(json_response):
                         count = 1
@@ -305,7 +305,7 @@ def process(command, channel, username, params, files, conn):
                 filter = None
                 if query:
                     filter = query
-                with requests.get(url=endpoint, headers=headers) as response:
+                with requests.get(url=endpoint, headers=headers, timeout=(10, 30)) as response:
                     json_response = response.json()
                     if len(json_response):
                         count = 1
@@ -364,7 +364,7 @@ def process(command, channel, username, params, files, conn):
                             messages.append({'text': message})
             if querytype == 'tgchannels':
                 endpoint = settings.APIURL['ransomlook']['url']+'telegram/channels'
-                with requests.get(url=endpoint, headers=headers) as response:
+                with requests.get(url=endpoint, headers=headers, timeout=(10, 30)) as response:
                     json_response = response.json()
                     if len(json_response):
                         count = 1
@@ -391,7 +391,7 @@ def process(command, channel, username, params, files, conn):
                         searches.append(' '.join(query[:-1]))
                     else:
                         filter = None
-                    with requests.get(url=endpoint, headers=headers) as response:
+                    with requests.get(url=endpoint, headers=headers, timeout=(10, 30)) as response:
                         json_response = response.json()
                         if len(json_response):
                             for tgchannel in json_response:
@@ -403,7 +403,7 @@ def process(command, channel, username, params, files, conn):
                             messages.append({'text': message})
                         if len(candidates):
                             endpoint = settings.APIURL['ransomlook']['url']+f"telegram/channel/{candidates[0]}"
-                            with requests.get(url=endpoint, headers=headers) as response:
+                            with requests.get(url=endpoint, headers=headers, timeout=(10, 30)) as response:
                                 json_response = response.json()
                                 if len(json_response):
                                     tgchannelinfo = json_response[0]
@@ -446,7 +446,7 @@ def process(command, channel, username, params, files, conn):
                                                     content = True
                                                     for image in images:
                                                         imageurl = settings.APIURL['ransomlook']['url']+f"telegram/channel/{candidates[0]}/image/%s" % (urllib.parse.quote_plus(image,))
-                                                        with requests.get(url=imageurl, headers=headers) as image:
+                                                        with requests.get(url=imageurl, headers=headers, timeout=(10, 30)) as image:
                                                             for header in image.headers:
                                                                 if header.lower() == 'content-disposition':
                                                                     filename = urllib.parse.unquote_plus(re.findall('filename=(.+)', image.headers[header], re.IGNORECASE)[0]).replace('?','-').replace('"','')

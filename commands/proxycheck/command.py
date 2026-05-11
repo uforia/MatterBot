@@ -59,7 +59,7 @@ def process(command, channel, username, params, files, conn):
                 if 'key' in settings.APIURL['proxycheck']:
                     if settings.APIURL['proxycheck']['key']:
                         apiurl += f"?key={settings.APIURL['proxycheck']['key']}"
-                with requests.post(apiurl, headers=headers, data=postdata) as response:
+                with requests.post(apiurl, headers=headers, data=postdata, timeout=(10, 30)) as response:
                     if response.status_code in (400,401,402,403,):
                         messages.append({'text': "Failed ProxyCheck lookup, check address validity or try again later ..."})
                     if response.status_code in (200,):

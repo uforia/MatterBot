@@ -101,7 +101,7 @@ def process(command, channel, username, params, files, conn):
                 for endpoint in endpoints:
                     data = {endpoint:query}
                     APIENDPOINT = settings.APIURL['hybridanalysis']['url']+endpoints[endpoint]
-                    with requests.post(APIENDPOINT, data=data, headers=headers) as response:
+                    with requests.post(APIENDPOINT, data=data, headers=headers, timeout=(10, 30)) as response:
                         message = ''
                         json_response = response.json()
                         if len(json_response):

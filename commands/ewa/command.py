@@ -63,7 +63,7 @@ def process(command, channel, username, params, files, conn):
                         }
                     """
                     query = json.dumps({'query': query.strip()})
-                    with requests.post(settings.APIURL['ewa']['url']+'/graphql', headers=headers, data=query) as response:
+                    with requests.post(settings.APIURL['ewa']['url']+'/graphql', headers=headers, data=query, timeout=(10, 30)) as response:
                         json_response = response.json()
                         if 'data' in json_response:
                             if 'pages' in json_response['data']:
@@ -83,7 +83,7 @@ def process(command, channel, username, params, files, conn):
                         """
                         query = json.dumps({'query': query.strip()})
                         try:
-                            with requests.post(settings.APIURL['ewa']['url']+'/graphql', headers=headers, data=query) as response:
+                            with requests.post(settings.APIURL['ewa']['url']+'/graphql', headers=headers, data=query, timeout=(10, 30)) as response:
                                 json_response = response.json()
                                 content = json_response['data']['pages']['single']['content']
                                 MODULEDIR = "commands/ewa/"
@@ -158,7 +158,7 @@ def process(command, channel, username, params, files, conn):
                 if command == 'create':
                     ### Download the CVE information
                     content = None
-                    with requests.get(settings.APIURL['nvd']['url']+cve) as response:
+                    with requests.get(settings.APIURL['nvd']['url']+cve, timeout=(10, 30)) as response:
                         json_response = response.json()
                         if 'resultsPerPage' in json_response:
                             if json_response['resultsPerPage'] == 1:
@@ -296,7 +296,7 @@ def process(command, channel, username, params, files, conn):
                                 }
                                 """ % (content, description, editor, isPublished, isPrivate, locale, path, tags, title,)
                                 query = json.dumps({'query': query.strip()})
-                                with requests.post(settings.APIURL['ewa']['url']+'/graphql', headers=headers, data=query) as response:
+                                with requests.post(settings.APIURL['ewa']['url']+'/graphql', headers=headers, data=query, timeout=(10, 30)) as response:
                                     json_response = response.json()
                                     if 'data' in json_response:
                                         if 'pages' in json_response['data']:

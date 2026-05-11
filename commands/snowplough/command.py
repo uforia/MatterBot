@@ -43,7 +43,7 @@ def process(command, channel, username, params, files, conn):
             }
             print(headers)
             print(url)
-            with requests.get(url, headers=headers) as response:
+            with requests.get(url, headers=headers, timeout=(10, 30)) as response:
                 json_response = response.json()
                 print(json_response)
         except Exception as e:

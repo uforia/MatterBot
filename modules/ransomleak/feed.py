@@ -44,7 +44,7 @@ def query(settings=None):
         authentication = (settings.AUTH['username'],settings.AUTH['password'])
     try:
         ENDPOINT = settings.URL
-        with requests.get(ENDPOINT, auth=authentication) as response:
+        with requests.get(ENDPOINT, auth=authentication, timeout=(10, 30)) as response:
             soup = BeautifulSoup(response.text,features='lxml')
             groups = [node.get('href') for node in soup.find_all('a') if node.get('href').endswith('.json')]
         fields = collections.OrderedDict({
@@ -76,7 +76,7 @@ def query(settings=None):
             for group in groups:
                 ENDPOINT = settings.URL+group
                 try:
-                    with requests.get(ENDPOINT, auth=authentication) as response:
+                    with requests.get(ENDPOINT, auth=authentication, timeout=(10, 30)) as response:
                         feed = yaml.safe_load(response.content) if response.status_code in (200,301,302,303,307,308) else None
                 except yaml.scanner.ScannerError:
                     pass

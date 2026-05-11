@@ -55,7 +55,7 @@ def process(command, channel, username, params, files, conn):
                 data = { 'url': params }
                 type = 'url'
             if type == 'url':
-                with requests.post(settings.APIURL['urlhaus']['url'], data=data) as response:
+                with requests.post(settings.APIURL['urlhaus']['url'], data=data, timeout=(10, 30)) as response:
                     if response.status_code in (401,):
                         message = "Incorrect URLhaus API key or not configured!"
                     else:
@@ -85,7 +85,7 @@ def process(command, channel, username, params, files, conn):
                             message += '\n'
                             messages.append({'text': message.strip()})
             if type == 'hash':
-                with requests.post(settings.APIURL['urlhaus']['payload'], data=data) as response:
+                with requests.post(settings.APIURL['urlhaus']['payload'], data=data, timeout=(10, 30)) as response:
                     if response.status_code in (401,):
                         message = "Incorrect URLhaus API key or not configured!"
                     else:

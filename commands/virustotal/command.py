@@ -64,7 +64,7 @@ def process(command, channel, username, params, files, conn):
                 APIENDPOINT = settings.APIURL['virustotal']['url'] + 'domains/%s' % (params,)
             if querytype:
                 uploads = []
-                with requests.get(APIENDPOINT, headers=headers) as response:
+                with requests.get(APIENDPOINT, headers=headers, timeout=(10, 30)) as response:
                     json_response = response.json()
                     if 'data' in json_response:
                         data = json_response['data']
@@ -98,7 +98,7 @@ def process(command, channel, username, params, files, conn):
                                     for crowdsourced_yara_result in attributes['crowdsourced_yara_results']:
                                         if crowdsourced_yara_result['source'] == 'https://malpedia.caad.fkie.fraunhofer.de/':
                                             ruleset_name = crowdsourced_yara_result['ruleset_name'].replace('_auto','')
-                                            with requests.get(settings.APIURL['malpedia']['url'] + '/' + ruleset_name + '/zip', headers=malpedia_headers) as response:
+                                            with requests.get(settings.APIURL['malpedia']['url'] + '/' + ruleset_name + '/zip', headers=malpedia_headers, timeout=(10, 30)) as response:
                                                 if response.content:
                                                     bytes = response.content
                                                     if len(bytes)>0:
@@ -121,7 +121,7 @@ def process(command, channel, username, params, files, conn):
                                     else:
                                         verdict = 'safe'
                                     text += '\n - Maliciousness: `' + verdict + '` (' + str(probability) + '%)'
-                                    with requests.get(APIENDPOINT + '/behaviour_mitre_trees', headers=headers) as response:
+                                    with requests.get(APIENDPOINT + '/behaviour_mitre_trees', headers=headers, timeout=(10, 30)) as response:
                                         json_response = response.json()
                                         mitre_tree_names = ('Malwares', 'Subtechniques', 'Techniques', 'Tools')
                                         if 'data' in json_response:

@@ -44,7 +44,7 @@ def getToken():
     }
     try:
         url = f"{settings.APIURL['docspell']['url']}/open/auth/login"
-        with requests.post(url, headers=headers, json=auth) as response:
+        with requests.post(url, headers=headers, json=auth, timeout=(10, 30)) as response:
             json_response = response.json()
             if 'token' in json_response and 'validMs' in json_response:
                 return json_response['token']
@@ -81,7 +81,7 @@ def process(command, channel, username, params, files, conn):
                     res = [ ''.join(esc_dict.get(chr, chr) for chr in sub) for sub in params]
                     query = f"content%3A%22{' '.join(res)}%22"
                     url = f"{settings.APIURL['docspell']['url']}/sec/item/search?q={query}&withDetails=True"
-                    with requests.get(url=url, headers=headers) as response:
+                    with requests.get(url=url, headers=headers, timeout=(10, 30)) as response:
                         json_response = response.json()
                         if "groups" in json_response:
                             if "name" in json_response['groups'][0]:
@@ -112,7 +112,7 @@ def process(command, channel, username, params, files, conn):
                                                         'User-Agent': 'MatterBot integration for Docspell v0.1',
                                                         'X-Docspell-Auth': f"{token}",
                                                     }
-                                                    with requests.get(url=url, headers=headers) as download:
+                                                    with requests.get(url=url, headers=headers, timeout=(10, 30)) as download:
                                                         entry = {'filename': name, 'bytes': download.content}
                                                         if not entry in files:
                                                             files.append(entry)
@@ -177,7 +177,7 @@ def process(command, channel, username, params, files, conn):
                                 mime_type = file['mime_type']
                                 filesize = file['size']
                                 contentfields = {'file': (filename, content, mime_type)}
-                                with requests.post(url=url, headers=headers, files=contentfields) as response:
+                                with requests.post(url=url, headers=headers, files=contentfields, timeout=(10, 30)) as response:
                                     if response.status_code in (200, 201):
                                         entries.append({
                                             'success': True,
