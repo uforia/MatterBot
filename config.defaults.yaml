@@ -45,6 +45,8 @@ Matterbot:
   msglength: 16383 # Change to '4000' if you are using Mattermost <=5.x (seriously, you should upgrade!)
   logcmd: True
   logcmdparams: False
+  command_workers: 8 # Max parallel module command executions. Lower (e.g. 1) effectively serializes commands
+                     # if you suspect a module is not thread-safe; raise for more parallelism on a fast host.
 
 Modules:
   moduledir: "modules"

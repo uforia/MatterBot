@@ -2,6 +2,7 @@
 
 import ast
 import asyncio
+import concurrent.futures
 import copy
 import fnmatch
 import importlib.util
@@ -24,6 +25,14 @@ class TokenAuth():
 
 class MattermostManager(object):
     def __init__(self):
+        # Bounded thread pool so synchronous module.process() calls don't block
+        # the asyncio event loop. See call_module(). Worker count is
+        # configurable via Matterbot.command_workers — set to 1 if a module
+        # turns out not to be thread-safe; raise for more parallelism.
+        self._command_executor = concurrent.futures.ThreadPoolExecutor(
+            max_workers=options.Matterbot.get('command_workers', 8),
+            thread_name_prefix='mb-cmd',
+        )
         self.mmDriver = Driver(options={
             'url'       : options.Matterbot['host'],
             'port'      : options.Matterbot['port'],
@@ -663,8 +672,16 @@ class MattermostManager(object):
     async def call_module(self, module, command, channame, rootid, username, params, files, conn):
         try:
             chanid = self.channame_to_chanid(channame)
-            async with asyncio.timeout(30):
-                result = self.commands[module]['process'](command, channame, username, params, files, conn)
+            # Run the (synchronous) module handler in a thread so it cannot block
+            # the asyncio event loop. The outer asyncio.timeout in handle_post
+            # is what bounds wall-clock duration; this await is the yield point
+            # that lets it fire.
+            loop = asyncio.get_running_loop()
+            result = await loop.run_in_executor(
+                self._command_executor,
+                self.commands[module]['process'],
+                command, channame, username, params, files, conn,
+            )
             # Command logging: see config.defaults.yaml for clarification
             if result and 'messages' in result:
                 for message in result['messages']:
