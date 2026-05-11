@@ -750,6 +750,10 @@ class MattermostManager(object):
                                             async with asyncio.timeout(30):
                                                 await self.call_module(module, command, channame, rootid, username, params, files, self.mmDriver)
                                         except asyncio.TimeoutError:
+                                            log.warning(
+                                                f"Command timed out: module={module} command={command} "
+                                                f"user={username} channel={channame}"
+                                            )
                                             text = f"Error: the command to the {module} module timed out while processing/waiting for a response."
                                             await self.send_message(chanid, text, rootid)
 
