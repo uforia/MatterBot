@@ -34,6 +34,19 @@ class MattermostManager(object):
             max_workers=options.Matterbot.get('command_workers', 8),
             thread_name_prefix='mb-cmd',
         )
+        # Maximum number of in-flight module dispatches per user. Prevents a
+        # single user from saturating the bot (or the command thread-pool)
+        # with parallel commands and starving other users. Further requests
+        # from that user are queued behind the same asyncio.timeout window
+        # as the run itself, so a spammer can self-DoS their own queue but
+        # cannot block anyone else. Tunable via Matterbot.user_concurrency.
+        self._user_concurrency = options.Matterbot.get('user_concurrency', 2)
+        # Map of userid -> asyncio.Semaphore, populated lazily on first command
+        # from each user via dict.setdefault() so concurrent first-time
+        # creations don't race. Entries are never evicted; size is bounded
+        # by the number of distinct users who have ever talked to the bot
+        # since process start (small for a single-team deployment).
+        self._user_semaphores = {}
         self.mmDriver = Driver(options={
             'url'       : options.Matterbot['host'],
             'port'      : options.Matterbot['port'],
@@ -694,6 +707,14 @@ class MattermostManager(object):
                             await self.send_message(welcome_channel, text)
 
 
+    def _semaphore_for(self, userid):
+        # setdefault is atomic in CPython for the dict op, so two coroutines
+        # racing on the same first-time userid get the same Semaphore back
+        # (one freshly-constructed instance may be discarded — harmless).
+        return self._user_semaphores.setdefault(
+            userid, asyncio.Semaphore(self._user_concurrency)
+        )
+
     async def call_module(self, module, command, channame, rootid, username, params, files, conn):
         try:
             chanid = self.channame_to_chanid(channame)
@@ -789,8 +810,12 @@ class MattermostManager(object):
                                                 if len(post['metadata']['files']):
                                                     files = post['metadata']['files']
                                         try:
+                                            # Per-user fairness gate is inside the timeout window so
+                                            # a single user spamming commands self-DoSes their own
+                                            # queue (commands time out) instead of blocking others.
                                             async with asyncio.timeout(30):
-                                                await self.call_module(module, command, channame, rootid, username, params, files, self.mmDriver)
+                                                async with self._semaphore_for(userid):
+                                                    await self.call_module(module, command, channame, rootid, username, params, files, self.mmDriver)
                                         except asyncio.TimeoutError:
                                             log.warning(
                                                 f"Command timed out: module={module} command={command} "
