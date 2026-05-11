@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
-NAME = "watchTowr Offensive Security Blog"
-URL = "https://labs.watchtowr.com/rss/"
+NAME = "Deutsche Telekom CERT"
+URL = "https://github.security.telekom.com/atom.xml"
 CHANNELS = (
     "newsfeed",
 )
 TOPICS = (
+    "Advisories",
     "CTI",
     "Vulnerabilities"
 )

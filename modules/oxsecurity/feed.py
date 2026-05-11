@@ -35,21 +35,25 @@ def query(settings=None):
     items = []
     feed = feedparser.parse(settings.URL, agent='MatterBot RSS Automation 1.0')
     count = 0
+    category = ["Security", "Vulnerability"]
     stripchars = '`\\[\\]\'\"'
     regex = re.compile('[%s]' % stripchars)
     while count < settings.ENTRIES:
         try:
-            title = feed.entries[count].title
-            link = feed.entries[count].link
-            content = settings.NAME + ': [' + title + '](' + link + ')'
-            if len(feed.entries[count].description):
-                description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
-                if len(description) > 400:
-                    description = description[:396] + ' ...'
-                content += '\n>'+ description +'\n'
+            tags = feed.entries[count].tags
+            for tag in tags:
+                if any(element in tag['term'] for element in category):
+                    title = feed.entries[count].title
+                    link = feed.entries[count].link
+                    content = settings.NAME + ': [' + title + '](' + link + ')'
+                    if len(feed.entries[count].description):
+                        description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
+                        if len(description)>400:
+                            description = description[:396]+' ...'
+                        content += '\n>'+description+'\n'
             for channel in settings.CHANNELS:
                 items.append([channel, content])
-            count += 1
+            count+=1
         except IndexError:
             return items # No more items
     return items

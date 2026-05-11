@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 
-NAME = "Aqua Security Blog"
-URLS = (
-    "http://blog.aquasec.com/rss.xml", 
-    "https://www.aquasec.com/feed/"
-)
+NAME = "OX Security Blog"
+URL = "https://www.ox.security/feed/"
 CHANNELS = (
     "newsfeed",
 )
 TOPICS = (
+    "General",
     "CTI",
     "Vulnerabilities"
 )

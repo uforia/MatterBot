@@ -16,8 +16,6 @@ import bs4
 import feedparser
 import re
 
-
-
 def query(settings=None):
     if settings:
         try:
@@ -45,12 +43,12 @@ def query(settings=None):
                 content = settings.NAME + ': [' + title + '](' + link + ')'
                 if len(feed.entries[count].description):
                     description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
-                    if len(description)>400:
-                        description = description[:396]+' ...'
-                    content += '\n>'+description+'\n'
+                    if len(description) > 400:
+                        description = description[:396] + ' ...'
+                    content += '\n>'+ description +'\n'
                 for channel in settings.CHANNELS:
                     items.append([channel, content])
-                count+=1
+                count += 1
             except IndexError:
                 return items # No more items
     return items
