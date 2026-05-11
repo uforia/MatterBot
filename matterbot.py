@@ -10,6 +10,7 @@ import logging
 import os
 import pathlib
 import re
+import signal
 import sys
 import time
 import traceback
@@ -99,6 +100,15 @@ class MattermostManager(object):
                 self.commands[module_name]['process'] = getattr(module, 'process')
                 self.commands[module_name]['help'] = HELP
         self.binds = sorted(list(set(self.binds)))
+        # Translate SIGTERM (docker stop, systemctl stop, k8s pod termination)
+        # into a KeyboardInterrupt in the main thread, so the existing
+        # interrupt path in run_forever drains in-flight work and exits cleanly
+        # instead of being SIGKILL'd 10s later.
+        signal.signal(signal.SIGTERM, self._on_terminate)
+
+    def _on_terminate(self, signum, frame):
+        log.info(f"Received {signal.Signals(signum).name} — initiating graceful drain")
+        raise KeyboardInterrupt
 
     def run_forever(self):
         """Drive the Mattermost websocket, reconnecting on disconnect with
@@ -108,23 +118,35 @@ class MattermostManager(object):
         backoff = 1.0
         max_backoff = 60.0
         healthy_after = 60.0  # a connection that lasted this long resets backoff
-        while True:
-            connected_at = time.monotonic()
-            try:
-                log.info("Connecting Mattermost websocket")
-                self.mmDriver.init_websocket(self.handle_raw_message)
-                log.warning("Websocket loop returned (server closed connection?)")
-            except KeyboardInterrupt:
-                log.info("Interrupted — exiting")
-                raise
-            except Exception:
-                log.exception("Websocket loop crashed")
-            if time.monotonic() - connected_at >= healthy_after:
-                backoff = 1.0
-            else:
-                backoff = min(backoff * 2, max_backoff)
-            log.info(f"Reconnecting websocket in {backoff:.1f}s")
-            time.sleep(backoff)
+        try:
+            while True:
+                connected_at = time.monotonic()
+                try:
+                    log.info("Connecting Mattermost websocket")
+                    self.mmDriver.init_websocket(self.handle_raw_message)
+                    log.warning("Websocket loop returned (server closed connection?)")
+                except KeyboardInterrupt:
+                    raise
+                except Exception:
+                    log.exception("Websocket loop crashed")
+                if time.monotonic() - connected_at >= healthy_after:
+                    backoff = 1.0
+                else:
+                    backoff = min(backoff * 2, max_backoff)
+                log.info(f"Reconnecting websocket in {backoff:.1f}s")
+                time.sleep(backoff)
+        except KeyboardInterrupt:
+            log.info("Interrupt received — draining in-flight work")
+        finally:
+            # Drain the command thread pool (added by the call_module executor
+            # PR) so any in-flight module handlers can complete instead of
+            # being abandoned mid-write. The outer asyncio.timeout(30) bounds
+            # each task, so total drain is capped near 30s.
+            executor = getattr(self, '_command_executor', None)
+            if executor is not None:
+                log.info("Waiting for command executor to drain")
+                executor.shutdown(wait=True, cancel_futures=True)
+            log.info("Exit")
 
     def load_bindmap(self):
         try:
