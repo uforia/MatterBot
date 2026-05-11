@@ -11,6 +11,7 @@ import os
 import pathlib
 import re
 import sys
+import time
 import traceback
 import configargparse
 from mattermostdriver import Driver
@@ -98,8 +99,32 @@ class MattermostManager(object):
                 self.commands[module_name]['process'] = getattr(module, 'process')
                 self.commands[module_name]['help'] = HELP
         self.binds = sorted(list(set(self.binds)))
-        # Start the websocket
-        self.mmDriver.init_websocket(self.handle_raw_message)
+
+    def run_forever(self):
+        """Drive the Mattermost websocket, reconnecting on disconnect with
+        exponential backoff. Without this loop, any websocket termination
+        (network blip, MM restart, idle timeout) causes init_websocket to
+        return and the process to exit silently."""
+        backoff = 1.0
+        max_backoff = 60.0
+        healthy_after = 60.0  # a connection that lasted this long resets backoff
+        while True:
+            connected_at = time.monotonic()
+            try:
+                log.info("Connecting Mattermost websocket")
+                self.mmDriver.init_websocket(self.handle_raw_message)
+                log.warning("Websocket loop returned (server closed connection?)")
+            except KeyboardInterrupt:
+                log.info("Interrupted — exiting")
+                raise
+            except Exception:
+                log.exception("Websocket loop crashed")
+            if time.monotonic() - connected_at >= healthy_after:
+                backoff = 1.0
+            else:
+                backoff = min(backoff * 2, max_backoff)
+            log.info(f"Reconnecting websocket in {backoff:.1f}s")
+            time.sleep(backoff)
 
     def load_bindmap(self):
         try:
@@ -774,3 +799,4 @@ if __name__ == '__main__' :
     log = logging.getLogger('MatterBot')
     log.info('Starting MatterBot')
     mm = MattermostManager()
+    mm.run_forever()
