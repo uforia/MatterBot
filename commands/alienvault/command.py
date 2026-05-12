@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import concurrent.futures
 import re
 import requests
 import traceback
@@ -76,14 +77,14 @@ def process(command, channel, username, params, files, conn):
                     endpoints = ('file/'+query+'/analysis',)
                 if querytype in ('url'):
                     endpoints = ('url/'+query+'/url_list',)
-                for endpoint in endpoints:
+                def _fetch_endpoint(endpoint):
                     APIENDPOINT = settings.APIURL['alienvault']['url']+endpoint+'?limit=10'
                     with requests.get(APIENDPOINT, headers=headers, timeout=(10, 30)) as response:
                         message = ''
                         try:
                             json_response = response.json()
                         except:
-                            continue
+                            return None
                         geofields = {
                             'asn': 'ASN',
                             'city': 'City',
@@ -170,7 +171,17 @@ def process(command, channel, username, params, files, conn):
                                                         message += '\n| **Families** | `%s` |' % '`, `'.join(sorted(families))
                         if len(message):
                             table = '| **AlienVault OTX** | **'+query+'** |\n| -: | :- |'+message+'\n\n'
-                            messages.append({'text': table})
+                            return {'text': table}
+                        return None
+                with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(endpoints), 6)) as pool:
+                    futures = [pool.submit(_fetch_endpoint, endpoint) for endpoint in endpoints]
+                    for fut in concurrent.futures.as_completed(futures):
+                        try:
+                            result = fut.result()
+                        except Exception:
+                            continue
+                        if result:
+                            messages.append(result)
     except Exception as e:
         messages.append({'text': 'A Python error occurred searching AlienVault OTX:%s\n%s' % (str(e), traceback.format_exc())})
     finally:
