@@ -798,31 +798,41 @@ class MattermostManager(object):
                     await self.feed_message(userid, post, params, chaninfo, rootid)
                 else:
                     await self.log_message(userid, command, params, chaninfo, rootid)
-                    tasks = []
                     if not any(_ in post['message'] for _ in ('| **YES** |', '| **NO** |', 'I know about `!help')):
+                        # Bindings like @ioc subscribe many modules to a single command.
+                        # Collect them up front, then fan out concurrently via gather
+                        # so the slowest module sets the wall-clock floor, not the sum.
+                        modules_to_run = []
                         for module in self.commands:
                             if command in self.commands[module]['binds']:
                                 if self.isallowed_module(userid, module, chaninfo):
-                                    if not module in tasks:
-                                        files = []
-                                        if 'metadata' in post:
-                                            if 'files' in post['metadata']:
-                                                if len(post['metadata']['files']):
-                                                    files = post['metadata']['files']
-                                        try:
-                                            # Per-user fairness gate is inside the timeout window so
-                                            # a single user spamming commands self-DoSes their own
-                                            # queue (commands time out) instead of blocking others.
-                                            async with asyncio.timeout(30):
-                                                async with self._semaphore_for(userid):
-                                                    await self.call_module(module, command, channame, rootid, username, params, files, self.mmDriver)
-                                        except asyncio.TimeoutError:
-                                            log.warning(
-                                                f"Command timed out: module={module} command={command} "
-                                                f"user={username} channel={channame}"
-                                            )
-                                            text = f"Error: the command to the {module} module timed out while processing/waiting for a response."
-                                            await self.send_message(chanid, text, rootid)
+                                    if not module in modules_to_run:
+                                        modules_to_run.append(module)
+                        if modules_to_run:
+                            files = []
+                            if 'metadata' in post:
+                                if 'files' in post['metadata']:
+                                    if len(post['metadata']['files']):
+                                        files = post['metadata']['files']
+
+                            async def _run_module(module):
+                                try:
+                                    async with asyncio.timeout(30):
+                                        await self.call_module(module, command, channame, rootid, username, params, files, self.mmDriver)
+                                except asyncio.TimeoutError:
+                                    log.warning(
+                                        f"Command timed out: module={module} command={command} "
+                                        f"user={username} channel={channame}"
+                                    )
+                                    text = f"Error: the command to the {module} module timed out while processing/waiting for a response."
+                                    await self.send_message(chanid, text, rootid)
+
+                            # Per-user fairness gate is acquired ONCE per command
+                            # invocation, not per subscribed module — otherwise an
+                            # @ioc-style fanout to N modules would serialize behind
+                            # user_concurrency=2 and lose most of the gather win.
+                            async with self._semaphore_for(userid):
+                                await asyncio.gather(*(_run_module(m) for m in modules_to_run))
 
 if __name__ == '__main__' :
     '''
