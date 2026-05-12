@@ -73,7 +73,7 @@ def process(command, channel, username, params, files, conn):
             "quiet": True,
             "genkey": "KCPP{:03d}".format(randkey)
         }
-        with requests.post(settings.APIURL['koboldcpp']['url'], json=json.dumps(data), headers=headers) as response:
+        with requests.post(settings.APIURL['koboldcpp']['url'], json=json.dumps(data), headers=headers, timeout=(10, 30)) as response:
             answers = response.json()
             if 'results' in answers:
                 num = 1

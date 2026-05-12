@@ -43,7 +43,7 @@ def process(command, channel, username, params, files, conn):
         try:
             messages = []
             if params.endswith('.onion'):
-                with requests.get(settings.APIURL['onionlookup']['url']+f"{params}", headers=headers) as response:
+                with requests.get(settings.APIURL['onionlookup']['url']+f"{params}", headers=headers, timeout=(10, 30)) as response:
                     if response.status_code in (400,401,402,403,):
                         messages.append({'text': "Failed Onion-Lookup, check address validity or try again later ..."})
                     if response.status_code in (200,):

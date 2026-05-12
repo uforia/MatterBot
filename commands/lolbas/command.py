@@ -41,7 +41,7 @@ def process(command, channel, username, params, files, conn):
             }
             query = params[0]
             if query == 'rebuildcache' or not Path(settings.CACHE).is_file():
-                with requests.get(settings.APIURL['lolbas']['url'], headers=headers) as response:
+                with requests.get(settings.APIURL['lolbas']['url'], headers=headers, timeout=(10, 30)) as response:
                     json_response = response.json()
                     if len(json_response):
                         with open(settings.CACHE, mode='w') as f:
@@ -105,7 +105,7 @@ def process(command, channel, username, params, files, conn):
                                         iocs.add(detection[type])
                             try:
                                 for url in urls:
-                                    with requests.get(url, headers=headers) as response:
+                                    with requests.get(url, headers=headers, timeout=(10, 30)) as response:
                                         uploads.append({'filename': Path(url).name, 'bytes': response.content})
                             except:
                                 pass

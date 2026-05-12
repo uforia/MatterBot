@@ -49,7 +49,7 @@ def process(command, channel, username, params, files, conn):
                 }
             }
             messages = []
-            with requests.post(settings.APIENDPOINT, json=data, headers=headers) as response:
+            with requests.post(settings.APIENDPOINT, json=data, headers=headers, timeout=(10, 30)) as response:
                 answer = response.json()
                 reply = None
                 if 'response' in answer:

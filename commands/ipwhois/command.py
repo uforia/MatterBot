@@ -36,7 +36,7 @@ def process(command, channel, username, params, files, conn):
             if re.search(r"^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(\:[0-9]*)?$", params):
                 data = params.split(':')[0]
             if data:
-                with requests.get(settings.APIURL['ipwhois']['url'] + data) as response:
+                with requests.get(settings.APIURL['ipwhois']['url'] + data, timeout=(10, 30)) as response:
                     json_response = response.json()
                     message = 'IPWHOIS lookup for `%s`' % (data,)
                     if 'success' in json_response:

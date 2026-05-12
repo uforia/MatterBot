@@ -44,7 +44,7 @@ def process(command, channel, username, params, files, conn):
                 url = settings.PACKAGES
 
                 # Request data from the API
-                response = requests.get(url)
+                response = requests.get(url, timeout=(10, 30))
                 response.raise_for_status()
 
                 json_response = response.json()

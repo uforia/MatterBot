@@ -42,7 +42,7 @@ def getToken():
         username = urllib.parse.quote(settings.APIURL['qualys']['username'])
         password = urllib.parse.quote(settings.APIURL['qualys']['password'])
         data = 'username=%s&password=%s&token=true' % (username,password)
-        with requests.post(settings.APIURL['qualys']['jwt'], headers=headers, data=data) as response:
+        with requests.post(settings.APIURL['qualys']['jwt'], headers=headers, data=data, timeout=(10, 30)) as response:
             content = response.content.decode()
             if 'Authentication Failure' in content:
                 return None
@@ -153,7 +153,7 @@ def process(command, channel, username, params, files, conn):
                     if querytype == 'software':
                         completeAPIurl += '?includeFields=assetName,dnsName,address,software,tag'
                     jsonfilter = json.dumps(filtermap[querytype])
-                    with requests.post(completeAPIurl, headers=headers, data=jsonfilter) as response:
+                    with requests.post(completeAPIurl, headers=headers, data=jsonfilter, timeout=(10, 30)) as response:
                         try:
                             if len(response.content):
                                 json_response = json.loads(response.content)
@@ -185,7 +185,7 @@ def process(command, channel, username, params, files, conn):
                                                                 while hasMore == 1:
                                                                     lastSeenAssetId = json_response['lastSeenAssetId']
                                                                     paginationAPIurl = completeAPIurl + f"&lastSeenAssetId={lastSeenAssetId}"
-                                                                    with requests.post(paginationAPIurl, headers=headers, data=jsonfilter) as response:
+                                                                    with requests.post(paginationAPIurl, headers=headers, data=jsonfilter, timeout=(10, 30)) as response:
                                                                         json_response = json.loads(response.content)
                                                                         assets += json_response['assetListData']['asset']
                                                                         hasMore = int(json_response['hasMore'])

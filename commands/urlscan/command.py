@@ -46,7 +46,7 @@ def process(command, channel, username, params, files, conn):
                     "size": settings.ENTRIES,
                     "datasource": "scans",
                 }
-                with requests.get(settings.APIURL['urlscan']['url'], headers=headers, params=query) as response:
+                with requests.get(settings.APIURL['urlscan']['url'], headers=headers, params=query, timeout=(10, 30)) as response:
                     if response.status_code in (400,):
                         message = "Incorrect Urlscan query!"
                     elif response.status_code in (401,):
@@ -72,7 +72,7 @@ def process(command, channel, username, params, files, conn):
                                                     else:
                                                         message += f"| - "
                                                 verdicturl = result["result"]
-                                                with requests.get(verdicturl, headers=headers) as verdictresponse:
+                                                with requests.get(verdicturl, headers=headers, timeout=(10, 30)) as verdictresponse:
                                                     if not response.status_code in (200, 206):
                                                         messages.append({'text': "An error occurred retrieving Urlscan details"})
                                                     else:

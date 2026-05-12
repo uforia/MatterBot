@@ -53,7 +53,7 @@ def process(command, channel, username, params, files, conn):
                 "order": "Event.publish_timestamp desc",
                 "value": params,
             }
-            with requests.post(settings.APIENDPOINT, data=json.dumps(data), headers=headers) as response:
+            with requests.post(settings.APIENDPOINT, data=json.dumps(data), headers=headers, timeout=(10, 30)) as response:
                 answer = response.json()
                 if 'response' in answer:
                     results = answer['response']

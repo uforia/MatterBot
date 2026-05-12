@@ -41,7 +41,7 @@ def process(command, channel, username, params, files, conn):
                 long = params[1]
                 if re.search(r"^[\-\.0-9]+$", lat) and re.search(r"^[\-\.0-9]+$", long):
                     # Close enough
-                    with requests.get(settings.APIURL['osmdata']['url']+'lat='+lat+'&lon='+long+'&format=json', headers=headers) as response:
+                    with requests.get(settings.APIURL['osmdata']['url']+'lat='+lat+'&lon='+long+'&format=json', headers=headers, timeout=(10, 30)) as response:
                         json_response = response.json()
                         message = 'Geographical address lookup for latitude `%s`, longitude `%s`: ' % (lat, long)
                         if 'display_name' in json_response:

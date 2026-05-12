@@ -69,7 +69,7 @@ def process(command, channel, username, params, files, conn):
                     APIENDPOINT = settings.APIURL['shodan']['url'] + '/shodan/host/%s' % (ip,)
                     if apikey:
                         APIENDPOINT += '?key=%s' % (apikey,)
-                    with requests.get(APIENDPOINT, headers=headers) as response:
+                    with requests.get(APIENDPOINT, headers=headers, timeout=(10, 30)) as response:
                         json_response = response.json()
                         if 'error' in json_response:
                             error = json_response['error']
@@ -138,7 +138,7 @@ def process(command, channel, username, params, files, conn):
                     if apikey:
                         APIENDPOINT += 'key=%s' % (apikey,)
                     APIENDPOINT += '&query=%s' % (host,)
-                    with requests.get(APIENDPOINT, headers=headers) as response:
+                    with requests.get(APIENDPOINT, headers=headers, timeout=(10, 30)) as response:
                         json_response = response.json()
                         if 'matches' in json_response:
                             total = len(json_response['matches'])
@@ -232,7 +232,7 @@ def process(command, channel, username, params, files, conn):
                     facets = urllib.parse.quote(','.join(facets))
                     APIENDPOINT += '&facets=' + facets
                     text += ', facets: `' + urllib.parse.unquote(facets) + '`'
-                with requests.get(APIENDPOINT, headers=headers) as response:
+                with requests.get(APIENDPOINT, headers=headers, timeout=(10, 30)) as response:
                     json_response = response.json()
                     if 'error' in json_response:
                         error = json_response['error']
@@ -340,7 +340,7 @@ def process(command, channel, username, params, files, conn):
                 table_header_displayed = False
                 for page in range(1,pages+1):
                     PAGEENDPOINT = APIENDPOINT+'&page='+str(page) if page>1 else APIENDPOINT
-                    with requests.get(PAGEENDPOINT, headers=headers) as response:
+                    with requests.get(PAGEENDPOINT, headers=headers, timeout=(10, 30)) as response:
                         json_response = response.json()
                         if 'error' in json_response:
                             error = json_response['error']
@@ -416,7 +416,7 @@ def process(command, channel, username, params, files, conn):
                 APIENDPOINT = settings.APIURL['shodan']['url'] + '/api-info'
                 if apikey:
                     APIENDPOINT += '?key=%s' % (apikey,)
-                with requests.get(APIENDPOINT, headers=headers) as response:
+                with requests.get(APIENDPOINT, headers=headers, timeout=(10, 30)) as response:
                     json_response = response.json()
                     if 'error' in json_response:
                         error = json_response['error']

@@ -40,7 +40,7 @@ def process(command, channel, username, params, files, conn):
             "max_tokens": settings.MAX_TOKENS,
             "prompt": params,
         }
-        with requests.post(settings.APIENDPOINT, json=data, headers=headers) as response:
+        with requests.post(settings.APIENDPOINT, json=data, headers=headers, timeout=(10, 30)) as response:
             answer = response.json()
             reply = None
             if 'error' in answer:

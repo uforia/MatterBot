@@ -60,7 +60,7 @@ def process(command, channel, username, params, files, conn):
                 for endpoint in endpoints:
                     query = urllib.parse.quote_plus(query.encode())
                     APIENDPOINT = settings.APIURL['leakix']['url']+endpoint+query
-                    with requests.get(APIENDPOINT,headers=headers) as response:
+                    with requests.get(APIENDPOINT,headers=headers, timeout=(10, 30)) as response:
                         json_response = response.json()
                         querytype = endpoint.strip('/')
                         if json_response:

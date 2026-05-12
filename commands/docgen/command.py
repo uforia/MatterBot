@@ -150,7 +150,7 @@ def process(command, channel, username, params, files, conn):
                         }
                         """ % (pagecontent, description, editor, isPublished, isPrivate, locale, path, tags, title,)
                         query = json.dumps({'query': query.strip()})
-                        with requests.post(settings.APIURL['docgen']['url']+'/graphql', headers=headers, data=query) as response:
+                        with requests.post(settings.APIURL['docgen']['url']+'/graphql', headers=headers, data=query, timeout=(10, 30)) as response:
                             json_response = response.json()
                             if 'data' in json_response:
                                 if 'pages' in json_response['data']:
@@ -215,7 +215,7 @@ def process(command, channel, username, params, files, conn):
                         }
                         """ % (pagecontent, description, editor, isPublished, isPrivate, locale, path, tags, title,)
                         query = json.dumps({'query': query.strip()})
-                        with requests.post(settings.APIURL['docgen']['url']+'/graphql', headers=headers, data=query) as response:
+                        with requests.post(settings.APIURL['docgen']['url']+'/graphql', headers=headers, data=query, timeout=(10, 30)) as response:
                             json_response = response.json()
                             if 'data' in json_response:
                                 if 'pages' in json_response['data']:
@@ -230,25 +230,25 @@ def process(command, channel, username, params, files, conn):
                 else:
                     maxdepth = 4
                 query = '{"query":"query { pages { list (orderBy: PATH) { id path title }}}"}'
-                with requests.post(settings.APIURL['docgen']['url'], headers=headers, data=query) as response:
+                with requests.post(settings.APIURL['docgen']['url'], headers=headers, data=query, timeout=(10, 30)) as response:
                     pages = response.json()
                     if 'data' in pages:
                         for page in pages['data']['pages']['list']:
                             if page['title'].lower() == settings.TEMPLATECASES.lower():
                                 query = '{"query":"query { pages { single (id: %d) { content }}}"}' % (page['id'],)
-                                with requests.post(settings.APIURL['docgen']['url'], headers=headers, data=query) as response:
+                                with requests.post(settings.APIURL['docgen']['url'], headers=headers, data=query, timeout=(10, 30)) as response:
                                     pagecontent = response.json()
                                     if 'data' in pagecontent:
                                         template_cases_content = csv.DictReader(StringIO(pagecontent['data']['pages']['single']['content']))
                             if page['title'].lower() == settings.TEMPLATEIDCHAIN.lower():
                                 query = '{"query":"query { pages { single (id: %d) { content }}}"}' % (page['id'],)
-                                with requests.post(settings.APIURL['docgen']['url'], headers=headers, data=query) as response:
+                                with requests.post(settings.APIURL['docgen']['url'], headers=headers, data=query, timeout=(10, 30)) as response:
                                     pagecontent = response.json()
                                     if 'data' in pagecontent:
                                         template_idchain_content = csv.DictReader(StringIO(pagecontent['data']['pages']['single']['content']))
                             if page['title'].lower() == settings.TEMPLATECUSTOMERS.lower():
                                 query = '{"query":"query { pages { single (id: %d) { content }}}"}' % (page['id'],)
-                                with requests.post(settings.APIURL['docgen']['url'], headers=headers, data=query) as response:
+                                with requests.post(settings.APIURL['docgen']['url'], headers=headers, data=query, timeout=(10, 30)) as response:
                                     pagecontent = response.json()
                                     if 'data' in pagecontent:
                                         template_customers_content = csv.DictReader(StringIO(pagecontent['data']['pages']['single']['content']))
@@ -270,13 +270,13 @@ def process(command, channel, username, params, files, conn):
                     pagecount = 0
                     for pid in template_id_chain['ids'].split(' '):
                         pages = '{"query":"query { pages { list (orderBy: PATH) { id path title }}}"}'
-                        with requests.post(settings.APIURL['docgen']['url'], headers=headers, data=pages) as response:
+                        with requests.post(settings.APIURL['docgen']['url'], headers=headers, data=pages, timeout=(10, 30)) as response:
                             pages = response.json()
                         if 'data' in pages:
                             for page in pages['data']['pages']['list']:
                                 if pid.lower() == page['path'].lower().split('/').pop():
                                     pagecontent = '{"query":"query { pages { single (id: %d) { content }}}"}' % (page['id'],)
-                                    with requests.post(settings.APIURL['docgen']['url'], headers=headers, data=pagecontent) as response:
+                                    with requests.post(settings.APIURL['docgen']['url'], headers=headers, data=pagecontent, timeout=(10, 30)) as response:
                                         pagecontent = response.json()
                                         if 'data' in pagecontent:
                                             langsplit = '<!---'+language+'--->'

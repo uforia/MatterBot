@@ -47,7 +47,7 @@ def query(settings=None):
                     history = shelve.open('modules/ransomwatch/'+settings.HISTORY,writeback=True)
         if not 'ransomwatch' in history:
             history['ransomransomwatch'] = []
-        with requests.get(settings.URL) as response:
+        with requests.get(settings.URL, timeout=(10, 30)) as response:
             feed = response.json()
         entries = sorted(feed, key=lambda feed: feed['discovered'], reverse=True)[:MAX]
         if len(entries):

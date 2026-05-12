@@ -36,7 +36,7 @@ def query(settings=None):
     count = 0
     stripchars = '\r\n|`\\[\\]\'\"'
     regex = re.compile(r'[%s]' % stripchars)
-    with requests.get(settings.URL+f'/{settings.ENTRIES}') as response:
+    with requests.get(settings.URL+f'/{settings.ENTRIES}', timeout=(10, 30)) as response:
         if response.status_code in (200,):
             json_response = response.json()
             if len(json_response):
@@ -57,7 +57,7 @@ def query(settings=None):
                             if not settings.SCREENDL:
                                 content += f" - Screenshot: [link]({url})"
                             else:
-                                with requests.get(url) as scrdl:
+                                with requests.get(url, timeout=(10, 30)) as scrdl:
                                     if scrdl.status_code in (200,):
                                         for header in scrdl.headers:
                                             if header.lower() == 'content-disposition':

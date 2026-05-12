@@ -65,7 +65,7 @@ def process(command, channel, username, params, files, conn):
                         querystring[querytype] = ip
                     if maxAge:
                         querystring['maxAgeInDays'] = maxAge
-                    with requests.get(url,headers=headers,params=querystring) as response:
+                    with requests.get(url,headers=headers,params=querystring, timeout=(10, 30)) as response:
                         json_response = response.json()
                         if 'data' in json_response:
                             reportCategories = {

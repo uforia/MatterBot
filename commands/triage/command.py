@@ -105,7 +105,7 @@ def process(command, channel, username, params, files, conn):
                             APIENDPOINTOFFSET = APIENDPOINT+'&offset=%s' % (offset,)
                         else:
                             APIENDPOINTOFFSET = APIENDPOINT
-                        with requests.get(APIENDPOINTOFFSET, headers=headers) as response:
+                        with requests.get(APIENDPOINTOFFSET, headers=headers, timeout=(10, 30)) as response:
                             if not response.status_code == 200:
                                 try:
                                     json_response = response.json()
@@ -291,7 +291,7 @@ def process(command, channel, username, params, files, conn):
                                     message += '|\n'
                                     messages.append({'text': message})
                             APIENDPOINT = APIENDPOINT = settings.APIURL['triage']['url'].strip('/')+'/samples/%s/sample' % (query,)
-                            with requests.get(APIENDPOINT, headers=headers) as response:
+                            with requests.get(APIENDPOINT, headers=headers, timeout=(10, 30)) as response:
                                 if response.status_code == 200:
                                     messages.append({'text': 'Tria.ge Malware Sample (DANGEROUS):', 'uploads': [
                                                         {'filename': 'triage-'+querytype+'-'+query+'.bin', 'bytes': response.content}

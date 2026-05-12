@@ -53,7 +53,7 @@ def process(command, channel, username, params, files, conn):
                 if re.search(r"^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(\:[0-65535]*)?$", ip):
                     text = 'Censys `%s` search for `%s`: ' % (querytype, ip)
                     APIENDPOINT = settings.APIURL['censys']['url'] + '/hosts/%s' % (ip,)
-                    with requests.get(APIENDPOINT, auth=(settings.APIURL['censys']['key'], settings.APIURL['censys']['secret']), headers=headers) as response:
+                    with requests.get(APIENDPOINT, auth=(settings.APIURL['censys']['key'], settings.APIURL['censys']['secret']), headers=headers, timeout=(10, 30)) as response:
                         json_response = response.json()
                         if 'error' in json_response:
                             error = json_response['error']
@@ -133,7 +133,7 @@ def process(command, channel, username, params, files, conn):
                 if (re.search(r"^[A-Fa-f0-9]{64}$", sha256)):
                     text = '\nCensys SHA256 certificate fingerprint search for: `%s`' % (sha256,)
                     APIENDPOINT = settings.APIURL['censys']['url'] + '/certificates/' + sha256 + '/hosts'
-                    with requests.get(APIENDPOINT, auth=(settings.APIURL['censys']['key'], settings.APIURL['censys']['secret']), headers=headers) as response:
+                    with requests.get(APIENDPOINT, auth=(settings.APIURL['censys']['key'], settings.APIURL['censys']['secret']), headers=headers, timeout=(10, 30)) as response:
                         json_response = response.json()
                         if 'error' in json_response:
                             error = json_response['error']
@@ -176,7 +176,7 @@ def process(command, channel, username, params, files, conn):
                                                 page += 1
                                                 cursor = result['links']['next']
                                                 APIENDPOINT = settings.APIURL['censys']['url'] + '/certificates/' + sha256 + '/hosts&cursor=' + cursor
-                                                response = requests.get(APIENDPOINT, auth=(settings.APIURL['censys']['key'], settings.APIURL['censys']['secret']))
+                                                response = requests.get(APIENDPOINT, auth=(settings.APIURL['censys']['key'], settings.APIURL['censys']['secret']), timeout=(10, 30))
                                                 json_response = response.json()
                                                 if 'result' in json_response:
                                                     uploads.append({'filename': 'censys-'+querytype+'-page-'+str(page)+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content})
@@ -194,7 +194,7 @@ def process(command, channel, username, params, files, conn):
                     messages.append({'text': 'Censys error: invalid SHA256 fingerprint `%s`' % (params,)})
             if querytype == 'credits' or querytype == 'account':
                 APIENDPOINT = settings.APIURL['censys']['url'].replace('/v2', '/v1') + '/account'
-                with requests.get(APIENDPOINT, auth=(settings.APIURL['censys']['key'], settings.APIURL['censys']['secret']), headers=headers) as response:
+                with requests.get(APIENDPOINT, auth=(settings.APIURL['censys']['key'], settings.APIURL['censys']['secret']), headers=headers, timeout=(10, 30)) as response:
                     json_response = response.json()
                     if 'error' in json_response:
                         error = json_response['error']

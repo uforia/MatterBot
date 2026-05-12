@@ -43,7 +43,7 @@ def process(command, channel, username, params, files, conn):
             url = settings.APIURL['botscout']['url']+f"{query}"
             if settings.APIURL['botscout']['key']:
                 url += f"&key={settings.APIURL['botscout']['key']}"
-            with requests.get(url, headers=headers) as response:
+            with requests.get(url, headers=headers, timeout=(10, 30)) as response:
                 if response.status_code in (200,):
                     message = f"| BotScout results | `{query}` |\n"
                     message += "| :- | -: |\n"

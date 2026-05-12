@@ -95,7 +95,7 @@ def process(command, channel, username, params, files, conn):
         if querytype:
             if querytype == 'url':
                 a1kendpoint += f"?url={query}"
-                with requests.get(url=a1kendpoint, headers=a1kheaders) as response:
+                with requests.get(url=a1kendpoint, headers=a1kheaders, timeout=(10, 30)) as response:
                     if response.status_code in (200,):
                         results = response.json()
                         if 'analysis' in results:
@@ -153,7 +153,7 @@ def process(command, channel, username, params, files, conn):
                             messages.append({'text': message})
             if querytype == 'host':
                 a1kendpoint += f"{query}/"
-                with requests.get(url=a1kendpoint, headers=a1kheaders) as response:
+                with requests.get(url=a1kendpoint, headers=a1kheaders, timeout=(10, 30)) as response:
                     if response.status_code in (200,):
                         results = response.json()
                         if 'top_threats' in results:
@@ -206,7 +206,7 @@ def process(command, channel, username, params, files, conn):
                             messages.append({'text': f"**Last ReversingLabs DNS record resolution:** `{results['last_dns_records_time']}`\n"})
             if querytype == 'ip':
                 a1kendpoint += f"{query}/report/"
-                with requests.get(url=a1kendpoint, headers=a1kheaders) as response:
+                with requests.get(url=a1kendpoint, headers=a1kheaders, timeout=(10, 30)) as response:
                     if response.status_code in (200,):
                         results = response.json()
                         if 'top_threats' in results:
@@ -268,7 +268,7 @@ def process(command, channel, username, params, files, conn):
                     'include_networkthreatintelligence': True,
                     'skip_reanalysis': True,
                 }
-                with requests.post(url=a1kendpoint, headers=a1kheaders, json=data) as response:
+                with requests.post(url=a1kendpoint, headers=a1kheaders, json=data, timeout=(10, 30)) as response:
                     results = response.json()
                     if 'count' in results:
                         if results['count']>0:
@@ -303,7 +303,7 @@ def process(command, channel, username, params, files, conn):
                                 messages.append({'text': message})
                                 for samplehash in samplehashes:
                                     a1kendpoint = f"https://a1000.reversinglabs.com/api/samples/{samplehash}/download/"
-                                    with requests.get(url=a1kendpoint, headers=a1kheaders) as sample:
+                                    with requests.get(url=a1kendpoint, headers=a1kheaders, timeout=(10, 30)) as sample:
                                         if response.status_code in (200,):
                                             uploads.append({'filename': f"sample-{samplehash}.bin", 'bytes': sample.content})
                             uploads.append({'filename': 'reversingslabs-'+query+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content})
@@ -315,7 +315,7 @@ def process(command, channel, username, params, files, conn):
                 if checkSHA256(query):
                     ticendpoint += f'/sha256/{query}'                    
                 ticendpoint += '?format=json&extended=True'
-                with requests.get(url=ticendpoint, headers=ticheaders, auth=(settings.APIURL['ticloud']['username'],settings.APIURL['ticloud']['password'])) as response:
+                with requests.get(url=ticendpoint, headers=ticheaders, auth=(settings.APIURL['ticloud']['username'],settings.APIURL['ticloud']['password']), timeout=(10, 30)) as response:
                     if response.status_code in (200,):
                         json_response = response.json()
                         if 'rl' in json_response:

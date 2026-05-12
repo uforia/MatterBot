@@ -62,7 +62,7 @@ def query(settings=None):
                     for media in feed.entries[count]['media_content']:
                         if 'url' in media:
                             url = media['url']
-                            with requests.get(url, headers=headers) as response:
+                            with requests.get(url, headers=headers, timeout=(10, 30)) as response:
                                 if response.status_code in (200,206):
                                     filename = url.split('/')[-1]
                                     bytes = response.content

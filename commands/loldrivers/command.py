@@ -41,7 +41,7 @@ def process(command, channel, username, params, files, conn):
             }
             query = params[0]
             if query == 'rebuildcache' or not Path(settings.CACHE).is_file():
-                with requests.get(settings.APIURL['loldrivers']['url'], headers=headers) as response:
+                with requests.get(settings.APIURL['loldrivers']['url'], headers=headers, timeout=(10, 30)) as response:
                     json_response = response.json()
                     if len(json_response):
                         with open(settings.CACHE, mode='w') as f:
@@ -155,7 +155,7 @@ def process(command, channel, username, params, files, conn):
                                         type = Detection['type'].replace('_',' ').title()
                                         url = Detection['value']
                                         try:
-                                            with requests.get(url) as response:
+                                            with requests.get(url, timeout=(10, 30)) as response:
                                                 uploads.append({'filename': Path(url).name, 'bytes': b'xxxx'})
                                                 filenames.append(Path(url).name)
                                         except:
