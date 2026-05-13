@@ -10,6 +10,9 @@ import traceback
 from importlib import import_module
 from types import SimpleNamespace
 from pathlib import Path
+import logging
+
+log = logging.getLogger('MatterBot')
 _pkg = __package__ or Path(__file__).parent.name
 def _load(module_name):
     try:
@@ -151,6 +154,7 @@ def process(command, channel, username, params, files, conn):
                             if len(message):
                                 messages.append({'text': message})
         except:
-            messages.append({'text': 'An error occurred in the ProxyCheck module:\nError: `%s`' % (traceback.format_exc(),)})
+            log.exception("proxycheck module error")
+            messages.append({'text': 'An error occurred in the ProxyCheck module:\nError: `%s`' % (str(e),)})
         finally:
             return {'messages': messages}

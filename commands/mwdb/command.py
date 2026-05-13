@@ -12,6 +12,9 @@ from concurrent.futures import ThreadPoolExecutor
 from importlib import import_module
 from types import SimpleNamespace
 from pathlib import Path
+import logging
+
+log = logging.getLogger('MatterBot')
 _pkg = __package__ or Path(__file__).parent.name
 def _load(module_name):
     try:
@@ -349,6 +352,7 @@ def process(command, channel, username, params, files, conn):
                 if len(downloads):
                     messages.append({'text': f"**MWDB**: *Sample download(s)*", 'uploads': downloads})
         except Exception as e:
-            messages.append({'text': 'A Python error occurred searching the MWDB API: `%s`\n```%s```\n' % (str(e), traceback.format_exc())})
+            log.exception("mwdb module error")
+            messages.append({'text': 'A Python error occurred searching the MWDB API: `%s`' % (str(e))})
         finally:
             return {'messages': messages}

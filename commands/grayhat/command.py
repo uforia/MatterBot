@@ -10,6 +10,9 @@ from datetime import datetime
 from importlib import import_module
 from types import SimpleNamespace
 from pathlib import Path
+import logging
+
+log = logging.getLogger('MatterBot')
 _pkg = __package__ or Path(__file__).parent.name
 def _load(module_name):
     try:
@@ -131,9 +134,11 @@ def process(command, channel, username, params, files, conn,):
             messages.append({'text': f"Rate limit exceeded."})
         else:    
             # Handle HTTP request errors
-            messages.append({'text': f"An HTTP error occurred querying grayhat:\n\n{response.status_code} Error: {str(e)} \n{traceback.format_exc()}"})
+            log.exception("grayhat module error")
+            messages.append({'text': f"An HTTP error occurred querying grayhat:\n\n{response.status_code} Error: {str(e)} "})
     except Exception as e:
         # Catch other unexpected errors
-        messages.append({'text': f"An error occurred querying grayhat:\n\nError: {str(e)}\n{traceback.format_exc()}"})
+        log.exception("grayhat module error")
+        messages.append({'text': f"An error occurred querying grayhat:\n\nError: {str(e)}"})
     finally:
         return {'messages': messages}

@@ -11,6 +11,9 @@ import urllib.parse
 from importlib import import_module
 from types import SimpleNamespace
 from pathlib import Path
+import logging
+
+log = logging.getLogger('MatterBot')
 _pkg = __package__ or Path(__file__).parent.name
 def _load(module_name):
     try:
@@ -208,6 +211,7 @@ def process(command, channel, username, params, files, conn):
                                         message += '\n\n'
                                         messages.append({'text': message})
     except Exception as e:
-        messages.append({'text': 'A Python error occurred querying the LeakIX API: `%s`\n```%s```\n' % (str(e), traceback.format_exc())})
+        log.exception("leakix module error")
+        messages.append({'text': 'A Python error occurred querying the LeakIX API: `%s`' % (str(e))})
     finally:
         return {'messages': messages}

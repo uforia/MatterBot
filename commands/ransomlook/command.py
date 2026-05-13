@@ -11,6 +11,9 @@ import urllib.parse
 from importlib import import_module
 from types import SimpleNamespace
 from pathlib import Path
+import logging
+
+log = logging.getLogger('MatterBot')
 _pkg = __package__ or Path(__file__).parent.name
 def _load(module_name):
     try:
@@ -466,6 +469,7 @@ def process(command, channel, username, params, files, conn):
         else:
             messages.append({'text': f"RansomLook module does not understand type/query: {querytype}/{query}"})
     except Exception as e:
-        messages.append({'text': 'A Python error occurred searching the RansomLook API: `%s`\n```%s```\n' % (str(e), traceback.format_exc())})
+        log.exception("ransomlook module error")
+        messages.append({'text': 'A Python error occurred searching the RansomLook API: `%s`' % (str(e))})
     finally:
         return {'messages': messages}

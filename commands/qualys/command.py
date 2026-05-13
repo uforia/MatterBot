@@ -13,6 +13,9 @@ import urllib.parse
 from importlib import import_module
 from types import SimpleNamespace
 from pathlib import Path
+import logging
+
+log = logging.getLogger('MatterBot')
 _pkg = __package__ or Path(__file__).parent.name
 def _load(module_name):
     try:
@@ -300,15 +303,18 @@ def process(command, channel, username, params, files, conn):
                                                             messages.append({'text': f'No Qualys assets were found matching for `{querytype}`: `{query}`.'})
 
                                         except Exception as e:
-                                            messages.append({'text': 'A Python error occurred parsing the Qualys API response: `%s`\n```%s```\n' % (str(e), traceback.format_exc())})
+                                            log.exception("qualys module error")
+                                            messages.append({'text': 'A Python error occurred parsing the Qualys API response: `%s`' % (str(e))})
                             else:
                                 messages.append({'text': f'No Qualys assets were found matching for `{querytype}`: `{query}`.'})
                         except Exception as e:
-                            messages.append({'text': 'The Qualys Cyber Security Asset Management API call returned an unexpected result/error: `%s`\n```%s```\n```%s```\n' % (str(e), traceback.format_exc(), response.content)})
+                            log.exception("qualys module error")
+                            messages.append({'text': 'The Qualys Cyber Security Asset Management API call returned an unexpected result/error: `%s`\n```%s```' % (str(e), response.content)})
                 else:
                     messages.append({'text': 'The Qualys module could not obtain a valid JWT token. Check your credentials and/or subscription permissions.'})
     except Exception as e:
-        messages.append({'text': 'A Python error occurred searching the Qualys API: `%s`\n```%s```\n' % (str(e), traceback.format_exc())})
+        log.exception("qualys module error")
+        messages.append({'text': 'A Python error occurred searching the Qualys API: `%s`' % (str(e))})
     finally:
         return {'messages': messages}
 

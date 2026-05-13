@@ -9,6 +9,9 @@ import traceback
 from importlib import import_module
 from types import SimpleNamespace
 from pathlib import Path
+import logging
+
+log = logging.getLogger('MatterBot')
 _pkg = __package__ or Path(__file__).parent.name
 def _load(module_name):
     try:
@@ -191,6 +194,7 @@ def process(command, channel, username, params, files, conn):
                 finally:
                     pool.shutdown(wait=False, cancel_futures=True)
     except Exception as e:
-        messages.append({'text': 'A Python error occurred searching AlienVault OTX:%s\n%s' % (str(e), traceback.format_exc())})
+        log.exception("alienvault module error")
+        messages.append({'text': 'A Python error occurred searching AlienVault OTX:%s' % (str(e))})
     finally:
         return {'messages': messages}

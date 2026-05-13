@@ -790,7 +790,8 @@ class MattermostManager(object):
                                 uploads.append(file_id)
                     await self.send_message(chanid, text, rootid, uploads or None)
         except Exception as e:
-            text = "An error occurred during the %s module call: %s" % (str(module),traceback.format_exc())
+            log.exception(f"call_module: error dispatching module={module}")
+            text = "An error occurred during the %s module call: `%s`" % (str(module), str(e))
             await self.send_message(chanid, text, rootid)
 
     async def handle_post(self, data: dict):

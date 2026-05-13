@@ -9,6 +9,9 @@ import traceback
 from importlib import import_module
 from types import SimpleNamespace
 from pathlib import Path
+import logging
+
+log = logging.getLogger('MatterBot')
 _pkg = __package__ or Path(__file__).parent.name
 def _load(module_name):
     try:
@@ -81,6 +84,7 @@ def process(command, channel, username, params, files, conn):
                         {'filename': 'tweetfeed-'+params+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content}
                     ]}]
     except Exception as e:
-        messages.append({'text': 'A Python error occurred searching Tria.ge: %s\n%s' % (str(e),traceback.format_exc())})
+        log.exception("tweetfeed module error")
+        messages.append({'text': 'A Python error occurred searching Tria.ge: %s' % (str(e))})
     finally:
         return {'messages': messages}

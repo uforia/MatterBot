@@ -7,6 +7,9 @@ import traceback
 from importlib import import_module
 from types import SimpleNamespace
 from pathlib import Path
+import logging
+
+log = logging.getLogger('MatterBot')
 _pkg = __package__ or Path(__file__).parent.name
 def _load(module_name):
     try:
@@ -145,9 +148,11 @@ def process(command, channel, username, params, files, conn):
 
     except requests.exceptions.RequestException as e:
         # Handle HTTP request errors
-        messages.append({'text': 'An HTTP error occurred:\nError: ' + (str(e),traceback.format_exc())})
+        log.exception("haveibeenpwned module error")
+        messages.append({'text': 'An HTTP error occurred:\nError: ' + str(e)})
     except Exception as e:
         # Catch other unexpected errors
-        messages.append({'text': 'An error occurred in HIBP:\nError: ' + (str(e),traceback.format_exc())})
+        log.exception("haveibeenpwned module error")
+        messages.append({'text': 'An error occurred in HIBP:\nError: ' + str(e)})
     finally:
         return {'messages': messages}

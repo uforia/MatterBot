@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 
+import logging
 import re
 import requests
 import traceback
+
+log = logging.getLogger('MatterBot')
 
 ### Dynamic configuration loader (do not change/edit)
 from importlib import import_module
@@ -71,6 +74,7 @@ def process(command, channel, username, params, files, conn):
                                 {'text': message.strip()},
                             ]}
         except Exception as e:
+            log.exception("asnwhois module error")
             return {'messages': [
-                {'text': 'An error occurred in GTFOBins:\nError: ' + (str(e),traceback.format_exc())}
+                {'text': 'An error occurred in GTFOBins:\nError: ' + str(e)}
             ]}

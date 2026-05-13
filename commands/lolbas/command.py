@@ -9,6 +9,9 @@ import traceback
 from importlib import import_module
 from types import SimpleNamespace
 from pathlib import Path
+import logging
+
+log = logging.getLogger('MatterBot')
 _pkg = __package__ or Path(__file__).parent.name
 def _load(module_name):
     try:
@@ -116,6 +119,7 @@ def process(command, channel, username, params, files, conn):
                         else:
                             messages.append({'text': message})
     except Exception as e:
-        messages.append({'text': 'An error occurred in LOLBAS:\nError: ' + (str(e),traceback.format_exc())})
+        log.exception("lolbas module error")
+        messages.append({'text': 'An error occurred in LOLBAS:\nError: ' + str(e)})
     finally:
         return {'messages': messages}
