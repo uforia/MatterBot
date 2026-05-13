@@ -5,6 +5,7 @@ import re
 import requests
 import traceback
 from concurrent.futures import ThreadPoolExecutor
+from urllib.parse import urlparse
 
 ### Dynamic configuration loader (do not change/edit)
 from importlib import import_module
@@ -39,6 +40,27 @@ def process(command, channel, username, params, files, conn):
             'Content-Type': settings.CONTENTTYPE,
             'api-key': settings.APIURL['urlscan']['key'],
         }
+        # Pin verdict-fetch host + scheme to the operator-configured urlscan
+        # endpoint. The verdict URL we fetch comes from urlscan.io's search
+        # response body — without this check, a compromised or maliciously
+        # crafted response could redirect the bot's fetch (and the API key
+        # in `headers`) to an attacker-controlled host. Resolved once
+        # per process() invocation since settings.APIURL doesn't change.
+        _api_parsed = urlparse(settings.APIURL['urlscan']['url'])
+        _api_host = (_api_parsed.hostname or '').lower()
+        _api_scheme = _api_parsed.scheme
+
+        def _is_allowed_verdict_url(verdict_url):
+            try:
+                p = urlparse(verdict_url)
+            except Exception:
+                return False
+            return (
+                bool(_api_host)
+                and (p.hostname or '').lower() == _api_host
+                and p.scheme == _api_scheme
+            )
+
         try:
             pattern = r"\b(?:[a-zA-Z0-9-]+\.)+(?:[a-zA-Z]{2,}|xn--[a-zA-Z0-9-]+)\b"
             hostnames = re.findall(pattern, " ".join(params))
@@ -81,8 +103,12 @@ def process(command, channel, username, params, files, conn):
                                 verdict_results = {}
                                 if candidates:
                                     def _fetch_verdict(url):
+                                        if not _is_allowed_verdict_url(url):
+                                            return None
                                         try:
-                                            with requests.get(url, headers=headers, timeout=(10, 30)) as r:
+                                            with requests.get(url, headers=headers, timeout=(10, 30), allow_redirects=False) as r:
+                                                if r.status_code not in (200, 206):
+                                                    return None
                                                 return r.json()
                                         except Exception:
                                             return None
