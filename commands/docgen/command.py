@@ -119,19 +119,35 @@ def process(command, channel, username, params, files, conn):
                         if len(params)>1:
                             tags += ',"' + '", "'.join(params[1:]) + '"'
                         tags = "[" + tags + "]"
-                        query = """
-                        mutation Page {
+                        # GraphQL mutation — parameterized via variables so the user-
+                        # controlled fields (content, description, path, title, tags)
+                        # cannot break out of the """-delimited string literals to
+                        # inject additional mutation fields. The static mutation
+                        # text below is byte-stable across invocations; only the
+                        # variables dict carries user data.
+                        mutation = """
+                        mutation Page(
+                            $content: String!,
+                            $description: String!,
+                            $editor: String!,
+                            $isPublished: Boolean!,
+                            $isPrivate: Boolean!,
+                            $locale: String!,
+                            $path: String!,
+                            $tags: [String],
+                            $title: String!
+                        ) {
                             pages {
                                 create (
-                                    content: \"\"\"%s\"\"\",
-                                    description: \"\"\"%s\"\"\",
-                                    editor: "%s",
-                                    isPublished: %s,
-                                    isPrivate: %s,
-                                    locale: "%s",
-                                    path: "%s",
-                                    tags: %s,
-                                    title: \"\"\"%s\"\"\"
+                                    content: $content,
+                                    description: $description,
+                                    editor: $editor,
+                                    isPublished: $isPublished,
+                                    isPrivate: $isPrivate,
+                                    locale: $locale,
+                                    path: $path,
+                                    tags: $tags,
+                                    title: $title
                                 )
                                 {
                                     responseResult {
@@ -148,9 +164,23 @@ def process(command, channel, username, params, files, conn):
                                 }
                             }
                         }
-                        """ % (pagecontent, description, editor, isPublished, isPrivate, locale, path, tags, title,)
-                        query = json.dumps({'query': query.strip()})
-                        with requests.post(settings.APIURL['docgen']['url']+'/graphql', headers=headers, data=query, timeout=(10, 30)) as response:
+                        """
+                        tags_list = [title] + list(params[1:])
+                        payload = json.dumps({
+                            'query': mutation.strip(),
+                            'variables': {
+                                'content': pagecontent,
+                                'description': description,
+                                'editor': editor,
+                                'isPublished': True,
+                                'isPrivate': False,
+                                'locale': locale,
+                                'path': path,
+                                'tags': tags_list,
+                                'title': title,
+                            },
+                        })
+                        with requests.post(settings.APIURL['docgen']['url']+'/graphql', headers=headers, data=payload, timeout=(10, 30)) as response:
                             json_response = response.json()
                             if 'data' in json_response:
                                 if 'pages' in json_response['data']:
@@ -184,19 +214,32 @@ def process(command, channel, username, params, files, conn):
                         if len(params)>1:
                             tags += ',"' + '", "'.join(params[1:]) + '"'
                         tags = "[" + tags + "]"
-                        query = """
-                        mutation Page {
+                        # Same parameterized mutation shape as the Excel-conversion
+                        # path above. User-controlled fields flow via variables,
+                        # never via string interpolation into the mutation text.
+                        mutation = """
+                        mutation Page(
+                            $content: String!,
+                            $description: String!,
+                            $editor: String!,
+                            $isPublished: Boolean!,
+                            $isPrivate: Boolean!,
+                            $locale: String!,
+                            $path: String!,
+                            $tags: [String],
+                            $title: String!
+                        ) {
                             pages {
                                 create (
-                                    content: \"\"\"%s\"\"\",
-                                    description: \"\"\"%s\"\"\",
-                                    editor: "%s",
-                                    isPublished: %s,
-                                    isPrivate: %s,
-                                    locale: "%s",
-                                    path: "%s",
-                                    tags: %s,
-                                    title: \"\"\"%s\"\"\"
+                                    content: $content,
+                                    description: $description,
+                                    editor: $editor,
+                                    isPublished: $isPublished,
+                                    isPrivate: $isPrivate,
+                                    locale: $locale,
+                                    path: $path,
+                                    tags: $tags,
+                                    title: $title
                                 )
                                 {
                                     responseResult {
@@ -213,9 +256,23 @@ def process(command, channel, username, params, files, conn):
                                 }
                             }
                         }
-                        """ % (pagecontent, description, editor, isPublished, isPrivate, locale, path, tags, title,)
-                        query = json.dumps({'query': query.strip()})
-                        with requests.post(settings.APIURL['docgen']['url']+'/graphql', headers=headers, data=query, timeout=(10, 30)) as response:
+                        """
+                        tags_list = [title] + list(params[1:])
+                        payload = json.dumps({
+                            'query': mutation.strip(),
+                            'variables': {
+                                'content': pagecontent,
+                                'description': description,
+                                'editor': editor,
+                                'isPublished': True,
+                                'isPrivate': False,
+                                'locale': locale,
+                                'path': path,
+                                'tags': tags_list,
+                                'title': title,
+                            },
+                        })
+                        with requests.post(settings.APIURL['docgen']['url']+'/graphql', headers=headers, data=payload, timeout=(10, 30)) as response:
                             json_response = response.json()
                             if 'data' in json_response:
                                 if 'pages' in json_response['data']:
