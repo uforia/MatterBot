@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import OpenSSL
+import ipaddress
 import re
 import ssl
 
@@ -37,11 +38,20 @@ def process(command, channel, username, params, files, conn):
                 CNs = []
                 param = param.replace('[.]','.')
                 if re.search(r"^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(\:[0-9]*)?$", param):
-                    ipaddress = param.split(':')[0]
+                    host = param.split(':')[0]
                     port = int(param.split(':')[1]) if ':' in param else 443
-                    message = '**TLSGrab** Canonical names for `'+ipaddress+'`:`'+str(port)+'`: '
+                    message = '**TLSGrab** Canonical names for `'+host+'`:`'+str(port)+'`: '
                     try:
-                        cert = ssl.get_server_certificate((ipaddress, port))
+                        host_ip = ipaddress.ip_address(host)
+                    except ValueError:
+                        messages.append({'text': message + 'invalid IP address.'})
+                        continue
+                    if (host_ip.is_private or host_ip.is_loopback or host_ip.is_link_local
+                            or host_ip.is_multicast or host_ip.is_reserved or host_ip.is_unspecified):
+                        messages.append({'text': message + 'refused — non-routable / internal address.'})
+                        continue
+                    try:
+                        cert = ssl.get_server_certificate((host, port))
                         x509 = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, cert)
                         for component in x509.get_subject().get_components():
                             if component[0] == b'CN':
