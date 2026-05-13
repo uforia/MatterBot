@@ -173,15 +173,23 @@ def process(command, channel, username, params, files, conn):
                             table = '| **AlienVault OTX** | **'+query+'** |\n| -: | :- |'+message+'\n\n'
                             return {'text': table}
                         return None
-                with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(endpoints), 6)) as pool:
+                pool = concurrent.futures.ThreadPoolExecutor(max_workers=min(len(endpoints), 6))
+                try:
                     futures = [pool.submit(_fetch_endpoint, endpoint) for endpoint in endpoints]
-                    for fut in concurrent.futures.as_completed(futures):
+                    # Return at 25s so partial results reach the user before the
+                    # outer asyncio.timeout(30) in matterbot.handle_post fires.
+                    # Stragglers run to completion as orphans (bounded by the
+                    # per-call timeout=(10, 30) on each requests.get).
+                    done, _ = concurrent.futures.wait(futures, timeout=25)
+                    for fut in done:
                         try:
                             result = fut.result()
                         except Exception:
                             continue
                         if result:
                             messages.append(result)
+                finally:
+                    pool.shutdown(wait=False, cancel_futures=True)
     except Exception as e:
         messages.append({'text': 'A Python error occurred searching AlienVault OTX:%s\n%s' % (str(e), traceback.format_exc())})
     finally:
