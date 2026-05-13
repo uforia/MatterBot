@@ -8,7 +8,10 @@ any-of: system_admin role, channel_admin role on this channel, or per-
 channel allowlist).
 """
 
+import logging
 import re
+
+log = logging.getLogger('matterbot')
 
 ### Dynamic configuration loader (do not change/edit)
 from importlib import import_module
@@ -46,10 +49,18 @@ from . import welcome as wm
 def _resolve_caller(conn, channel_name, username, team_id=None):
     """Returns (user_id, channel_id) for the @welcome invocation, or
     (None, None) on lookup failure. Best-effort: any API error surfaces
-    as None and the caller emits a generic 'could not resolve' reply."""
+    as None and the caller emits a generic 'could not resolve' reply.
+
+    Mattermost's WS post events expose `sender_name` as `@<username>`
+    (with the @ prefix). The users.get_user_by_username API expects the
+    bare username — the @ is rejected by username validation and the
+    server returns 404 ("Sorry, we could not find the page."). Strip
+    leading @s before the lookup."""
+    bare_username = username.lstrip('@')
     try:
-        user_id = conn.users.get_user_by_username(username)['id']
-    except Exception:
+        user_id = conn.users.get_user_by_username(bare_username)['id']
+    except Exception as e:
+        log.warning(f"welcome: get_user_by_username({bare_username!r}) failed: {e}")
         return None, None
     try:
         if team_id is None:
@@ -57,13 +68,26 @@ def _resolve_caller(conn, channel_name, username, team_id=None):
             # safe; the alternative is threading team_id through
             # call_module's signature, which is a bigger change.
             me = conn.users.get_user('me')
-            teams = conn.teams.get_user_teams(me['id'])
+            # Method name varies across mattermostdriver versions; try
+            # the canonical names in order before giving up.
+            teams = None
+            teams_api = conn.teams
+            for method_name in ('get_user_teams', 'get_teams_for_user'):
+                method = getattr(teams_api, method_name, None)
+                if method is not None:
+                    try:
+                        teams = method(me['id'])
+                        break
+                    except Exception:
+                        continue
             team_id = teams[0]['id'] if teams else None
         if not team_id:
+            log.warning(f"welcome: could not resolve a team_id for channel={channel_name!r}")
             return user_id, None
         chan = conn.channels.get_channel_by_name(team_id, channel_name)
         return user_id, chan['id']
-    except Exception:
+    except Exception as e:
+        log.warning(f"welcome: channel lookup failed channel={channel_name!r}: {e}")
         return user_id, None
 
 
