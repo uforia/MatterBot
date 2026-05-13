@@ -102,10 +102,10 @@ def query(settings=None):
                     for media in feed.entries[count]['media_content']:
                         if 'url' in media:
                             url = media['url']
-                            content = _safe_fetch(url, headers)
-                            if content is not None:
+                            body = _safe_fetch(url, headers)
+                            if body is not None:
                                 filename = url.split('/')[-1]
-                                upload = {'filename': filename, 'bytes': content}
+                                upload = {'filename': filename, 'bytes': body}
                                 uploads.append(upload)
                 for channel in settings.CHANNELS:
                     if upload:
