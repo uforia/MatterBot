@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import ast
 import datetime
 import json
 import os
@@ -258,26 +259,53 @@ def process(command, channel, username, params, files, conn):
                                 ### Create a WikiJS page
                                 description = "%s" % (title,)
                                 editor = "markdown"
-                                isPublished = "true"
-                                isPrivate = "false"
                                 locale = "en"
                                 path = "/home/%s" % (cveid,)
-                                tags = "[" + settings.TAGS + ", "
-                                tags += "\"%s\"]" % (cveid,)
                                 title = "%s" % (cveid,)
-                                query = """
-                                mutation Page {
+                                # settings.TAGS is operator-defined as a comma-
+                                # quoted-strings format compatible with the legacy
+                                # GraphQL-list-literal interpolation (e.g.
+                                #   TAGS = '"ewa", "cve"'
+                                # ). Parse it into a real Python list via
+                                # ast.literal_eval wrapped in [...] for safety, then
+                                # append the cveid. Operators who set TAGS = "" or
+                                # who follow the documented quoted format keep
+                                # working unchanged.
+                                try:
+                                    tags_list = list(ast.literal_eval(f"[{settings.TAGS}]"))
+                                except (ValueError, SyntaxError):
+                                    tags_list = []
+                                tags_list = [str(t) for t in tags_list] + [cveid]
+                                # GraphQL mutation — parameterized via variables so
+                                # the user-controlled NVD-sourced fields (content,
+                                # description, tags, title, path) cannot break out
+                                # of the """-delimited string literals to inject
+                                # additional mutation fields. The static mutation
+                                # text below is byte-stable across invocations;
+                                # only the variables dict carries user data.
+                                mutation = """
+                                mutation Page(
+                                    $content: String!,
+                                    $description: String!,
+                                    $editor: String!,
+                                    $isPublished: Boolean!,
+                                    $isPrivate: Boolean!,
+                                    $locale: String!,
+                                    $path: String!,
+                                    $tags: [String],
+                                    $title: String!
+                                ) {
                                     pages {
                                         create (
-                                            content: \"\"\"%s\"\"\",
-                                            description: \"\"\"%s\"\"\",
-                                            editor: "%s",
-                                            isPublished: %s,
-                                            isPrivate: %s,
-                                            locale: "%s",
-                                            path: "%s",
-                                            tags: %s,
-                                            title: \"\"\"%s\"\"\"
+                                            content: $content,
+                                            description: $description,
+                                            editor: $editor,
+                                            isPublished: $isPublished,
+                                            isPrivate: $isPrivate,
+                                            locale: $locale,
+                                            path: $path,
+                                            tags: $tags,
+                                            title: $title
                                         )
                                         {
                                             responseResult {
@@ -294,9 +322,22 @@ def process(command, channel, username, params, files, conn):
                                         }
                                     }
                                 }
-                                """ % (content, description, editor, isPublished, isPrivate, locale, path, tags, title,)
-                                query = json.dumps({'query': query.strip()})
-                                with requests.post(settings.APIURL['ewa']['url']+'/graphql', headers=headers, data=query, timeout=(10, 30)) as response:
+                                """
+                                payload = json.dumps({
+                                    'query': mutation.strip(),
+                                    'variables': {
+                                        'content': content,
+                                        'description': description,
+                                        'editor': editor,
+                                        'isPublished': True,
+                                        'isPrivate': False,
+                                        'locale': locale,
+                                        'path': path,
+                                        'tags': tags_list,
+                                        'title': title,
+                                    },
+                                })
+                                with requests.post(settings.APIURL['ewa']['url']+'/graphql', headers=headers, data=payload, timeout=(10, 30)) as response:
                                     json_response = response.json()
                                     if 'data' in json_response:
                                         if 'pages' in json_response['data']:
