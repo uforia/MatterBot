@@ -125,7 +125,7 @@ def process(command, channel, username, params, files, conn):
                                                     for line in highlight['lines']:
                                                         subline = regex.sub(' ', line)
                                                         keywords = regex.sub('',' '.join(params))
-                                                        subline = re.findall(r'.{0,'+str(settings.PREAMBLE)+'}'+keywords+'.{0,'+str(settings.POSTAMBLE)+'}', subline, re.IGNORECASE)
+                                                        subline = re.findall(r'.{0,'+str(settings.PREAMBLE)+'}'+re.escape(keywords)+'.{0,'+str(settings.POSTAMBLE)+'}', subline, re.IGNORECASE)
                                                         if len(subline):
                                                             lines.append('... '+subline[0]+' ...')
                                                         else:
@@ -135,7 +135,7 @@ def process(command, channel, username, params, files, conn):
                                                                 keywords = keywords.split(' OR ')[0]
                                                                 keywords = keywords.split(' && ')[0]
                                                                 keywords = keywords.split(' || ')[0]
-                                                                subline = re.findall(r'.{0,'+str(settings.PREAMBLE)+'}'+keywords+'.{0,'+str(settings.POSTAMBLE)+'}', subline, re.IGNORECASE)
+                                                                subline = re.findall(r'.{0,'+str(settings.PREAMBLE)+'}'+re.escape(keywords)+'.{0,'+str(settings.POSTAMBLE)+'}', subline, re.IGNORECASE)
                                                                 if len(subline):
                                                                     lines.append('... '+subline[0]+' ...')
                                                                 else:
