@@ -359,7 +359,7 @@ class MattermostManager(object):
         try:
             userinfo = self.mmDriver.users.get_user(userid)
             roles = [_.lower() for _ in userinfo['roles'].split()]
-            if any(options.Matterbot['botadmins']) in roles or userid in options.Matterbot['botadmins']:
+            if any(entry in roles for entry in options.Matterbot['botadmins']) or userid in options.Matterbot['botadmins']:
                 return True
         except:
             return None
@@ -381,7 +381,8 @@ class MattermostManager(object):
         username = self.userid_to_username(userid)
         if chaninfo['type'] in ('O', 'P'):
             log.debug(f"Channel name: {chaninfo['name']}")
-            if (channame or 'any') in self.commands[module]['chans']:
+            chans = self.commands[module]['chans']
+            if 'any' in chans or channame in chans:
                 return True
         elif chaninfo['type'] in ('D', 'G'):
             """
