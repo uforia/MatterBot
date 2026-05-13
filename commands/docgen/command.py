@@ -20,6 +20,9 @@ import weasyprint
 from importlib import import_module
 from types import SimpleNamespace
 from pathlib import Path
+import logging
+
+log = logging.getLogger('matterbot')
 _pkg = __package__ or Path(__file__).parent.name
 def _load(module_name):
     try:
@@ -415,6 +418,7 @@ def process(command, channel, username, params, files, conn):
             else:
                 messages.append({'text': 'Command or language `%s` not recognized.' % (subcommand,)})
     except Exception as e:
-        messages.append({'text': 'A Python error occurred during document generation:\nError:' + str(traceback.format_exc())})
+        log.exception("docgen module error")
+        messages.append({'text': 'A Python error occurred during document generation:\nError:' + str(e)})
     finally:
         return {'messages': messages}

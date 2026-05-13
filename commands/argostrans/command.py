@@ -8,6 +8,9 @@ import traceback
 from importlib import import_module
 from types import SimpleNamespace
 from pathlib import Path
+import logging
+
+log = logging.getLogger('matterbot')
 _pkg = __package__ or Path(__file__).parent.name
 def _load(module_name):
     try:
@@ -68,7 +71,8 @@ def process(command, channel, username, params, files, conn):
                     
             except requests.exceptions.RequestException as e:
                 # Handle HTTP request errors
-                messages.append({'text': f"An HTTP error occurred querying language packages:\nError: {str(e)}\n{traceback.format_exc()}"})
+                log.exception("argostrans module error")
+                messages.append({'text': f"An HTTP error occurred querying language packages:\nError: {str(e)}"})
             return table, allowedFrom, allowedTo
         
         allowedFrom = translationTable()[1]
@@ -115,6 +119,7 @@ def process(command, channel, username, params, files, conn):
 
     except Exception as e:
         # Catch other unexpected errors
-        messages.append({'text': f"An error occurred querying Argostranslate:\nError: {str(e)}\n{traceback.format_exc()}"})
+        log.exception("argostrans module error")
+        messages.append({'text': f"An error occurred querying Argostranslate:\nError: {str(e)}"})
     finally:
         return {'messages': messages}

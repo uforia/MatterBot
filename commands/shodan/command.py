@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 
 import datetime
+import logging
 import math
 import random
 import re
 import requests
 import traceback
 import urllib
+
+log = logging.getLogger('matterbot')
 
 ### Dynamic configuration loader (do not change/edit)
 from importlib import import_module
@@ -442,6 +445,7 @@ def process(command, channel, username, params, files, conn):
                 {'text': 'Seems like Shodan did not return something like JSON: `%s`' % (response.content,)}
             ]}
         except Exception as e:
+            log.exception("shodan module error")
             return {'messages': [
-                {'text': 'A Python error occurred searching Shodan:\nError: `%s`' % (traceback.format_exc(),)}
+                {'text': 'A Python error occurred searching Shodan: `%s`' % (str(e),)}
             ]}

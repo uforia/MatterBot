@@ -8,6 +8,9 @@ import traceback
 from importlib import import_module
 from types import SimpleNamespace
 from pathlib import Path
+import logging
+
+log = logging.getLogger('matterbot')
 _pkg = __package__ or Path(__file__).parent.name
 def _load(module_name):
     try:
@@ -80,7 +83,8 @@ def process(command, channel, username, params, files, conn):
                 messages.append({'text': table_message.strip()})
         except Exception as e:
             # Append error message to the messages list
-            messages.append({'text': 'An error occurred in crtsh:\nError: ' + (str(e),traceback.format_exc())})
+            log.exception("crtsh module error")
+            messages.append({'text': 'An error occurred in crtsh:\nError: ' + str(e)})
         finally:
             # Return the messages list
             return {'messages': messages}

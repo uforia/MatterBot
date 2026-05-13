@@ -2,10 +2,13 @@
 
 import collections
 import json
+import logging
 import os
 import re
 import requests
 import traceback
+
+log = logging.getLogger('matterbot')
 
 ### Dynamic configuration loader (do not change/edit)
 from importlib import import_module
@@ -81,7 +84,8 @@ def buildcache(messages):
                 message += '\n'
                 return message
     except Exception as e:
-        return 'An error occurred during the Unprotect.it cache building:\nError:\n'+traceback.format_exc()
+        log.exception("unprotectit cache-build error")
+        return 'An error occurred during the Unprotect.it cache building:\nError: ' + str(e)
 
 def process(command, channel, username, params, files, conn):
     if len(params):
@@ -183,6 +187,7 @@ def process(command, channel, username, params, files, conn):
                 for chunk in chunks:
                     messages.append({'text': f'Unprotect.it Related Downloads for `%s`' % ('`, `'.join(params)), 'uploads': chunk})
         except Exception as e:
-            messages.append({'text': 'An error occurred in the Unprotect.it module:\nError: '+traceback.format_exc()})
+            log.exception("unprotectit module error")
+            messages.append({'text': 'An error occurred in the Unprotect.it module:\nError: ' + str(e)})
         finally:
             return {'messages': messages}

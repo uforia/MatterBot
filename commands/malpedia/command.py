@@ -11,6 +11,9 @@ from concurrent.futures import ThreadPoolExecutor
 from importlib import import_module
 from types import SimpleNamespace
 from pathlib import Path
+import logging
+
+log = logging.getLogger('matterbot')
 _pkg = __package__ or Path(__file__).parent.name
 def _load(module_name):
     try:
@@ -149,6 +152,7 @@ def process(command, channel, username, params, files, conn):
                         text += '\n**Malware family**: `' + entry + '`'
                     messages.append({'text': text})
         except Exception as e:
-            messages.append({'text': 'An error occurred searching Malpedia for `%s`:\n%s' % (params, traceback.format_exc())},)
+            log.exception("malpedia module error")
+            messages.append({'text': 'An error occurred searching Malpedia for `%s`:' % (params)},)
         finally:
             return {'messages': messages}

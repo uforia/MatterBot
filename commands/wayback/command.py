@@ -9,6 +9,9 @@ import traceback
 from importlib import import_module
 from types import SimpleNamespace
 from pathlib import Path
+import logging
+
+log = logging.getLogger('matterbot')
 _pkg = __package__ or Path(__file__).parent.name
 def _load(module_name):
     try:
@@ -84,6 +87,7 @@ def process(command, channel, username, params, files, conn):
                 else:
                     messages.append({'text': f"URL `{query}` is not valid for archive.org's Wayback Machine."})
     except:
-        messages.append({'text': 'An error occurred in the Wayback Machine module:\nError: `%s`' % (traceback.format_exc(),)})
+        log.exception("wayback module error")
+        messages.append({'text': 'An error occurred in the Wayback Machine module:\nError: `%s`' % (str(e),)})
     finally:
         return {'messages': messages}

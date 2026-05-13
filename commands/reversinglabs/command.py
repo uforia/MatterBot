@@ -13,6 +13,9 @@ from ReversingLabs.SDK.a1000 import A1000
 from importlib import import_module
 from types import SimpleNamespace
 from pathlib import Path
+import logging
+
+log = logging.getLogger('matterbot')
 _pkg = __package__ or Path(__file__).parent.name
 def _load(module_name):
     try:
@@ -386,6 +389,7 @@ def process(command, channel, username, params, files, conn):
         else:
             messages.append({'text': f"ReversingLabs module does not understand type/query: {query}"})
     except Exception as e:
-        messages.append({'text': 'A Python error occurred searching the ReversingLabs API: `%s`\n```%s```\n' % (str(e), traceback.format_exc())})
+        log.exception("reversinglabs module error")
+        messages.append({'text': 'A Python error occurred searching the ReversingLabs API: `%s`' % (str(e))})
     finally:
         return {'messages': messages}

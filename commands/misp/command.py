@@ -10,6 +10,9 @@ import traceback
 from importlib import import_module
 from types import SimpleNamespace
 from pathlib import Path
+import logging
+
+log = logging.getLogger('matterbot')
 _pkg = __package__ or Path(__file__).parent.name
 def _load(module_name):
     try:
@@ -128,6 +131,7 @@ def process(command, channel, username, params, files, conn):
         else:
             messages.append({'text': 'At least ask me something, %s!' % (username,)})
     except Exception as e:
-        messages.append({'text': 'An error occurred searching MISP\nError: `%s`' % (traceback.format_exc(),)})
+        log.exception("misp module error")
+        messages.append({'text': 'An error occurred searching MISP\nError: `%s`' % (str(e),)})
     finally:
         return {'messages': messages}

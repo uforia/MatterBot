@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 
 import base64
+import logging
 import random
 import re
 import requests
 import traceback
+
+log = logging.getLogger('matterbot')
 
 ### Dynamic configuration loader (do not change/edit)
 from importlib import import_module
@@ -343,6 +346,7 @@ def process(command, channel, username, params, files, conn):
                                 {'text': text}
                             ]}
         except Exception as e:
+            log.exception("virustotal module error")
             return {'messages': [
-                {'text': 'An error occurred searching VirusTotal\nError: `%s`' % (traceback.format_exc(),)},
+                {'text': 'An error occurred searching VirusTotal: `%s`' % (str(e),)},
             ]}
