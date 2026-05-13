@@ -133,6 +133,16 @@ class MattermostManager(object):
         while True:
             connected_at = time.monotonic()
             try:
+                # Welcome-module reconcile pass — catches anyone who joined a
+                # configured channel while the bot was offline. Optional: if the
+                # welcome module isn't loaded, skip without error.
+                try:
+                    from welcome.welcome import reconcile as _welcome_reconcile
+                    _welcome_reconcile(self.mmDriver, self.my_id)
+                except ImportError:
+                    pass
+                except Exception:
+                    log.exception("welcome.reconcile failed (continuing)")
                 log.info("Connecting Mattermost websocket")
                 self.mmDriver.init_websocket(self.handle_raw_message)
                 log.warning("Websocket loop returned (server closed connection?)")
@@ -222,6 +232,28 @@ class MattermostManager(object):
         try:
             if 'event' in message:
                 post_data = message['data']
+                # Welcome-module hook: 'user_added' events arrive here with the
+                # target channel in `broadcast.channel_id`, which is not threaded
+                # into handle_event. Dispatch the welcome on_join directly so the
+                # channel id is preserved. ImportError = welcome module not in
+                # this deployment; silently skip.
+                if message.get('event') == 'user_added':
+                    broadcast = message.get('broadcast') or {}
+                    join_user_id = post_data.get('user_id')
+                    join_channel_id = broadcast.get('channel_id') or post_data.get('channel_id')
+                    if join_user_id and join_channel_id:
+                        try:
+                            from welcome.welcome import on_join as _welcome_on_join
+                            loop = asyncio.get_running_loop()
+                            loop.run_in_executor(
+                                self._command_executor,
+                                _welcome_on_join,
+                                self.mmDriver, self.my_id, join_user_id, join_channel_id,
+                            )
+                        except ImportError:
+                            pass
+                        except Exception:
+                            log.exception("welcome.on_join hook failed (user_added)")
                 if 'post' in post_data: # We're handling some kind of post, e.g. a channel message
                     await self.handle_post(post_data)
                 else: # We're probably handling something administrative, such as channel adds/removals
@@ -759,6 +791,26 @@ class MattermostManager(object):
             # We're currently not handling users editing messages
             return
         post = json.loads(data['post'])
+        # Welcome-module hook: system_join_channel posts indicate a user joined
+        # a (typically public) channel. Defer to the welcome module and short-
+        # circuit — system posts have empty `message` and would otherwise drop
+        # through the command-dispatch loop harmlessly, but explicit early
+        # return is cheaper and clearer.
+        if post.get('type') == 'system_join_channel':
+            try:
+                from welcome.welcome import on_join as _welcome_on_join
+                loop = asyncio.get_running_loop()
+                loop.run_in_executor(
+                    self._command_executor,
+                    _welcome_on_join,
+                    self.mmDriver, self.my_id,
+                    post.get('user_id'), post.get('channel_id'),
+                )
+            except ImportError:
+                pass
+            except Exception:
+                log.exception("welcome.on_join hook failed (system_join_channel)")
+            return
         userid = post['user_id']
         chanid = post['channel_id']
         chaninfo = self.chanid_to_chaninfo(chanid)
