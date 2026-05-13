@@ -391,7 +391,15 @@ class MattermostManager(object):
         try:
             userinfo = self.mmDriver.users.get_user(userid)
             roles = [_.lower() for _ in userinfo['roles'].split()]
-            if any(entry in roles for entry in options.Matterbot['botadmins']) or userid in options.Matterbot['botadmins']:
+            # botadmins entries can be EITHER a Mattermost role name (e.g.
+            # 'system_admin') OR a Mattermost user id (opaque token). Role
+            # names need case-insensitive matching against `roles` (which is
+            # lowercased above); user ids are case-sensitive and must match
+            # exactly. We normalize the role-name comparison to lowercase
+            # but keep the userid comparison as-is.
+            botadmins = options.Matterbot['botadmins'] or []
+            normalized_roles = [str(e).lower() for e in botadmins]
+            if any(role in roles for role in normalized_roles) or userid in botadmins:
                 return True
         except:
             return None
