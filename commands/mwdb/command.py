@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
 import collections
+import concurrent.futures
 import mwdblib
 import re
 import requests
 import traceback
+from concurrent.futures import ThreadPoolExecutor
 
 ### Dynamic configuration loader (do not change/edit)
 from importlib import import_module
@@ -229,8 +231,22 @@ def process(command, channel, username, params, files, conn):
                             if 'blobs' in json_response:
                                 if len(json_response['blobs']):
                                     blobs += json_response['blobs']
-                                    for blob in blobs:
-                                        blob['parents'] = getBlobParents(blob['id'], mwdb)
+                                    if blobs:
+                                        pool = ThreadPoolExecutor(max_workers=min(len(blobs), 6))
+                                        try:
+                                            future_to_blob = {
+                                                pool.submit(getBlobParents, blob['id'], mwdb): blob
+                                                for blob in blobs
+                                            }
+                                            done, _not_done = concurrent.futures.wait(
+                                                list(future_to_blob.keys()), timeout=25,
+                                            )
+                                            for fut in done:
+                                                future_to_blob[fut]['parents'] = fut.result()
+                                            for fut in (set(future_to_blob) - done):
+                                                future_to_blob[fut]['parents'] = None
+                                        finally:
+                                            pool.shutdown(wait=False, cancel_futures=True)
                     except:
                         raise
                 for file in files:
