@@ -8,7 +8,7 @@ import re
 import requests
 import traceback
 
-log = logging.getLogger('matterbot')
+log = logging.getLogger('MatterBot')
 
 ### Dynamic configuration loader (do not change/edit)
 from importlib import import_module

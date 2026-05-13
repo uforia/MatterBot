@@ -12,7 +12,7 @@ from types import SimpleNamespace
 from pathlib import Path
 import logging
 
-log = logging.getLogger('matterbot')
+log = logging.getLogger('MatterBot')
 _pkg = __package__ or Path(__file__).parent.name
 def _load(module_name):
     try:

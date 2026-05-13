@@ -9,7 +9,7 @@ import requests
 import traceback
 import urllib
 
-log = logging.getLogger('matterbot')
+log = logging.getLogger('MatterBot')
 
 ### Dynamic configuration loader (do not change/edit)
 from importlib import import_module
