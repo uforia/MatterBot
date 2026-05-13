@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
+import concurrent.futures
 import re
 import requests
 import traceback
+from concurrent.futures import ThreadPoolExecutor
 
 ### Dynamic configuration loader (do not change/edit)
 from importlib import import_module
@@ -60,36 +62,54 @@ def process(command, channel, username, params, files, conn):
                                 message += f"\n| Timestamp | Title | IP | URL | Verdict | Details | Screenshot |"
                                 message += f"\n| -: | :- | -: | :- | :- |"
                                 fields = ['title', 'ip', 'url']
+                                candidates = []
                                 for result in json_response["results"]:
                                     if "task" in result:
                                         if "url" in result["task"]:
                                             if any(_ in result["task"]["url"] for _ in params):
                                                 time = result["task"]["time"]
-                                                message += f"\n| {time} "
+                                                fields_text = ""
                                                 for field in fields:
                                                     if field in result['page']:
-                                                        message += f"| `{result['page'][field].replace('.','[.]',1).replace(':','[:]',1).replace('http','hxxp').replace('|','-')}` "
+                                                        fields_text += f"| `{result['page'][field].replace('.','[.]',1).replace(':','[:]',1).replace('http','hxxp').replace('|','-')}` "
                                                     else:
-                                                        message += f"| - "
+                                                        fields_text += f"| - "
                                                 verdicturl = result["result"]
-                                                with requests.get(verdicturl, headers=headers, timeout=(10, 30)) as verdictresponse:
-                                                    if not response.status_code in (200, 206):
-                                                        messages.append({'text': "An error occurred retrieving Urlscan details"})
-                                                    else:
-                                                        json_verdict = verdictresponse.json()
-                                                        if "verdicts" in json_verdict:
-                                                            if "overall" in json_verdict["verdicts"]:
-                                                                if "malicious" in json_verdict["verdicts"]["overall"]:
-                                                                    malicious = json_verdict["verdicts"]["overall"]["malicious"]
-                                                                    if not malicious:
-                                                                        message += "| Safe "
-                                                                    else:
-                                                                        message += "| *MALICIOUS* "
                                                 details = verdicturl.replace('api/v1/','')
                                                 screenshot = result["screenshot"]
-                                                message += f"| [Details]({details}) | [Screenshot]({screenshot}) "
-                                                message += "|"
-                                                length += 1
+                                                candidates.append((time, fields_text, verdicturl, details, screenshot))
+                                verdict_results = {}
+                                if candidates:
+                                    def _fetch_verdict(url):
+                                        try:
+                                            with requests.get(url, headers=headers, timeout=(10, 30)) as r:
+                                                return r.json()
+                                        except Exception:
+                                            return None
+
+                                    pool = ThreadPoolExecutor(max_workers=min(len(candidates), 6))
+                                    try:
+                                        future_to_idx = {pool.submit(_fetch_verdict, c[2]): i for i, c in enumerate(candidates)}
+                                        done, _not_done = concurrent.futures.wait(list(future_to_idx.keys()), timeout=25)
+                                        for fut in done:
+                                            verdict_results[future_to_idx[fut]] = fut.result()
+                                    finally:
+                                        pool.shutdown(wait=False, cancel_futures=True)
+                                for i, (time, fields_text, verdicturl, details, screenshot) in enumerate(candidates):
+                                    message += f"\n| {time} "
+                                    message += fields_text
+                                    json_verdict = verdict_results.get(i)
+                                    if json_verdict and "verdicts" in json_verdict:
+                                        if "overall" in json_verdict["verdicts"]:
+                                            if "malicious" in json_verdict["verdicts"]["overall"]:
+                                                malicious = json_verdict["verdicts"]["overall"]["malicious"]
+                                                if not malicious:
+                                                    message += "| Safe "
+                                                else:
+                                                    message += "| *MALICIOUS* "
+                                    message += f"| [Details]({details}) | [Screenshot]({screenshot}) "
+                                    message += "|"
+                                    length += 1
                                 message += "\n\n"
                                 if length>0:
                                     messages.append({'text': message})
