@@ -11,7 +11,7 @@ channel allowlist).
 import logging
 import re
 
-log = logging.getLogger('matterbot')
+log = logging.getLogger('MatterBot')
 
 ### Dynamic configuration loader (do not change/edit)
 from importlib import import_module

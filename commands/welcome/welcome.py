@@ -30,7 +30,7 @@ except ImportError:
     # a package context. Fall back to the absolute path the loader uses.
     import defaults  # type: ignore[import-not-found,no-redef]
 
-log = logging.getLogger('matterbot')
+log = logging.getLogger('MatterBot')
 
 # Single lock for write paths. SQLite's own file lock would also work,
 # but at the WAL+per-call-connection scale we have, an in-process lock
