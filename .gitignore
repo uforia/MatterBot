@@ -19,6 +19,11 @@ modules/*/*.cache.db
 modules/*/*.json
 modules/*/settings.py
 modules/csirt*/*
+# Welcome module local state (SQLite)
+commands/welcome/state.db
+commands/welcome/state.db-journal
+commands/welcome/state.db-wal
+commands/welcome/state.db-shm
 # Do not share proprietary content
 commands/*/template/*
 # Not really useful for public use
