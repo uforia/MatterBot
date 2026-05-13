@@ -110,10 +110,84 @@ def _resolve_mention(conn, mention):
 
 # ----- subcommand handlers --------------------------------------------------
 
-def _sub_set(conn, args, channel_id, channel_name, user_id):
-    if not args:
-        return "Usage: `@welcome set <message>`. Markdown allowed. `{user}` expands to the joining user's mention."
-    message = ' '.join(args).strip()
+# Cap on raw bytes we are willing to fetch for an attached welcome
+# message. Generous enough for any reasonable Markdown body, tight
+# enough to refuse a giant binary uploaded by accident. Decoded
+# content is then further capped by settings.MAX_MESSAGE_LEN.
+_MAX_ATTACHMENT_BYTES = 100 * 1024
+
+_TEXT_MIME_PREFIXES = ('text/',)
+_TEXT_FILE_SUFFIXES = ('.md', '.markdown', '.txt', '.text')
+
+
+def _looks_like_text_file(file_meta):
+    """Heuristic: a Mattermost file attachment is treated as a text-like
+    Markdown source when EITHER its mime_type starts with text/ OR its
+    name ends in a Markdown-/text-conventional suffix."""
+    mime = (file_meta.get('mime_type') or '').lower()
+    if any(mime.startswith(p) for p in _TEXT_MIME_PREFIXES):
+        return True
+    name = (file_meta.get('name') or '').lower()
+    return any(name.endswith(s) for s in _TEXT_FILE_SUFFIXES)
+
+
+def _read_attached_markdown(conn, files):
+    """Look for a text-like attachment in `files`. Return (text, error_or_None).
+
+    On success: (decoded UTF-8 string, None).
+    On hard error (oversize, decode failure): (None, "<reason>").
+    When no attachment is text-like: (None, None) — caller falls back
+    to the inline `args` path.
+
+    The first text-like attachment wins. Operators who attach multiple
+    files for some reason will see only the first usable one consumed."""
+    if not files:
+        return None, None
+    for f in files:
+        if not _looks_like_text_file(f):
+            continue
+        try:
+            raw = conn.files.get_file(f['id']).content
+        except Exception as e:
+            log.warning(f"welcome: get_file({f.get('name')!r}) failed: {e}")
+            return None, f"Could not read attached file `{f.get('name')}` ({e})."
+        if not isinstance(raw, (bytes, bytearray)):
+            return None, f"Attached file `{f.get('name')}` returned a non-bytes payload — refusing."
+        if len(raw) > _MAX_ATTACHMENT_BYTES:
+            return None, f"Attached file `{f.get('name')}` is too large ({len(raw)} bytes; cap {_MAX_ATTACHMENT_BYTES})."
+        try:
+            text = raw.decode('utf-8').strip()
+        except UnicodeDecodeError as e:
+            return None, f"Attached file `{f.get('name')}` is not valid UTF-8 ({e})."
+        if not text:
+            # Empty text file — fall through to args fallback rather than
+            # storing an empty welcome.
+            continue
+        return text, None
+    return None, None
+
+
+def _sub_set(conn, args, files, channel_id, channel_name, user_id):
+    # File-attachment path takes precedence. Mattermost's command tokenizer
+    # collapses newlines so multi-line Markdown can't reach us via inline
+    # args; attaching a .md/.txt file is the only way to set a welcome
+    # with paragraph breaks, lists, code fences, or own-line headers.
+    attached_text, attach_err = _read_attached_markdown(conn, files)
+    if attach_err:
+        return attach_err
+    args_message = ' '.join(args).strip() if args else ''
+    if attached_text:
+        message = attached_text
+        source_note = "from attached file"
+        if args_message:
+            source_note += " (inline args were also provided; ignored in favor of the attachment)"
+    elif args_message:
+        message = args_message
+        source_note = "from inline args"
+    else:
+        return ("Usage: `@welcome set <message>` (or attach a `.md`/`.txt` file). "
+                "Markdown allowed. `{user}` expands to the joining user's mention.")
+
     if len(message) > settings.MAX_MESSAGE_LEN:
         return f"Welcome message too long ({len(message)} chars; max {settings.MAX_MESSAGE_LEN})."
 
@@ -145,7 +219,9 @@ def _sub_set(conn, args, channel_id, channel_name, user_id):
         return (f"Welcome stored. **Warning:** could not enumerate existing channel "
                 f"members to mark them as already-welcomed. They may be DM'd on the "
                 f"next reconcile pass.")
-    return f"Welcome stored for `#{channel_name}` ({bootstrap_marked} existing members silently marked as already-welcomed, delivery=`{delivery}`)."
+    return (f"Welcome stored for `#{channel_name}` ({source_note}, "
+            f"{bootstrap_marked} existing members silently marked as already-welcomed, "
+            f"delivery=`{delivery}`).")
 
 
 def _sub_get(channel_id, channel_name):
@@ -306,7 +382,7 @@ def process(command, channel, username, params, files, conn):
         args = params[1:]
 
         if sub == 'set':
-            text = _sub_set(conn, args, channel_id, channel, user_id)
+            text = _sub_set(conn, args, files, channel_id, channel, user_id)
         elif sub == 'get':
             text = _sub_get(channel_id, channel)
         elif sub == 'clear':
