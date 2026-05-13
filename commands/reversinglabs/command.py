@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
 import collections
+import concurrent.futures
 import datetime
 import re
 import requests
 import traceback
+from concurrent.futures import ThreadPoolExecutor
 from ReversingLabs.SDK.a1000 import A1000
 
 ### Dynamic configuration loader (do not change/edit)
@@ -301,11 +303,25 @@ def process(command, channel, username, params, files, conn):
                                                                 message += f"| {name} | `{value}` |\n"
                                 message += '\n\n'
                                 messages.append({'text': message})
-                                for samplehash in samplehashes:
-                                    a1kendpoint = f"https://a1000.reversinglabs.com/api/samples/{samplehash}/download/"
-                                    with requests.get(url=a1kendpoint, headers=a1kheaders, timeout=(10, 30)) as sample:
-                                        if response.status_code in (200,):
-                                            uploads.append({'filename': f"sample-{samplehash}.bin", 'bytes': sample.content})
+                                if samplehashes:
+                                    def _download_sample(samplehash):
+                                        try:
+                                            a1kendpoint = f"https://a1000.reversinglabs.com/api/samples/{samplehash}/download/"
+                                            with requests.get(url=a1kendpoint, headers=a1kheaders, timeout=(10, 30)) as sample:
+                                                return samplehash, sample.content
+                                        except Exception:
+                                            return samplehash, None
+
+                                    pool = ThreadPoolExecutor(max_workers=min(len(samplehashes), 6))
+                                    try:
+                                        futures = [pool.submit(_download_sample, h) for h in samplehashes]
+                                        done, _not_done = concurrent.futures.wait(futures, timeout=25)
+                                        for fut in done:
+                                            samplehash, content = fut.result()
+                                            if content is not None:
+                                                uploads.append({'filename': f"sample-{samplehash}.bin", 'bytes': content})
+                                    finally:
+                                        pool.shutdown(wait=False, cancel_futures=True)
                             uploads.append({'filename': 'reversingslabs-'+query+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.json', 'bytes': response.content})
                             messages.append({'text': 'ReversingLabs JSON output and related samples:', 'uploads': uploads})
                 if checkMD5(query):
