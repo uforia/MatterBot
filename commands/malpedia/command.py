@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
 import base64
+import concurrent.futures
 import re
 import requests
 import traceback
+from concurrent.futures import ThreadPoolExecutor
 
 ### Dynamic configuration loader (do not change/edit)
 from importlib import import_module
@@ -67,18 +69,28 @@ def process(command, channel, username, params, files, conn):
                 if text:
                     messages.append({'text': text, 'uploads': uploads})
             if re.search(r"^[A-Za-z0-9]+$", params):
-                apipath = 'find/actor/%s' % (params,)
-                with requests.get(settings.APIURL['malpedia']['url'] + apipath, headers=headers, timeout=(10, 30)) as response:
-                    actors = response.json()
-                apipath = 'find/family/%s' % (params,)
-                with requests.get(settings.APIURL['malpedia']['url'] + apipath, headers=headers, timeout=(10, 30)) as response:
-                    families = response.json()
+                def _fetch_malpedia(apipath):
+                    with requests.get(settings.APIURL['malpedia']['url'] + apipath, headers=headers, timeout=(10, 30)) as response:
+                        return response.json()
+
+                pool = ThreadPoolExecutor(max_workers=2)
+                try:
+                    actors_fut = pool.submit(_fetch_malpedia, 'find/actor/%s' % (params,))
+                    families_fut = pool.submit(_fetch_malpedia, 'find/family/%s' % (params,))
+                    done, _ = concurrent.futures.wait(
+                        (actors_fut, families_fut), timeout=25,
+                    )
+                    actors = actors_fut.result() if actors_fut in done else None
+                    families = families_fut.result() if families_fut in done else None
+                finally:
+                    pool.shutdown(wait=False, cancel_futures=True)
                 if actors:
                     items = {}
                     subtrees = ('Malwares', 'Matrices', 'Mitigations', 'Techniques', 'Tools')
                     for subtree in subtrees:
                         items[subtree] = set()
                     text = 'Malpedia actor search for `%s`:' % (params,)
+                    mitre_lookups = []
                     for actor in actors:
                         actornames = []
                         actornames.append(actor['common_name'])
@@ -87,19 +99,31 @@ def process(command, channel, username, params, files, conn):
                         text += '\n**Actor names/synonyms**: `' + '`, `'.join(sorted(actornames, key=str.lower)) + '`'
                         for actorname in actornames:
                             if re.search(r"^G[0-9]{4}$", actorname):
+                                mitre_lookups.append(actorname)
+                    if mitre_lookups:
+                        def _fetch_mitre(actorname):
+                            try:
                                 with requests.get(settings.APIURL['mitre']['url'] + 'Actors/' + actorname, headers=headers, timeout=(10, 30)) as response:
-                                    mitre = response.json()
-                                    if mitre:
-                                        for subtree in subtrees:
-                                            if not subtree in items:
-                                                if len(mitre[subtree])>0:
-                                                    items[subtree] = list()
-                                            if subtree in mitre:
-                                                if len(mitre[subtree])>0:
-                                                    for mitrecode in sorted(mitre[subtree], key=str.lower):
-                                                        name = ' '.join(mitre[subtree][mitrecode]['name'])
-                                                        mitreid = mitrecode
-                                                        items[subtree].add((mitreid, name))
+                                    return response.json()
+                            except Exception:
+                                return None
+
+                        pool = ThreadPoolExecutor(max_workers=min(len(mitre_lookups), 6))
+                        try:
+                            futures = [pool.submit(_fetch_mitre, name) for name in mitre_lookups]
+                            done, _ = concurrent.futures.wait(futures, timeout=25)
+                            for fut in done:
+                                mitre = fut.result()
+                                if not mitre:
+                                    continue
+                                for subtree in subtrees:
+                                    if subtree in mitre and len(mitre[subtree])>0:
+                                        for mitrecode in sorted(mitre[subtree], key=str.lower):
+                                            name = ' '.join(mitre[subtree][mitrecode]['name'])
+                                            mitreid = mitrecode
+                                            items[subtree].add((mitreid, name))
+                        finally:
+                            pool.shutdown(wait=False, cancel_futures=True)
                     text += '\n'
                     messages.append({'text': text})
                     for subtree in subtrees:
