@@ -106,7 +106,6 @@ def query(settings=None):
                                             session = requests.Session()
                                             session.max_redirects = 3
                                             session.headers = headers
-                                            session.verify = False
                                             with session.get(url,allow_redirects=False,timeout=10) as response:
                                                 session.cookies.update(session.cookies)
                                             with session.get(url,allow_redirects=False,timeout=10) as response:

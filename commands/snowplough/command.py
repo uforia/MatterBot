@@ -34,20 +34,15 @@ def process(command, channel, username, params, files, conn):
         messages = []
         params = params[0].replace('[.]','.')
         token = base64.b64encode(f"{settings.APIURL['servicenow']['username']}:{settings.APIURL['servicenow']['password']}".encode('utf-8')).decode('ascii')
-        print(token)
         url = settings.APIURL['servicenow']['url']
         try:
             headers = {
                 'Content-Type': settings.CONTENTTYPE,
                 'Authorization': 'Basic %s' % (token,),
             }
-            print(headers)
-            print(url)
             with requests.get(url, headers=headers, timeout=(10, 30)) as response:
                 json_response = response.json()
-                print(json_response)
         except Exception as e:
             messages.append({'text': "An error occurred searching ServiceNow:`%s`\nError: %s" % (str(e),traceback.format_exc())})
         finally:
-            print(messages)
             return {'messages': messages}
