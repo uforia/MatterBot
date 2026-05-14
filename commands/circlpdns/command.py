@@ -89,7 +89,10 @@ def process(command, channel, username, params, files, conn):
     raw = params[0]
     query, kind = _validate_query(raw)
     if not query:
-        return {'messages': [{'text': f"CIRCL Passive DNS: `{raw}` — {kind}"}]}
+        # Silent no-op on shape mismatch — matches the urlhaus / malwarebazaar /
+        # threatfox convention so an `@ioc <hash>` fan-out doesn't spam the
+        # channel with rejection notices from every TI module.
+        return {'messages': messages}
 
     cfg = getattr(settings, 'APIURL', {}).get('circlpdns', {})
     user = cfg.get('user') or ''
