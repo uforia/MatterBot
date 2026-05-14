@@ -3,11 +3,22 @@
 BINDS = ["@ghunt"]
 CHANS = ["debug"]
 
-# Ghunt requires an authenticated Google session to call the internal
-# endpoints it scrapes. The bot host operator must run `ghunt login` once
-# (interactive) and have the resulting `creds.m` cookie file persisted on
-# disk before this command will return anything useful. See
-# https://github.com/mxrch/GHunt for the auth bootstrap flow.
+# Ghunt is intentionally NOT in the top-level requirements.txt. Reasons:
+#   1. It pins `pillow==9.3.0`, which fails to build on Python 3.12+
+#      (Pillow 9.x predates the newer setuptools metadata format and
+#      raises `KeyError: '__version__'` during get_requires_for_build_wheel).
+#      Forcing every operator's `pip install -r` to hit this is hostile;
+#      operators on Python <=3.11 can still install ghunt themselves.
+#   2. Ghunt needs an authenticated Google session to do anything useful —
+#      the operator MUST run `ghunt login` (interactive) and persist the
+#      resulting `creds.m` cookie file before this command returns
+#      anything. There is no "just install and go" path.
+#
+# Operator install (Python <=3.11):
+#     pip install ghunt
+#     ghunt login          # interactive cookie/OAuth bootstrap
+#
+# See https://github.com/mxrch/GHunt for the upstream README.
 #
 # Ghunt subcommand to invoke. Currently only `email` is wired; switching this
 # to `gaia` or another subcommand would also need a different positional-arg
