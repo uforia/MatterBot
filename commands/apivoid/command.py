@@ -103,7 +103,10 @@ def _format_report(sub, target, label, payload, max_detections):
             return f"APIVoid {sub}: `{_cell(err)}`"
         return None
 
-    rows = [('Target', f"{target} ({label})")]
+    # _cell() strips backticks/pipes/newlines so URL_RE-permitted
+    # backticks in the target can't close the inline-code wrap that
+    # surrounds the rendered cell value.
+    rows = [('Target', f"{_cell(target)} ({label})")]
     credits = payload.get('credits_remained')
     if credits is not None:
         rows.append(('Credits remaining', credits))
@@ -151,7 +154,7 @@ def _format_report(sub, target, label, payload, max_detections):
         if risk is not None:
             rows.append(('Risk score', risk))
 
-    lines = [f"APIVoid {sub} for `{target}`:"]
+    lines = [f"APIVoid {sub} for `{_cell(target)}`:"]
     lines.append('| Field | Value |')
     lines.append('| :- | :- |')
     for k, v in rows:
