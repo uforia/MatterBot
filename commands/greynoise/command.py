@@ -335,7 +335,11 @@ def process(command, channel, username, params, files, conn):
                                     if json_response['message'] == 'Forbidden':
                                         messages.append({'text': 'Your API key does not have access to the GreyNoise timeline functionality.'})
                                 else:
-                                    print(json_response) # I cannot complete this functionality without a working API key, unfortunately
+                                    # Timeline rendering is unimplemented — the original author left
+                                    # a `print(json_response)` placeholder noting they could not
+                                    # complete it without a working API key. Don't leak the response
+                                    # body to stdout/log; tell the user instead.
+                                    messages.append({'text': 'GreyNoise timeline rendering is not yet implemented in this module.'})
                     if querytype == 'similarity':
                         query = query[0].strip()
                         APIENDPOINT += urllib.parse.quote(querytypes[querytype]+'%s' % (query,))
@@ -345,7 +349,9 @@ def process(command, channel, username, params, files, conn):
                                 if json_response['message'] == 'Forbidden':
                                     messages.append({'text': 'Your API key does not have access to the GreyNoise similarity functionality.'})
                             else:
-                                print(json_response) # I cannot complete this functionality without a working API key, unfortunately
+                                # Similarity rendering is unimplemented — same placeholder shape
+                                # as the timeline branch above. Do not print() the response body.
+                                messages.append({'text': 'GreyNoise similarity rendering is not yet implemented in this module.'})
     except Exception as e:
         log.exception("greynoise module error")
         messages.append({'text': 'A Python error occurred searching GreyNoise:\nError: `%s`' % (str(e),)})
