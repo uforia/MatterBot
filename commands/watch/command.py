@@ -288,11 +288,19 @@ def _send_alert(conn, myid, watcher_userid, watcher_keyword, post_data):
     if len(snippet) > settings.SNIPPET_CHARS:
         snippet = snippet[: settings.SNIPPET_CHARS] + "…"
 
+    # The snippet is another user's chat message. Without sanitisation, any
+    # channel user could embed `@channel`/`@here` in a post that triggers
+    # someone's watcher and the bot would faithfully render the mention as
+    # a live ping inside the DM alert. Strip backticks/pipes/newlines so
+    # the inline-code wrap below holds, then render inside it so Mattermost
+    # suppresses @-mentions and markdown-link interpretation.
+    safe_snippet = snippet.replace('`', '').replace('|', '/').replace('\n', ' ').replace('\r', '')
+
     text = (
         f"🔔 Watch hit: `{watcher_keyword}`\n"
         f"Channel: ~{post_data['channame']}\n"
         f"From:    @{post_data['author']}\n\n"
-        f"> {snippet}"
+        f"> `{safe_snippet}`"
     )
 
     try:
