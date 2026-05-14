@@ -40,7 +40,7 @@ def process(command, channel, username, params, files, conn):
                     json_response = response.json()
                     message = 'IPWHOIS lookup for `%s`' % (data,)
                     if 'success' in json_response:
-                        if json_response['success'] != True:
+                        if json_response['success'] is not True:
                             return {'messages': [
                                 {'text': 'IPWHOIS errored out while searching for `%s`' % (params,)}
                             ]}

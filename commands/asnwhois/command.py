@@ -3,7 +3,6 @@
 import logging
 import re
 import requests
-import traceback
 
 log = logging.getLogger('MatterBot')
 
@@ -49,7 +48,7 @@ def process(command, channel, username, params, files, conn):
                     json_response = response.json()
                     message = 'ASN WHOIS lookup for `%s`: ' % (data,)
                     if 'data' in json_response:
-                        if json_response['data']['asn'] == None:
+                        if json_response['data']['asn'] is None:
                             return {'messages': [
                                 {'text': 'ASN `%s` does not exist.' % (data,)}
                             ]}
