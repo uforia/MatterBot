@@ -215,6 +215,7 @@ def process(command, channel, username, params, files, conn):
                 {'text': 'A Python error occurred searching Censys:\nError:'+str(e)}
             ]}
     else:
+        querytypes = ('ip', 'cert', 'credits', 'account')
         return {'messages': [
             {'text': 'Specify a Censys query type: `' + '`, `'.join(querytypes) + '`'}
         ]}

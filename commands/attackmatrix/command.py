@@ -112,7 +112,7 @@ def process(command, channel, username, params, files, conn):
                                 if 'error' in json_response:
                                     if json_response['error'].startswith('Key does not exist: '):
                                         continue
-                                    messages.append({'text': 'An error occurred querying AttackMatrix:\nError: '+str(type(e))+': '+str(e)})
+                                    messages.append({'text': 'An error occurred querying AttackMatrix:\nError: '+json_response['error']})
                                 else:
                                     result = True
                                     table = '\n\n'
