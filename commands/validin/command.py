@@ -102,7 +102,10 @@ def _format(target, target_kind, payload, max_per_type):
         shown = entries[:max_per_type]
 
         lines.append('')
-        lines.append(f"**{rtype} ({len(shown)} of {total}):**")
+        # rtype is an external JSON dict key; wrap in inline-code so
+        # the bold header can't render @-mentions or markdown links
+        # if the upstream API returns an unexpected key shape.
+        lines.append(f"**`{_cell(rtype)}` ({len(shown)} of {total}):**")
         lines.append('| Value | First seen | Last seen |')
         lines.append('| :- | :- | :- |')
         for r in shown:
