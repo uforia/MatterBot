@@ -174,9 +174,10 @@ def process(command, channel, username, params, files, conn):
             timeout=(10, 30),
         )
     except requests.RequestException as e:
-        # email + key in the query string; do not echo the URL.
+        # email + key live in the query string; str(e) sometimes
+        # includes the full URL — echo only the exception class.
         log.exception("fofa request failed")
-        return {'messages': [{'text': f"Fofa request failed: `{e}`"}]}
+        return {'messages': [{'text': f"Fofa request failed: `{type(e).__name__}`"}]}
 
     if resp.status_code == 401 or resp.status_code == 403:
         return {'messages': [{'text': 'Fofa: authentication failed — check `email` / `key`.'}]}
