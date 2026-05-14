@@ -195,7 +195,7 @@ def process(command, channel, username, params, files, conn):
     }
 
     try:
-        resp = requests.get(url, headers=headers, allow_redirects=True, timeout=(10, 30))
+        resp = requests.get(url, headers=headers, allow_redirects=False, timeout=(10, 30))
     except requests.RequestException as e:
         log.exception("threatrip request failed")
         return {'messages': [{'text': f"ThreatRip request failed: `{e}`"}]}
