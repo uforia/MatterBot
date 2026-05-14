@@ -153,7 +153,7 @@ def process(command, channel, username, params, files, conn):
                                 message += "\n\n"
                             if len(message):
                                 messages.append({'text': message})
-        except:
+        except Exception as e:
             log.exception("proxycheck module error")
             messages.append({'text': 'An error occurred in the ProxyCheck module:\nError: `%s`' % (str(e),)})
         finally:

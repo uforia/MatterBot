@@ -185,7 +185,7 @@ def process(command, channel, username, params, files, conn):
                             messages.append({'text': 'No VARIoT results found for: `%s`' % (' '.join(query),)})
                     else:
                         messages.append({'text': 'An error occurred searching VARIoT:\nError: `%s`' % (response.status_code,)})
-    except:
+    except Exception as e:
         log.exception("variot module error")
         messages.append({'text': 'An error occurred in the VARIoT module:\nError: `%s`' % (str(e),)})
     finally:

@@ -73,7 +73,7 @@ def process(command, channel, username, params, files, conn):
                     messages.append({'text': message})
                 else:
                     messages.append({'text': 'An error occurred querying the BotScout API:\nError: `%s`' % (response.content,)})
-        except:
+        except Exception as e:
             log.exception("botscout module error")
             messages.append({'text': 'An error occurred in the BotScout module:\nError: `%s`' % (str(e),)})
         finally:

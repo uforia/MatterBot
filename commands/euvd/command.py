@@ -173,7 +173,7 @@ def process(command, channel, username, params, files, conn):
                             messages.append({'text': text, 'uploads': [{'filename': 'euvd-'+querytype+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.csv', 'bytes': euvdcsv}]})
                         else:
                             messages.append({'text': text})
-    except:
+    except Exception as e:
         log.exception("euvd module error")
         messages.append({'text': 'An error occurred in the EUVD module:\nError: `%s`' % (str(e),)})
     finally:

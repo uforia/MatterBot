@@ -217,7 +217,7 @@ def process(command, channel, username, params, files, conn):
                             messages.append({'text': text, 'uploads': [{'filename': 'opencve-'+querytype+'-'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'.csv', 'bytes': opencvecsv}]})
                         else:
                             messages.append({'text': text})
-    except:
+    except Exception as e:
         log.exception("opencve module error")
         messages.append({'text': 'An error occurred in the OpenCVE module:\nError: `%s`' % (str(e),)})
     finally:
