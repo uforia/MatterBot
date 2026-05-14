@@ -163,9 +163,10 @@ def process(command, channel, username, params, files, conn):
             timeout=(10, 30),
         )
     except requests.RequestException as e:
-        # api-key is in the query string. Don't echo the URL.
+        # api-key lives in the query string; str(e) sometimes carries
+        # the full URL — echo only the exception class.
         log.exception("hunter.how request failed")
-        return {'messages': [{'text': f"Hunter.how request failed: `{e}`"}]}
+        return {'messages': [{'text': f"Hunter.how request failed: `{type(e).__name__}`"}]}
 
     if resp.status_code == 401 or resp.status_code == 403:
         return {'messages': [{'text': 'Hunter.how: authentication failed — check `key`.'}]}
