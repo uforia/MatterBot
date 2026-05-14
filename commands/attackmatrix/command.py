@@ -193,7 +193,9 @@ def process(command, channel, username, params, files, conn):
                                             with requests.get(APIENDPOINT, headers=headers, timeout=(10, 30)) as response:
                                                 json_response = response.json()
                                         except (requests.RequestException, ValueError) as e:
-                                            log.exception("attackmatrix per-actor follow-up failed for %s", actor)
+                                            # No module-level `log` is set up in attackmatrix yet;
+                                            # surface the failure to the operator via channel
+                                            # message and move on to the next actor.
                                             messages.append({'text': 'AttackMatrix: per-actor follow-up failed for `'+actor+'`: `'+str(e)+'`'})
                                             continue
                                         if not isinstance(json_response, dict):
