@@ -216,9 +216,9 @@ def _sub_set(conn, args, files, channel_id, channel_name, user_id):
     except Exception:
         # Non-fatal — the welcome is stored, but we could not mark all
         # current members. Reconcile-on-reconnect will catch up.
-        return (f"Welcome stored. **Warning:** could not enumerate existing channel "
-                f"members to mark them as already-welcomed. They may be DM'd on the "
-                f"next reconcile pass.")
+        return ("Welcome stored. **Warning:** could not enumerate existing channel "
+                "members to mark them as already-welcomed. They may be DM'd on the "
+                "next reconcile pass.")
     return (f"Welcome stored for `#{channel_name}` ({source_note}, "
             f"{bootstrap_marked} existing members silently marked as already-welcomed, "
             f"delivery=`{delivery}`).")

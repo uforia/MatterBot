@@ -69,7 +69,7 @@ def process(command, channel, username, params, files, conn):
                     for result in results:
                         domain = result['domain']
                         fqdn   = result['fqdn']
-                        if not domain in fqdnlist:
+                        if domain not in fqdnlist:
                             fqdnlist[domain]={'subdomains': set()}
                         if not fqdn==domain:
                             fqdnlist[domain]['subdomains'].add(fqdn)

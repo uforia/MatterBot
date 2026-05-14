@@ -5,7 +5,6 @@ import collections
 import datetime
 import re
 import requests
-import traceback
 
 ### Dynamic configuration loader (do not change/edit)
 from importlib import import_module
@@ -177,7 +176,7 @@ def process(command, channel, username, params, files, conn):
                                 count += 1
                                 if count>=10:
                                     message += "\n\n"
-                                    message += f"*Found more than 10 entries, refine your search if needed!*"
+                                    message += "*Found more than 10 entries, refine your search if needed!*"
                                     break
                             message += "\n\n"
                             messages.append({'text': message})

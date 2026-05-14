@@ -4,7 +4,6 @@ import collections
 import datetime
 import re
 import requests
-import traceback
 
 ### Dynamic configuration loader (do not change/edit)
 from importlib import import_module
@@ -63,7 +62,7 @@ def process(command, channel, username, params, files, conn):
                                 'titles': 'Page Titles',
                             })
                             message = f"| Onion-Lookup Results | `{params}` |\n"
-                            message += f"| :- | :- |\n"
+                            message += "| :- | :- |\n"
                             for field in fields:
                                 if field in json_response:
                                     if field in ('tags',):
@@ -71,9 +70,9 @@ def process(command, channel, username, params, files, conn):
                                         for tagentry in json_response[field]:
                                             tagtype = tagentry.split(':')[0]
                                             tag = regex.sub('',tagentry.split('=')[1].replace('"','').replace('-',' ').title())
-                                            if not tagtype in tagcollection:
+                                            if tagtype not in tagcollection:
                                                 tagcollection[tagtype] = []
-                                            if not tag in tagcollection[tagtype]:
+                                            if tag not in tagcollection[tagtype]:
                                                 tagcollection[tagtype].append(tag)
                                         for tagtype in tagcollection:
                                             message += f"| **Tag**: `{tagtype.title()}` | "

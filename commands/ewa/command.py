@@ -40,7 +40,7 @@ def process(command, channel, username, params, files, conn):
         if len(params)>1:
             command = params[0].lower()
             cve = params[1].upper()
-            if not command in ('create', 'pdf'):
+            if command not in ('create', 'pdf'):
                 messages.append({'text': "Please choose to `create` a WikiJS page for a CVE, or to generate a `pdf` for a CVE!"})
             elif not re.match(r'^CVE-\d{4}-\d{4,7}$', cve):
                 messages.append({'text': "Please specify the CVE number, e.g.: `CVE-2023-20855`!"})

@@ -6,7 +6,6 @@ import logging
 import os
 import re
 import requests
-import traceback
 
 log = logging.getLogger('MatterBot')
 
@@ -185,7 +184,7 @@ def process(command, channel, username, params, files, conn):
             if len(uploads):
                 chunks = [uploads[_:_ + 10] for _ in range(0, len(uploads), 10)]
                 for chunk in chunks:
-                    messages.append({'text': f'Unprotect.it Related Downloads for `%s`' % ('`, `'.join(params)), 'uploads': chunk})
+                    messages.append({'text': 'Unprotect.it Related Downloads for `%s`' % ('`, `'.join(params)), 'uploads': chunk})
         except Exception as e:
             log.exception("unprotectit module error")
             messages.append({'text': 'An error occurred in the Unprotect.it module:\nError: ' + str(e)})

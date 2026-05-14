@@ -2,7 +2,6 @@
 
 import requests
 import re
-import traceback
 
 ### Dynamic configuration loader (do not change/edit)
 from importlib import import_module

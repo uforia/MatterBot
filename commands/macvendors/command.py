@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import requests
-import traceback
 import urllib.parse
 import re
 
@@ -63,7 +62,7 @@ def process(command, channel, username, params, files, conn):
             messages.append({'text': "Vendor not found"})
     except requests.exceptions.RequestException as e:
         if response.status_code == 429:
-            messages.append({'text': f"Rate limit exceeded."})
+            messages.append({'text': "Rate limit exceeded."})
         else:    
             # Handle HTTP request errors
             log.exception("macvendors module error")

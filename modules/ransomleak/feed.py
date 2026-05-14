@@ -68,7 +68,7 @@ def query(settings=None):
                 else:
                     if Path('modules/ransomleak/feed.py').is_file():
                         history = shelve.open('modules/ransomleak/'+settings.HISTORY,writeback=True)
-            if not 'ransomleak' in history:
+            if 'ransomleak' not in history:
                 history['ransomleak'] = []
         except Exception as e:
             messages.append({'text': f"An error occurred in the RansomLeak module:\nError: {e}\n{traceback.format_exc()}"})
@@ -93,7 +93,7 @@ def query(settings=None):
                                 if field == 'company':
                                     if len(entry['domain'].strip()) and not len(entry['company']):
                                         domain = entry['domain'].strip()
-                                        if not 'http' in domain:
+                                        if 'http' not in domain:
                                             url = 'https://'+domain
                                         else:
                                             url = domain
@@ -157,7 +157,7 @@ def query(settings=None):
                 table += '|\n'
                 for item in items:
                     historyitem = item.replace('%date%','-')
-                    if not historyitem in history['ransomleak']:
+                    if historyitem not in history['ransomleak']:
                         count += 1
                         today = datetime.datetime.now().strftime('%Y-%m-%d')
                         history['ransomleak'].append(historyitem)
@@ -165,7 +165,7 @@ def query(settings=None):
                 table += '\n\n'
                 if count>0:
                     messages.append(table)
-    except Exception as e:
+    except Exception:
         message = "An error occurred during the Ransomleaks feed parsing:\n%s" % str(traceback.format_exc())
     finally:
         for message in messages:

@@ -4,7 +4,6 @@ import datetime
 import random
 import re
 import requests
-import traceback
 import urllib.parse
 
 ### Dynamic configuration loader (do not change/edit)

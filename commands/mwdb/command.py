@@ -5,7 +5,6 @@ import concurrent.futures
 import mwdblib
 import re
 import requests
-import traceback
 from concurrent.futures import ThreadPoolExecutor
 
 ### Dynamic configuration loader (do not change/edit)
@@ -185,7 +184,7 @@ def process(command, channel, username, params, files, conn):
         query = [_.replace('[', '').replace(']', '') for _ in params[1:]]
         try:
             messages = []
-            if not querytype in querytypes:
+            if querytype not in querytypes:
                 if len(query) == 0:
                     query = [querytype]
                     if checkHash(querytype):
@@ -350,7 +349,7 @@ def process(command, channel, username, params, files, conn):
                     message += '\n\n'
                     messages.append({'text': message})
                 if len(downloads):
-                    messages.append({'text': f"**MWDB**: *Sample download(s)*", 'uploads': downloads})
+                    messages.append({'text': "**MWDB**: *Sample download(s)*", 'uploads': downloads})
         except Exception as e:
             log.exception("mwdb module error")
             messages.append({'text': 'A Python error occurred searching the MWDB API: `%s`' % (str(e))})

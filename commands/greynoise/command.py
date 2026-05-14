@@ -3,7 +3,6 @@
 import random
 import re
 import requests
-import traceback
 import urllib.parse
 
 ### Dynamic configuration loader (do not change/edit)
@@ -57,7 +56,7 @@ def process(command, channel, username, params, files, conn):
     try:
         if len(params)>0:
             querytype = params[0].lower() if params[0] in querytypes else 'community'
-            if not querytype in querytypes:
+            if querytype not in querytypes:
                 return
             APIENDPOINT = settings.APIURL['greynoise']['url']
             headers = {

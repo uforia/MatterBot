@@ -2,7 +2,6 @@
 
 import re
 import requests
-import traceback
 
 ### Dynamic configuration loader (do not change/edit)
 from importlib import import_module
@@ -64,7 +63,7 @@ def process(command, channel, username, params, files, conn):
                     messages.append({'text': 'No answer was given by the AI LLM.'})
         else:
             messages.append({'text': f"At least ask me something, {username}!"})
-    except Exception as e:
+    except Exception:
         log.exception("ollama module error")
         messages.append({'text': 'An error occurred querying the AI LLM: `%s`:' % (params)},)
     finally:

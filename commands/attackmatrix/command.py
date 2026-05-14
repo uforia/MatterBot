@@ -43,12 +43,12 @@ def process(command, channel, username, params, files, conn):
         'name': 'Name',
         'details': 'MITRE ID',
     })
-    if not params[0] in querytypes:
+    if params[0] not in querytypes:
         messages.append({'text': 'Please specify an AttackMatrix query type: `'+'`, `'.join(querytypes)+'`.'})
     else:
         try:
             keywords = params[1:]
-            if len(' '.join(keywords))<4 and not querytype in ('matrices', 'config'):
+            if len(' '.join(keywords))<4 and querytype not in ('matrices', 'config'):
                 messages.append({'text': 'Please specify at least one reasonably-sized keyword to query the AttackMatrix `'+querytype+'`.'})
             else:
                 headers={
@@ -310,7 +310,7 @@ def process(command, channel, username, params, files, conn):
                                                 exists = True
                                                 for actor in actors:
                                                     if ttpcategory in json_response[actor]:
-                                                        if not ttp in json_response[actor][ttpcategory]:
+                                                        if ttp not in json_response[actor][ttpcategory]:
                                                             # Check if the TTP exists for every actor, otherwise set to False
                                                             exists = False
                                                 if exists:
@@ -341,7 +341,7 @@ def process(command, channel, username, params, files, conn):
                                                 if category in json_response[actor]:
                                                     for ttp in sorted(json_response[actor][category]):
                                                         if category in commonttps:
-                                                            if not ttp in commonttps[category]:
+                                                            if ttp not in commonttps[category]:
                                                                 table += '| '+category+' '
                                                                 table += '| '+ttp+' '
                                                                 name = regex.sub(' ', ' '.join(json_response[actor][category][ttp]['name']))
@@ -370,7 +370,7 @@ def process(command, channel, username, params, files, conn):
                                                 if category in json_response[actor]:
                                                     for ttp in json_response[actor][category]:
                                                         if category in commonttps:
-                                                            if not ttp in commonttps[category]:
+                                                            if ttp not in commonttps[category]:
                                                                 mitreid = ttp
                                                                 contents = mitreid+'\n'
                                                                 contents += ' '.join(json_response[actor][category][ttp]['name'])

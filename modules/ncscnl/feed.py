@@ -17,7 +17,6 @@ import feedparser
 import logging
 import re
 import shelve
-import traceback
 from pathlib import Path
 
 log = logging.getLogger('MatterBot')
@@ -53,9 +52,9 @@ def query(settings=None):
             else:
                 if Path('modules/ncscnl/feed.py').is_file():
                     history = shelve.open('modules/ncscnl/'+settings.HISTORY,writeback=True)
-        if not 'ncscnl' in history:
+        if 'ncscnl' not in history:
             history['ncscnl'] = []
-    except Exception as e:
+    except Exception:
         log.exception("ncscnl feed: history init error")
         raise
     if history:
@@ -77,7 +76,7 @@ def query(settings=None):
                         matches = historyregex.search(title)
                         if matches:
                             historyitem = matches.group(0)
-                            if not historyitem in history['ncscnl']:
+                            if historyitem not in history['ncscnl']:
                                 productnames = set()
                                 for lookupvalue in settings.LOOKUPVALUES:
                                     luregex = re.compile('%s' % lookupvalue)

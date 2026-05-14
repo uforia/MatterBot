@@ -3,7 +3,6 @@
 import io
 import pandas as pd
 import requests
-import traceback
 from datetime import datetime
 
 ### Dynamic configuration loader (do not change/edit)
@@ -131,7 +130,7 @@ def process(command, channel, username, params, files, conn,):
         if response.status_code == 400:
             messages.append({'text': f"Input `{param}` is invalid."})
         elif response.status_code == 429:
-            messages.append({'text': f"Rate limit exceeded."})
+            messages.append({'text': "Rate limit exceeded."})
         else:    
             # Handle HTTP request errors
             log.exception("grayhat module error")

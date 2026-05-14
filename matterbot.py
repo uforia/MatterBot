@@ -85,7 +85,7 @@ class MattermostManager(object):
             for module in fnmatch.filter(files, "command.py"):
                 module_name = root.split('/')[-1].lower()
                 module = importlib.import_module(module_name + '.' + 'command')
-                if not module_name in self.commands:
+                if module_name not in self.commands:
                     module.settings.BINDS = None
                     module.settings.CHANS = None
                     defaults = importlib.import_module(module_name + '.' + 'defaults')
@@ -189,7 +189,7 @@ class MattermostManager(object):
                         channel_members = self.mmDriver.channels.get_channel_members(welcome_channel_id)
                         return [_['user_id'] for _ in channel_members]
         except:
-            log.error(f"An error occurred updating the welcome channel state!")
+            log.error("An error occurred updating the welcome channel state!")
 
     async def update_welcome_channel(self):
         try:
@@ -200,7 +200,7 @@ class MattermostManager(object):
                         channel_members = self.mmDriver.channels.get_channel_members(welcome_channel_id)
                         return [_['user_id'] for _ in channel_members]
         except:
-            log.error(f"An error occurred updating the welcome channel state!")
+            log.error("An error occurred updating the welcome channel state!")
 
     async def update_bindmap(self):
         try:
@@ -211,7 +211,7 @@ class MattermostManager(object):
             with open(options.Matterbot['bindmap'],'w') as f:
                 json.dump(self.bindmap,f)
         except:
-            log.error(f"An error occurred updating the `%s` bindmap file; config changes were not successfully saved!" % (options.Matterbot['bindmap'],))
+            log.error("An error occurred updating the `%s` bindmap file; config changes were not successfully saved!" % (options.Matterbot['bindmap'],))
 
     async def update_feedmap(self):
         try:
@@ -219,7 +219,7 @@ class MattermostManager(object):
             with open(options.Matterbot['feedmap'],'w') as f:
                 json.dump(self.newfeedmap,f)
         except:
-            log.error(f"An error occurred updating the `%s` feedmap file; config changes were not successfully saved!" % (options.Matterbot['feedmap'],))
+            log.error("An error occurred updating the `%s` feedmap file; config changes were not successfully saved!" % (options.Matterbot['feedmap'],))
 
     async def handle_raw_message(self, raw_json: str):
         try:
@@ -498,12 +498,12 @@ class MattermostManager(object):
                                 if 'ADMIN_ONLY' in self.feedmap['MODULES'][unclassified_feed]:
                                     displayname = unclassified_feed+r'(*)' if self.feedmap['MODULES'][unclassified_feed]['ADMIN_ONLY'] else unclassified_feed
                                 unclassified_feeds_displaynames.add(displayname)
-                            text += f"\n| Unclassified | `"+"`, `".join(sorted(unclassified_feeds_displaynames))+"` |"
+                            text += "\n| Unclassified | `"+"`, `".join(sorted(unclassified_feeds_displaynames))+"` |"
                         text += "\n\n"
                         text += "*An asterisk after a module name indicates the feed can only be enabled/disabled by a MatterBot admin.*\n"
                         messages.append(text)
                     if len(enabled_feeds):
-                        text = f"Enabled feeds: `"+"` ,`".join(sorted(enabled_feeds))+f"` ({len(enabled_feeds)})"
+                        text = "Enabled feeds: `"+"` ,`".join(sorted(enabled_feeds))+f"` ({len(enabled_feeds)})"
                         messages.append(text)
                     else:
                         text = "There are no feeds enabled in this channel.\n"
@@ -517,8 +517,8 @@ class MattermostManager(object):
                         messages.append(text)
                 if self.isadmin(userid) or options.Matterbot['feedmode'].lower() == 'user':
                     all_channel_types = [self.chanid_to_channame(_['id']) for _ in self.mmDriver.channels.get_channels_for_user(self.my_id,self.my_team_id) if self.is_in_channel(_['id'])]
-                    my_channels = [_ for _ in all_channel_types if not self.my_id in _]
-                    if not channame in my_channels:
+                    my_channels = [_ for _ in all_channel_types if self.my_id not in _]
+                    if channame not in my_channels:
                         text = f"@{username}, you cannot have feeds in a Direct Message window."
                         messages.append(text)
                     else:
@@ -548,7 +548,7 @@ class MattermostManager(object):
                                     if not ADMIN_ONLY or self.isadmin(userid):
                                         if mode == 'enable':
                                             if 'NAME' in self.feedmap['MODULES'][module_name]:
-                                                if not channame in self.feedmap['MODULES'][module_name]['CHANNELS']:
+                                                if channame not in self.feedmap['MODULES'][module_name]['CHANNELS']:
                                                     self.feedmap['MODULES'][module_name]['CHANNELS'].append(channame)
                                                     switched_feeds.add(module_name)
                                         elif mode == 'disable':
@@ -614,14 +614,14 @@ class MattermostManager(object):
                 text = "@" + username + ", you do not have permission to bind commands."
             else:
                 all_channel_types = [self.chanid_to_channame(_['id']) for _ in self.mmDriver.channels.get_channels_for_user(self.my_id,self.my_team_id) if self.is_in_channel(_['id'])]
-                my_channels = [_ for _ in all_channel_types if not self.my_id in _]
-                if not channame in my_channels:
+                my_channels = [_ for _ in all_channel_types if self.my_id not in _]
+                if channame not in my_channels:
                     text = "@" + username + ", you cannot bind commands to direct message windows."
                 else:
                     if params[0] == '*':
                         params = self.commands.keys() # Attempt to enable/disable all modules
                     for modulename in params:
-                        if not modulename in self.commands:
+                        if modulename not in self.commands:
                             text = "@" + username + ", there is no `%s` module loaded. Use one of the help commands (`%s`) to see a list of available modules." % (modulename,"`, `".join(options.Matterbot['helpcmds']))
                         elif command in ('!bind', '@bind'):
                             if channame in self.commands[modulename]['chans']:
@@ -630,7 +630,7 @@ class MattermostManager(object):
                                 self.commands[modulename]['chans'].append(channame)
                                 text = "The `%s` module is now available in the `%s` channel." % (modulename,self.channame_to_chandisplayname(channame))
                         elif command in ('!unbind', '@unbind'):
-                            if not channame in self.commands[modulename]['chans']:
+                            if channame not in self.commands[modulename]['chans']:
                                 text = "The `%s` module is not loaded in the `%s` channel." % (modulename,self.channame_to_chandisplayname(channame))
                             else:
                                 self.commands[modulename]['chans'].remove(channame)
@@ -868,7 +868,7 @@ class MattermostManager(object):
                         for module in self.commands:
                             if command in self.commands[module]['binds']:
                                 if self.isallowed_module(userid, module, chaninfo):
-                                    if not module in modules_to_run:
+                                    if module not in modules_to_run:
                                         modules_to_run.append(module)
                         if modules_to_run:
                             files = []

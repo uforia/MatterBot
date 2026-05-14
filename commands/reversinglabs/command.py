@@ -5,9 +5,7 @@ import concurrent.futures
 import datetime
 import re
 import requests
-import traceback
 from concurrent.futures import ThreadPoolExecutor
-from ReversingLabs.SDK.a1000 import A1000
 
 ### Dynamic configuration loader (do not change/edit)
 from importlib import import_module
@@ -122,7 +120,7 @@ def process(command, channel, username, params, files, conn):
                                         message += f"| {threat_fields[threat_field]} "
                                     message += "|\n"
                                     for threat_field in threat_fields:
-                                        message += f"| :- "
+                                        message += "| :- "
                                     message += "|\n"
                                     for top_threat in top_threats:
                                         for threat_field in threat_fields:
@@ -174,7 +172,7 @@ def process(command, channel, username, params, files, conn):
                                     message += f"| {threat_fields[threat_field]} "
                                 message += "|\n"
                                 for threat_field in threat_fields:
-                                    message += f"| :- "
+                                    message += "| :- "
                                 message += "|\n"
                                 for top_threat in top_threats:
                                     for threat_field in threat_fields:
@@ -201,7 +199,7 @@ def process(command, channel, username, params, files, conn):
                         if 'last_dns_records' in results:
                             last_dns_records = results['last_dns_records']
                             message = f"**ReversingLabs DNS Results**: `{query}`\n\n"
-                            message += f"| **Type** | **Value** | **Resolver** |\n"
+                            message += "| **Type** | **Value** | **Resolver** |\n"
                             message += '| :- | :- | :- |\n'
                             for last_dns_record in last_dns_records:
                                 message += f"| {last_dns_record['type']} | {last_dns_record['value']} | {last_dns_record['provider']} |\n"
@@ -227,7 +225,7 @@ def process(command, channel, username, params, files, conn):
                                     message += f"| {threat_fields[threat_field]} "
                                 message += "|\n"
                                 for threat_field in threat_fields:
-                                    message += f"| :- "
+                                    message += "| :- "
                                 message += "|\n"
                                 for top_threat in top_threats:
                                     for threat_field in threat_fields:
@@ -367,7 +365,7 @@ def process(command, channel, username, params, files, conn):
                                     '5': 'Cannot be judged',
                                 }
                                 message = f"| **ReversingLabs TitaniumCloud** | **Query**: `{query}` |\n"
-                                message += f"| :- | :- |\n"
+                                message += "| :- | :- |\n"
                                 for ticfield in ticfields:
                                     if ticfield in results:
                                         value = results[ticfield]
@@ -384,7 +382,7 @@ def process(command, channel, username, params, files, conn):
                                         if ticfield == 'scanner_percent':
                                             value = str(round(value,2))+'%'
                                         message += f"| {ticfields[ticfield]} | `{value}` |\n"
-                                message += f"\n\n"
+                                message += "\n\n"
                                 messages.append({'text': message})
         else:
             messages.append({'text': f"ReversingLabs module does not understand type/query: {query}"})

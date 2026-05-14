@@ -17,7 +17,6 @@ import logging
 import re
 import requests
 import shelve
-import traceback
 import unicodedata
 from pathlib import Path
 
@@ -54,9 +53,9 @@ def query(settings=None):
             else:
                 if Path('modules/opencve/feed.py').is_file():
                     history = shelve.open('modules/opencve/'+settings.HISTORY,writeback=True)
-        if not 'opencve' in history:
+        if 'opencve' not in history:
             history['opencve'] = []
-    except Exception as e:
+    except Exception:
         log.exception("opencve feed: history init error")
         raise
     if history:
@@ -87,7 +86,7 @@ def query(settings=None):
                 if not filtered:
                     last_update = entry['updated_at']
                     historyitem = (cve,last_update)
-                    if not historyitem in history['opencve']:
+                    if historyitem not in history['opencve']:
                         if settings.PUBLICDESCURL:
                             link = f"https://app.opencve.io/cve/{cve}"
                         else:
@@ -134,7 +133,7 @@ def query(settings=None):
                 count+=1
             except IndexError:
                 return items # No more items
-            except Exception as e:
+            except Exception:
                 log.exception("opencve feed: item-processing error")
         return items
 
