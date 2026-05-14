@@ -15,7 +15,6 @@
 import bs4
 import feedparser
 import re
-import ssl
 
 def query(settings=None):
     if settings:
@@ -32,8 +31,6 @@ def query(settings=None):
         except ImportError:
             pass
     items = []
-    if hasattr(ssl, '_create_unverified_context'):
-        ssl._create_default_https_context = ssl._create_unverified_context
     feed = feedparser.parse(settings.URL, agent='MatterBot RSS Automation 1.0')
     count = 0
     stripchars = '`\\[\\]\'\"'
