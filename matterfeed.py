@@ -60,26 +60,26 @@ class MattermostManager(object):
                     channelmap[channel_info['name']] = channel_info['id']
             self.log.info("Complete : Channels updated ...")
             return channelmap
-        except:
+        except Exception:
             if options.debug:
-                self.log.error("Error   : Cannot update channel map, announcements in additional channels might not work!")
+                self.log.exception("Error   : Cannot update channel map, announcements in additional channels might not work!")
             return {}
 
     def load_feedmap(self):
         try:
             with open(options.Modules['feedmap'],'r') as f:
                 return json.load(f)
-        except:
+        except Exception:
             if options.debug:
-                self.log.error(f"Error   : Cannot read {options.Modules['feedmap']} file. Announcements in additional channels might not work!")
+                self.log.exception(f"Error   : Cannot read {options.Modules['feedmap']} file. Announcements in additional channels might not work!")
             return {}
 
     def update_feedmap(self):
         try:
             with open(options.Matterbot['feedmap'],'w') as f:
                 json.dump(self.feedmap,f)
-        except:
-            self.log.error("An error occurred updating the `%s` feedmap file; config changes were not successfully saved!" % (options.Matterbot['feedmap'],))
+        except Exception:
+            self.log.exception("An error occurred updating the `%s` feedmap file; config changes were not successfully saved!" % (options.Matterbot['feedmap'],))
 
     def createPost(self, channel, text, uploads = []):
         try:
@@ -322,7 +322,7 @@ class MattermostManager(object):
                 for newspost in items:
                     try:
                         channel, content, uploads = newspost
-                    except:
+                    except ValueError:
                         channel, content = newspost
                         uploads = []
                     if [channel, content, uploads] not in posts:

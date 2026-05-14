@@ -62,8 +62,8 @@ class MattermostManager(object):
         })
         try:
             self.mmDriver.login()
-        except:
-            log.error("Mattermost server is unreachable. Perhaps it is down, or you might have misconfigured one or more setting(s). Shutting down!")
+        except Exception:
+            log.exception("Mattermost server is unreachable. Perhaps it is down, or you might have misconfigured one or more setting(s). Shutting down!")
             return False
         self.me = self.mmDriver.users.get_user(user_id='me')
         log.info("Who am I: %s" % (self.me,))
@@ -104,8 +104,8 @@ class MattermostManager(object):
         try:
             with open(options.Matterbot['bindmap'],'w') as f:
                 json.dump(self.commands,f)
-        except:
-            log.error("An error occurred writing the bindmap file: %s" % (options.Matterbot['bindmap'],))
+        except Exception:
+            log.exception("An error occurred writing the bindmap file: %s" % (options.Matterbot['bindmap'],))
         # Resolve function calls and update the module help
         for root, dirs, files in os.walk(modulepath):
             for module in fnmatch.filter(files, "command.py"):
@@ -188,8 +188,8 @@ class MattermostManager(object):
                     if self.is_in_channel(welcome_channel_id):
                         channel_members = self.mmDriver.channels.get_channel_members(welcome_channel_id)
                         return [_['user_id'] for _ in channel_members]
-        except:
-            log.error("An error occurred updating the welcome channel state!")
+        except Exception:
+            log.exception("An error occurred updating the welcome channel state!")
 
     async def update_welcome_channel(self):
         try:
@@ -199,8 +199,8 @@ class MattermostManager(object):
                     if self.is_in_channel(welcome_channel_id):
                         channel_members = self.mmDriver.channels.get_channel_members(welcome_channel_id)
                         return [_['user_id'] for _ in channel_members]
-        except:
-            log.error("An error occurred updating the welcome channel state!")
+        except Exception:
+            log.exception("An error occurred updating the welcome channel state!")
 
     async def update_bindmap(self):
         try:
@@ -210,16 +210,16 @@ class MattermostManager(object):
                 del self.bindmap[module]['process']
             with open(options.Matterbot['bindmap'],'w') as f:
                 json.dump(self.bindmap,f)
-        except:
-            log.error("An error occurred updating the `%s` bindmap file; config changes were not successfully saved!" % (options.Matterbot['bindmap'],))
+        except Exception:
+            log.exception("An error occurred updating the `%s` bindmap file; config changes were not successfully saved!" % (options.Matterbot['bindmap'],))
 
     async def update_feedmap(self):
         try:
             self.newfeedmap = copy.deepcopy(self.feedmap)
             with open(options.Matterbot['feedmap'],'w') as f:
                 json.dump(self.newfeedmap,f)
-        except:
-            log.error("An error occurred updating the `%s` feedmap file; config changes were not successfully saved!" % (options.Matterbot['feedmap'],))
+        except Exception:
+            log.exception("An error occurred updating the `%s` feedmap file; config changes were not successfully saved!" % (options.Matterbot['feedmap'],))
 
     async def handle_raw_message(self, raw_json: str):
         try:
@@ -401,7 +401,8 @@ class MattermostManager(object):
             normalized_roles = [str(e).lower() for e in botadmins]
             if any(role in roles for role in normalized_roles) or userid in botadmins:
                 return True
-        except:
+        except Exception:
+            log.exception("isadmin check failed; treating as non-admin")
             return None
 
     def is_in_channel(self, chanid, userid=None):
@@ -743,8 +744,8 @@ class MattermostManager(object):
                                     try:
                                         with open(welcome_file) as f:
                                             text += f.read()
-                                    except:
-                                        log.error(f"The welcome message file {welcome_file} could not be read!")
+                                    except Exception:
+                                        log.exception(f"The welcome message file {welcome_file} could not be read!")
                             await self.send_message(welcome_channel, text)
 
 
