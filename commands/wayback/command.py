@@ -86,7 +86,7 @@ def process(command, channel, username, params, files, conn):
                                     messages.append({'text': f"URL `{query}` is not present in the archive.org's Wayback Machine."})
                 else:
                     messages.append({'text': f"URL `{query}` is not valid for archive.org's Wayback Machine."})
-    except:
+    except Exception as e:
         log.exception("wayback module error")
         messages.append({'text': 'An error occurred in the Wayback Machine module:\nError: `%s`' % (str(e),)})
     finally:
