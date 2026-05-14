@@ -130,11 +130,13 @@ def _format_subdomains(domain, payload, max_subdomains):
     truncated = total > max_subdomains
     shown = hosts[:max_subdomains]
 
-    lines = [f"FullHunt subdomains for `{domain}` — {len(shown)} of {total}:"]
+    lines = [f"FullHunt subdomains for `{_cell(domain)}` — {len(shown)} of {total}:"]
     lines.append('```')
     for h in shown:
         if isinstance(h, str):
-            lines.append(h)
+            # Neutralise ``` so an upstream host string can't terminate
+            # the fenced block.
+            lines.append(re.sub(r'`{3,}', '``', h))
         elif isinstance(h, dict):
             # Some FullHunt response variants nest each host as
             # {host: "...", ip: "...", ports: [...]}.
@@ -146,7 +148,8 @@ def _format_subdomains(domain, payload, max_subdomains):
             ports = h.get('ports')
             if isinstance(ports, list) and ports:
                 extras.append('ports=' + ','.join(str(p) for p in ports[:8]))
-            lines.append(host + (f" [{' | '.join(extras)}]" if extras else ''))
+            row = str(host) + (f" [{' | '.join(extras)}]" if extras else '')
+            lines.append(re.sub(r'`{3,}', '``', row))
     lines.append('```')
     if truncated:
         lines.append(f"_…{total - max_subdomains} more subdomain(s) not shown._")
