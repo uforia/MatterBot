@@ -61,7 +61,11 @@ jobs:
           set -euo pipefail
           # Use the merge-base of the PR head against the base branch tip.
           # This survives both linear PRs and PRs whose base has advanced.
-          git fetch --no-tags --depth=0 origin "$BASE_REF"
+          # `--depth=0` is invalid (git: "depth 0 is not a positive number")
+          # and was killing this step on every PR. The checkout step above
+          # already sets fetch-depth: 0, so we just need to update the
+          # remote ref for $BASE_REF without imposing a new shallow limit.
+          git fetch --no-tags origin "$BASE_REF"
           MERGE_BASE="$(git merge-base "$BASE_SHA" HEAD)"
           echo "Merge base: $MERGE_BASE"
           # `--diff-filter=AM` => only Added or Modified files. Deleted /
