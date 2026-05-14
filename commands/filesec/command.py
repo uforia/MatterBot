@@ -77,13 +77,15 @@ def _format(ext, payload, max_refs):
     if last_modified:
         rows.append(('Last modified', last_modified))
 
-    lines = [f"FileSec record for `.{ext}`:"]
+    lines = [f"FileSec record for `.{_cell(ext)}`:"]
     if description:
         # Strip down to a single block of prose, keep it manageable.
         desc = ' '.join(str(description).split())
         if len(desc) > 600:
             desc = desc[:599].rstrip() + '…'
-        lines.append(f"> {desc}")
+        # Wrap in inline-code so external FileSec descriptions can't
+        # inject @-mentions or markdown links via the blockquote.
+        lines.append(f"> `{_cell(desc)}`")
         lines.append('')
     lines.append('| Field | Value |')
     lines.append('| :- | :- |')
