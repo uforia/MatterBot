@@ -776,7 +776,7 @@ class MattermostManager(object):
                     if 'text' in message:
                         text = message['text']
                     if 'uploads' in message:
-                        if message['uploads'] != None:
+                        if message['uploads'] is not None:
                             uploads = []
                             for upload in message['uploads']:
                                 filename = upload['filename']

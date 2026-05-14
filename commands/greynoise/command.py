@@ -154,9 +154,9 @@ def process(command, channel, username, params, files, conn):
                                                         metadatavalue = metadatavalue.strip()
                                                     elif metadatafield == 'tor':
                                                         metadatavalue = json_response[field][metadatafield]
-                                                        if metadatavalue == True:
+                                                        if metadatavalue is True:
                                                             metadatavalue = '`Yes`'
-                                                        elif metadatavalue == False:
+                                                        elif metadatavalue is False:
                                                             metadatavalue = '`No`'
                                                         else:
                                                             metadatavalue = ''
@@ -202,9 +202,9 @@ def process(command, channel, username, params, files, conn):
                                                         message += '\n| **%s** | %s |' % (rawdatafields[rawdatafield],rawdatavalue)
                                         else:
                                             value = json_response[field]
-                                            if value == True:
+                                            if value is True:
                                                 value = 'Yes'
-                                            if value == False:
+                                            if value is False:
                                                 value = 'No'
                                             if len(value):
                                                 message += '\n| **%s** | `%s` |' % (fields[field],value)
