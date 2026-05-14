@@ -82,7 +82,10 @@ def _format(query, payload, max_results, max_snippet):
             char_budget = max_snippet
             for ln in sorted(lines_data.keys(), key=lambda s: int(s) if s.isdigit() else 0):
                 code = str(lines_data[ln]).rstrip()
-                fragment = f"{ln}: {code}"
+                # Collapse any ``` run inside upstream code so a search
+                # hit can't terminate the fenced block and inject markdown
+                # after it.
+                fragment = re.sub(r'`{3,}', '``', f"{ln}: {code}")
                 if char_budget - len(fragment) < 0:
                     if char_budget > 4:
                         snippet_lines.append(fragment[:char_budget - 1] + '…')
