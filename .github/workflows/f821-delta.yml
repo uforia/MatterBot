@@ -1,0 +1,94 @@
+name: F821 delta check
+
+# Why this exists:
+#   PR #171 (the traceback channel-leak sweep) introduced 6 latent NameError
+#   bugs by editing code inside bare `except:` blocks without binding `e`.
+#   The bug fired only on the secondary failure path, so it slipped through
+#   import-check and module-load and sat undetected until `ruff check
+#   --select F821` was run as part of the code-quality backlog (#180).
+#   Hotfix landed in #181.
+#
+# What this gate does:
+#   Runs `ruff check --select F821` ONLY on the .py files this PR touches
+#   (relative to the PR base branch). Pre-existing F821s elsewhere in the
+#   tree are tracked under #180 and are deliberately NOT a merge blocker
+#   here -- this gate is for *new* regressions of the PR #171 shape.
+#
+# Source lesson: OpenBrain 1fb73732-1775-489a-a41d-7d7fe19c5426
+#   eval_assertion: "After any mechanical sweep that edits code inside an
+#   `except` block, run `ruff check --select F821 <changed_files>` and
+#   verify zero new undefined-name findings."
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '**.py'
+  # Allow manual re-runs from the Actions tab for retries / debugging.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  f821-delta:
+    name: ruff F821 on changed .py files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR head with full history
+        uses: actions/checkout@v4
+        with:
+          # fetch-depth: 0 so we have the base ref locally for the diff.
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install ruff
+        run: pip install --no-cache-dir 'ruff==0.15.11'
+
+      - name: Compute list of changed .py files
+        id: changed
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          # Use the merge-base of the PR head against the base branch tip.
+          # This survives both linear PRs and PRs whose base has advanced.
+          git fetch --no-tags --depth=0 origin "$BASE_REF"
+          MERGE_BASE="$(git merge-base "$BASE_SHA" HEAD)"
+          echo "Merge base: $MERGE_BASE"
+          # `--diff-filter=AM` => only Added or Modified files. Deleted /
+          # renamed-away paths don't exist on HEAD so ruff would 404 them.
+          CHANGED="$(git diff --name-only --diff-filter=AM "$MERGE_BASE"...HEAD -- '*.py' | tr '\n' ' ')"
+          echo "Changed .py files: $CHANGED"
+          # Emit to step output for the next step.
+          {
+            echo "files<<EOF"
+            git diff --name-only --diff-filter=AM "$MERGE_BASE"...HEAD -- '*.py'
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Run ruff F821 on changed files
+        env:
+          CHANGED_FILES: ${{ steps.changed.outputs.files }}
+        run: |
+          set -euo pipefail
+          if [ -z "${CHANGED_FILES// /}" ]; then
+            echo "No .py files changed in this PR -- nothing to check."
+            exit 0
+          fi
+          echo "Files to check:"
+          printf '  %s\n' $CHANGED_FILES
+          echo
+          # --output-format=github gives ::error:: annotations attached to
+          # the exact line+column on the PR diff view. --no-cache because
+          # the runner is ephemeral and the cache step adds nothing here.
+          # Exit non-zero on any F821 in any changed file.
+          ruff check --select F821 --no-cache --output-format=github $CHANGED_FILES
