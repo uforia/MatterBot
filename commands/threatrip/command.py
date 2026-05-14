@@ -155,7 +155,9 @@ def _format(query, label, ttype, payload, max_tags):
             tag_str += f", …(+{len(tags) - max_tags})"
         rows.append(('Tags', tag_str))
 
-    lines = [f"ThreatRip record for `{query}`:"]
+    # _cell() strips backticks so a backtick in the URL-classified query
+    # can't close the inline-code wrap around the heading.
+    lines = [f"ThreatRip record for `{_cell(query)}`:"]
     lines.append('| Field | Value |')
     lines.append('| :- | :- |')
     for k, v in rows:
