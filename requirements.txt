@@ -5,6 +5,7 @@ beautifulsoup4
 chardet
 ConfigArgParse
 dfir-unfurl[all]
+dnstwist
 feedparser
 graphviz
 holehe
