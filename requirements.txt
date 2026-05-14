@@ -6,7 +6,6 @@ chardet
 ConfigArgParse
 dfir-unfurl[all]
 feedparser
-ghunt
 graphviz
 holehe
 lxml
