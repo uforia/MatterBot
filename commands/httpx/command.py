@@ -129,18 +129,61 @@ def _format_result(target, rec):
     return '\n'.join(lines)
 
 
+def _is_projectdiscovery_httpx(path):
+    """Probe a candidate `httpx` binary and verify it's ProjectDiscovery's.
+
+    A common collision: `pip install httpx[cli]` (or any transitive dep that
+    pulls in the python httpx HTTP-client library with its `[cli]` extra)
+    installs a script named `httpx` in the venv's bin/. `shutil.which('httpx')`
+    then finds the Python one first. Python httpx CLI expects
+    `httpx [OPTIONS] [METHOD] URL`, NOT the `-u <target> -json -tech-detect`
+    argv shape we use; the subprocess fails / returns garbage.
+
+    Filter at resolution time so the operator gets a clear "wrong binary"
+    message instead of a confusing subprocess error later.
+    """
+    try:
+        proc = subprocess.run(
+            [path, '-version'],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    blob = ((proc.stdout or '') + (proc.stderr or '')).lower()
+    # ProjectDiscovery httpx -version output contains "projectdiscovery"
+    # and/or "current version". Python httpx CLI doesn't recognise the
+    # single-dash `-version` flag and emits an argparse error, missing
+    # both signatures.
+    return 'projectdiscovery' in blob or 'current version' in blob
+
+
 def _resolve_binary():
-    explicit = getattr(settings, 'HTTPX_BIN', '') or ''
+    """Return a path to ProjectDiscovery's `httpx` binary, or None.
+
+    Probes each candidate with `_is_projectdiscovery_httpx` so a Python
+    httpx[cli] script on PATH doesn't get picked up by accident.
+    """
+    candidates = []
+    explicit = (getattr(settings, 'HTTPX_BIN', '') or '').strip()
     if explicit:
-        explicit = explicit.strip()
         if Path(explicit).is_file():
-            return explicit
-        # If the operator typed just a bare name, fall back to PATH lookup.
-        found = shutil.which(explicit)
+            candidates.append(explicit)
+        else:
+            found = shutil.which(explicit)
+            if found:
+                candidates.append(found)
+    if not candidates:
+        # Fall back to PATH lookup for the bare name.
+        found = shutil.which('httpx')
         if found:
-            return found
-        return None
-    return shutil.which('httpx')
+            candidates.append(found)
+    for path in candidates:
+        if _is_projectdiscovery_httpx(path):
+            return path
+    return None
 
 
 def process(command, channel, username, params, files, conn):
@@ -155,6 +198,22 @@ def process(command, channel, username, params, files, conn):
 
     binary = _resolve_binary()
     if not binary:
+        # Distinguish "nothing on PATH" from "wrong tool on PATH" so the
+        # operator gets actionable guidance.
+        on_path = shutil.which('httpx')
+        if on_path:
+            return {'messages': [{
+                'text': (
+                    f"httpx binary at `{on_path}` does NOT look like "
+                    "ProjectDiscovery httpx (`-version` probe failed). "
+                    "It's almost certainly the **Python httpx HTTP-client CLI** "
+                    "(installed by `pip install httpx[cli]` or pulled in as a "
+                    "transitive dep). Install ProjectDiscovery's separately — "
+                    "`go install github.com/projectdiscovery/httpx/cmd/httpx@latest` — "
+                    "and either put it earlier in `$PATH` or set `HTTPX_BIN` in "
+                    "`settings.py` to an absolute path."
+                )
+            }]}
         return {'messages': [{
             'text': (
                 "httpx binary not found. Install ProjectDiscovery httpx "
