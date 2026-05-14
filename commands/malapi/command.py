@@ -79,12 +79,15 @@ def _format(api, payload, max_techniques):
     if isinstance(categories, list) and categories:
         rows.append(('Categories', ', '.join(_cell(c) for c in categories[:max_techniques])))
 
-    lines = [f"MalAPI record for `{api}`:"]
+    lines = [f"MalAPI record for `{_cell(api)}`:"]
     if description:
         desc = ' '.join(str(description).split())
         if len(desc) > 600:
             desc = desc[:599].rstrip() + '…'
-        lines.append(f"> {desc}")
+        # Wrap the blockquote line in inline-code so an attacker who
+        # controls the upstream MalAPI description can't inject @-mentions
+        # or markdown links via the blockquote text.
+        lines.append(f"> `{_cell(desc)}`")
         lines.append('')
     lines.append('| Field | Value |')
     lines.append('| :- | :- |')
