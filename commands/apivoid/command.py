@@ -209,9 +209,8 @@ def process(command, channel, username, params, files, conn):
 
     sub = params[0].lower()
     if sub not in SUBCOMMANDS:
-        # Unknown subcommand → silent (operator may have meant a different
-        # module); usage hint only fires when params is empty.
-        return {'messages': messages}
+        cmds = ', '.join(f"`{k}`" for k in SUBCOMMANDS)
+        return {'messages': [{'text': f"APIVoid: unknown subcommand `{_cell(params[0])}`. Subcommands: {cmds}"}]}
 
     if len(params) < 2:
         return {'messages': [{'text': f"Usage: `@apivoid {sub} <target>` ({SUBCOMMANDS[sub]['label']})"}]}
@@ -247,9 +246,10 @@ def process(command, channel, username, params, files, conn):
             timeout=(10, 30),
         )
     except requests.RequestException as e:
-        # Note: the apikey is in the query string. Don't echo the URL.
+        # apikey lives in the query string; str(e) sometimes carries the
+        # full URL — echo only the exception class to avoid leaking it.
         log.exception("apivoid request failed")
-        return {'messages': [{'text': f"APIVoid request failed: `{e}`"}]}
+        return {'messages': [{'text': f"APIVoid request failed: `{type(e).__name__}`"}]}
 
     if resp.status_code == 401 or resp.status_code == 403:
         return {'messages': [{'text': 'APIVoid: authentication failed — check `key`.'}]}
