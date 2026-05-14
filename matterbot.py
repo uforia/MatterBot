@@ -831,6 +831,24 @@ class MattermostManager(object):
         # We're probably handling a regular message; make sure to check we're allowed to respond our own messages too (see config file)
         # Additionally, check if we're not self-triggering on the display of the bind map
         if options.Matterbot['recursion'] or userid != self.my_id:
+            # Watch-module hook: scan the post against active keyword watches
+            # and DM matched watchers. Fire-and-forget on the command pool so
+            # we don't stall the event loop or command dispatch below.
+            # ImportError = watch module not in this deployment; silently skip.
+            try:
+                from watch.command import scan_message as _watch_scan
+                loop = asyncio.get_running_loop()
+                loop.run_in_executor(
+                    self._command_executor,
+                    _watch_scan,
+                    self.mmDriver, self.my_id,
+                    userid, chanid, channame, username,
+                    post.get('message') or '',
+                )
+            except ImportError:
+                pass
+            except Exception:
+                log.exception("watch.scan_message hook failed")
             messages = list()
             for mline in messagelines:
                 addparams = False
