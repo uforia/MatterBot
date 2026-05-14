@@ -133,16 +133,20 @@ def process(command, channel, username, params, files, conn):
     ghunt_path = shutil.which("ghunt")
     if not ghunt_path:
         log.warning(
-            "ghunt module: ghunt binary not on PATH; install with `pip install ghunt` "
-            "(Python <=3.11 only — ghunt pins pillow==9.3.0 which does not build on 3.12+)"
+            "ghunt module: ghunt binary not on PATH; install via pipx "
+            "(`pipx install ghunt`) or any package manager that lands the "
+            "binary on PATH — the bot only needs the executable, not the lib"
         )
         return {
             "messages": [
                 {
-                    "text": "Ghunt is not installed on this host. Run "
-                    "`pip install ghunt` (requires Python ≤3.11 — ghunt pins "
-                    "`pillow==9.3.0`, which does not build on 3.12+), then "
-                    "`ghunt login`, then restart the bot."
+                    "text": "Ghunt is not on this host's PATH. The bot shells "
+                    "out to the `ghunt` binary, so any install method works — "
+                    "pipx is the cleanest: `pipx install ghunt && ghunt login`. "
+                    "(Ghunt pins `pillow==9.3.0`, which fails to build on "
+                    "Python 3.12+, so pipx with `--python python3.11` keeps "
+                    "that constraint out of the bot's own venv.) Restart the "
+                    "bot once `ghunt` is on PATH."
                 }
             ]
         }
