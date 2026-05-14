@@ -7,16 +7,23 @@ CHANS = ["debug"]
 #   1. It pins `pillow==9.3.0`, which fails to build on Python 3.12+
 #      (Pillow 9.x predates the newer setuptools metadata format and
 #      raises `KeyError: '__version__'` during get_requires_for_build_wheel).
-#      Forcing every operator's `pip install -r` to hit this is hostile;
-#      operators on Python <=3.11 can still install ghunt themselves.
+#      Forcing every operator's `pip install -r` to hit this is hostile.
 #   2. Ghunt needs an authenticated Google session to do anything useful —
 #      the operator MUST run `ghunt login` (interactive) and persist the
 #      resulting `creds.m` cookie file before this command returns
 #      anything. There is no "just install and go" path.
 #
-# Operator install (Python <=3.11):
-#     pip install ghunt
-#     ghunt login          # interactive cookie/OAuth bootstrap
+# This command shells out to the `ghunt` binary via subprocess; it does NOT
+# import ghunt as a Python library. The bot can therefore run on any Python
+# version — only the environment that *installs* ghunt is constrained by
+# Pillow 9.3.0. The cleanest install pattern is pipx, which isolates ghunt
+# in its own venv:
+#
+#     pipx install ghunt --python python3.11   # any Python where Pillow 9 builds
+#     ghunt login                               # interactive cookie/OAuth bootstrap
+#
+# A system package manager install, a separate venv, or anything else that
+# puts the `ghunt` binary on the bot's PATH works equally well.
 #
 # See https://github.com/mxrch/GHunt for the upstream README.
 #
