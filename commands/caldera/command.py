@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import re
+from urllib.parse import urlparse
 import requests
 
 ### Dynamic configuration loader (do not change/edit)
@@ -264,7 +265,10 @@ def process(command, channel, username, params, files, conn):
     max_records = int(getattr(settings, 'MAX_RECORDS', 12))
     max_chars = int(getattr(settings, 'MAX_OUTPUT_CHARS', 8000))
 
-    if not key or key.startswith('<') or 'caldera.example.com' in base:
+    # Exact-hostname check (not substring) — refuses the placeholder URL
+    # without false-matching things like `caldera.example.com.evil.tld`.
+    host = (urlparse(base).hostname or '').lower()
+    if not key or key.startswith('<') or host in ('', 'caldera.example.com'):
         return {'messages': [{'text': 'Caldera is not configured. Set `url` (your Caldera v2 API endpoint) and `key` in `settings.py`.'}]}
 
     cfg_sub = SUBCOMMANDS[sub]
