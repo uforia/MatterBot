@@ -10,6 +10,7 @@ import json
 import logging
 import os
 import pathlib
+from pathlib import Path
 import re
 import sys
 import time
@@ -72,6 +73,20 @@ class MattermostManager(object):
         self.my_team_id = self.mmDriver.teams.get_team_by_name(self.my_team_name)['id']
         # Load an existing module channel binding map if present
         modulepath = options.Modules['commanddir'].strip('/')
+        # Put the PARENT of the command directory on sys.path so modules can
+        # be imported as `<dirname>.<command>.command` — the fully-qualified
+        # dotted path avoids name collisions with installed PyPI packages
+        # that share a directory name. Concrete case: `dfir-unfurl[all]`
+        # installs a top-level `unfurl` package; `commands/unfurl/` would
+        # otherwise resolve `import unfurl.command` against the installed
+        # distribution and fail because it has no `command` submodule. Same
+        # collision shape applies to commands/holehe/ vs the holehe pkg.
+        _mp = Path(modulepath).resolve()
+        _pkg_prefix = _mp.name
+        if str(_mp.parent) not in sys.path:
+            sys.path.insert(0, str(_mp.parent))
+        # Keep the legacy commands-on-sys.path entry — some modules may rely
+        # on it for sibling imports.
         sys.path.append(modulepath)
         self.commands = {}
         self.binds = []
@@ -84,17 +99,17 @@ class MattermostManager(object):
         for root, dirs, files in os.walk(modulepath):
             for module in fnmatch.filter(files, "command.py"):
                 module_name = root.split('/')[-1].lower()
-                module = importlib.import_module(module_name + '.' + 'command')
+                module = importlib.import_module(f"{_pkg_prefix}.{module_name}.command")
                 if module_name not in self.commands:
                     module.settings.BINDS = None
                     module.settings.CHANS = None
-                    defaults = importlib.import_module(module_name + '.' + 'defaults')
+                    defaults = importlib.import_module(f"{_pkg_prefix}.{module_name}.defaults")
                     if hasattr(defaults, 'BINDS'):
                         module.settings.BINDS = defaults.BINDS
                     if hasattr(defaults, 'CHANS'):
                         module.settings.CHANS = defaults.CHANS
                     if 'settings.py' in files:
-                        overridesettings = importlib.import_module(module_name + '.' + 'settings')
+                        overridesettings = importlib.import_module(f"{_pkg_prefix}.{module_name}.settings")
                         if hasattr(overridesettings, 'BINDS'):
                             module.settings.BINDS = overridesettings.BINDS
                         if hasattr(overridesettings, 'CHANS'):
@@ -110,12 +125,12 @@ class MattermostManager(object):
         for root, dirs, files in os.walk(modulepath):
             for module in fnmatch.filter(files, "command.py"):
                 module_name = root.split('/')[-1].lower()
-                module = importlib.import_module(module_name + '.' + 'command')
-                defaults = importlib.import_module(module_name + '.' + 'defaults')
+                module = importlib.import_module(f"{_pkg_prefix}.{module_name}.command")
+                defaults = importlib.import_module(f"{_pkg_prefix}.{module_name}.defaults")
                 if hasattr(defaults, 'HELP'):
                     HELP = defaults.HELP
                 if 'settings.py' in files:
-                    overridesettings = importlib.import_module(module_name + '.' + 'settings')
+                    overridesettings = importlib.import_module(f"{_pkg_prefix}.{module_name}.settings")
                     if hasattr(overridesettings, 'HELP'):
                         HELP = overridesettings.HELP
                 self.commands[module_name]['process'] = getattr(module, 'process')
