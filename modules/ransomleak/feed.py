@@ -21,6 +21,7 @@ import shelve
 import traceback
 import yaml
 from bs4 import BeautifulSoup
+from pathlib import Path
 
 def query(settings=None):
     if settings:
@@ -81,7 +82,7 @@ def query(settings=None):
                 except yaml.scanner.ScannerError:
                     pass
                 if feed:
-                    entries = sorted(feed, key=lambda feed: feed['published'], reverse=True)[:MAX]
+                    entries = sorted(feed, key=lambda feed: feed['published'], reverse=True)[:settings.ENTRIES]
                     for entry in entries:
                         item = ''
                         for field in fields:

@@ -15,6 +15,7 @@
 import re
 import requests
 import shelve
+from pathlib import Path
 
 
 
@@ -49,7 +50,7 @@ def query(settings=None):
             history['ransomransomwatch'] = []
         with requests.get(settings.URL, timeout=(10, 30)) as response:
             feed = response.json()
-        entries = sorted(feed, key=lambda feed: feed['discovered'], reverse=True)[:MAX]
+        entries = sorted(feed, key=lambda feed: feed['discovered'], reverse=True)[:settings.ENTRIES]
         if len(entries):
             count = 0
             content = '**%s Update**\n' % (settings.NAME,)

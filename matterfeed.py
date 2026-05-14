@@ -406,7 +406,7 @@ def main(log):
         mm.runModules()
     except Exception as e:
         if options.debug:
-            self.log.error(f"Error   :{str(e)}\nTraceback: {traceback.format_exc()}")
+            log.error(f"Error   :{str(e)}\nTraceback: {traceback.format_exc()}")
 
 if __name__ == '__main__' :
     '''

@@ -443,7 +443,7 @@ class MattermostManager(object):
                         return True
                 except Exception as e:
                     # Apparently the channel does not exist; perhaps it is spelled incorrectly or otherwise a misconfiguration?
-                    log.error("An error occurred during channel parsing: %s" % (str(e),traceback.format_exc()))
+                    log.error("An error occurred during channel parsing: %s\nTraceback: %s" % (str(e),traceback.format_exc()))
         log.info(f"User {userid} is not allowed to use {module} in {channame}.")
         return False
 
