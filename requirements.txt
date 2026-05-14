@@ -5,6 +5,7 @@ beautifulsoup4
 chardet
 ConfigArgParse
 feedparser
+ghunt
 graphviz
 lxml
 mattermostdriver
