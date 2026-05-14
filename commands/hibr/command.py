@@ -127,7 +127,7 @@ def process(command, channel, username, params, files, conn):
         resp = requests.get(
             url,
             headers=headers,
-            allow_redirects=True,
+            allow_redirects=False,
             timeout=(10, 30),
         )
     except requests.RequestException as e:
