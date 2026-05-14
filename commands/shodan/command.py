@@ -6,7 +6,6 @@ import math
 import random
 import re
 import requests
-import traceback
 import urllib
 
 log = logging.getLogger('MatterBot')
@@ -51,7 +50,7 @@ def process(command, channel, username, params, files, conn):
             querytype = 'host'
         else:
             params = params[1:]
-        if not querytype in querytypes:
+        if querytype not in querytypes:
             return
             #return {'messages': [
             #    {'text': 'Please specify one of these query types: `' + '`, `'.join(querytypes) + '`'}
@@ -440,7 +439,7 @@ def process(command, channel, username, params, files, conn):
                     text += '\n**Monitor**: ' + monitored_ips_remaining + '/' + monitored_ips_limit
                     messages.append({'text': text})
             return {'messages': messages}
-        except ValueError as e:
+        except ValueError:
             return {'messages': [
                 {'text': 'Seems like Shodan did not return something like JSON: `%s`' % (response.content,)}
             ]}

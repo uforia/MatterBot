@@ -61,7 +61,7 @@ def query(settings=None):
                         count+=1
                     except IndexError:
                         return items # No more items
-        except Exception as e:
+        except Exception:
             content = traceback.format_exc()
             for channel in settings.CHANNELS:
                 items.append([channel, content])

@@ -3,7 +3,6 @@
 import datetime
 import re
 import requests
-import traceback
 
 ### Dynamic configuration loader (do not change/edit)
 from importlib import import_module
@@ -48,7 +47,7 @@ def process(command, channel, username, params, files, conn):
             messages.append({'text': 'EUVD: you need to specify one of `%s`!' % ('`, `'.join(querytypes),)})
         else:
             querytype = params[0].lower()
-            if not querytype in querytypes:
+            if querytype not in querytypes:
                 messages.append({'text': 'EUVD: you need to specify one of `%s`!' % ('`, `'.join(querytypes),)})
             else:
                 if len(params) < 2:
@@ -105,7 +104,7 @@ def process(command, channel, username, params, files, conn):
                                     break
                     if querytype == 'euvd':
                         euvd = params[0].lower()
-                        if not 'euvd-' in euvd.lower():
+                        if 'euvd-' not in euvd.lower():
                             euvd = 'EUVD-'+euvd
                         euvd = euvd.upper()
                         url = settings.APIURL['euvd']['url']+'enisaid?id=%s' % (euvd,)

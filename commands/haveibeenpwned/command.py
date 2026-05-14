@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import requests
-import traceback
 
 ### Dynamic configuration loader (do not change/edit)
 from importlib import import_module
@@ -91,7 +90,7 @@ def process(command, channel, username, params, files, conn):
                 elif param_searchtype == "domain":
 
                    #TODO
-                    message += f"COMING SOON"
+                    message += "COMING SOON"
 
 
         elif param_searchtype == "breach":

@@ -45,7 +45,7 @@ def query(settings=None):
             else:
                 if Path('modules/ransomwatch/feed.py').is_file():
                     history = shelve.open('modules/ransomwatch/'+settings.HISTORY,writeback=True)
-        if not 'ransomwatch' in history:
+        if 'ransomwatch' not in history:
             history['ransomransomwatch'] = []
         with requests.get(settings.URL, timeout=(10, 30)) as response:
             feed = response.json()
@@ -64,7 +64,7 @@ def query(settings=None):
                 else:
                     victim = victim.title()
                 line = '\n| %s | %s | %s |' % (group, victim, date)
-                if not line in history['ransomwatch']:
+                if line not in history['ransomwatch']:
                     history['ransomwatch'].append(line)
                     content += line
                     count += 1
@@ -74,7 +74,7 @@ def query(settings=None):
                     items.append([channel, content])
         history.sync()
         history.close()
-    except Exception as e:
+    except Exception:
         return items
     finally:
         return items

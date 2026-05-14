@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import requests
-import traceback
 
 ### Dynamic configuration loader (do not change/edit)
 from importlib import import_module
@@ -149,7 +148,7 @@ def process(command, channel, username, params, files, conn):
         if response.status_code == 400:
             messages.append({'text': f"Domain `{param}` is invalid."})
         elif response.status_code == 429:
-            messages.append({'text': f"Rate limit exceeded."})
+            messages.append({'text': "Rate limit exceeded."})
         else:    
             # Handle HTTP request errors
             log.exception("dnsdumpster module error")

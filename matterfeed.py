@@ -50,19 +50,19 @@ class MattermostManager(object):
 
     def update_channels(self):
         try:
-            self.log.info(f"Starting : Updating channels ...")
+            self.log.info("Starting : Updating channels ...")
             channelmap = copy.deepcopy(self.channels)
             userchannels = self.mmDriver.channels.get_channels_for_user(self.me['id'],self.my_team_id)
             for userchannel in userchannels:
                 channel_info = self.mmDriver.channels.get_channel(userchannel['id'])
-                if not channel_info['name'] in channelmap:
+                if channel_info['name'] not in channelmap:
                     self.log.info(f"Found    : {channel_info['name']} channel ...")
                     channelmap[channel_info['name']] = channel_info['id']
-            self.log.info(f"Complete : Channels updated ...")
+            self.log.info("Complete : Channels updated ...")
             return channelmap
         except:
             if options.debug:
-                self.log.error(f"Error   : Cannot update channel map, announcements in additional channels might not work!")
+                self.log.error("Error   : Cannot update channel map, announcements in additional channels might not work!")
             return {}
 
     def load_feedmap(self):
@@ -79,7 +79,7 @@ class MattermostManager(object):
             with open(options.Matterbot['feedmap'],'w') as f:
                 json.dump(self.feedmap,f)
         except:
-            self.log.error(f"An error occurred updating the `%s` feedmap file; config changes were not successfully saved!" % (options.Matterbot['feedmap'],))
+            self.log.error("An error occurred updating the `%s` feedmap file; config changes were not successfully saved!" % (options.Matterbot['feedmap'],))
 
     def createPost(self, channel, text, uploads = []):
         try:
@@ -149,7 +149,7 @@ class MattermostManager(object):
                     module_name = root.split('/')[-1]
                     if options.debug:
                         self.log.info(f"Found    : {module_name} module ...")
-                    if not module_name in modules:
+                    if module_name not in modules:
                         modules[module_name] = {}
                     modules[module_name]['cache'] = f"{root}/{module_name}.cache"
 
@@ -167,13 +167,13 @@ class MattermostManager(object):
                     sys.modules[spec.name] = settings
                     try:
                         spec.loader.exec_module(settings)
-                    except Exception as e:
+                    except Exception:
                         raise ImportError(f"Settings for {module_name} could not be loaded...")
-                    if not 'MODULES' in self.feedmap:
+                    if 'MODULES' not in self.feedmap:
                         self.feedmap['MODULES'] = {}
                     # Migrate old feedmap format to new
                     if module_name in self.feedmap:
-                        if not module_name in self.feedmap['MODULES']:
+                        if module_name not in self.feedmap['MODULES']:
                             self.log.info(f"Fixing   : Old feedmap format found, moving root node for '{module_name}' module to MODULES node ...")
                             self.feedmap['MODULES'][module_name] = self.feedmap[module_name]
                             self.log.info(f"Fixing   : Removing old root node for '{module_name}' ...")
@@ -182,7 +182,7 @@ class MattermostManager(object):
                             self.log.info(f"Fixing   : Old feedmap format found, removing root node for '{module_name}' module ...")
                             del self.feedmap[module_name]
                     # New module, create an entry for it
-                    if not module_name in self.feedmap['MODULES']:
+                    if module_name not in self.feedmap['MODULES']:
                         settings_dict = {k: v for k, v in vars(settings).items() if not k.startswith('__')}
                         self.feedmap['MODULES'][module_name] = {
                             'NAME': getattr(settings,'NAME'),
@@ -192,39 +192,39 @@ class MattermostManager(object):
                             'SETTINGS': settings_dict,
                         }
                     # Create the appropriate subnodes if non-existent
-                    if not 'TOPICS' in self.feedmap:
+                    if 'TOPICS' not in self.feedmap:
                         self.feedmap['TOPICS'] = {}
-                    if not 'CHANNELS' in self.feedmap['MODULES'][module_name]:
+                    if 'CHANNELS' not in self.feedmap['MODULES'][module_name]:
                         self.feedmap['MODULES'][module_name]['CHANNELS'] = []
-                    if not 'SETTINGS' in self.feedmap['MODULES'][module_name]:
+                    if 'SETTINGS' not in self.feedmap['MODULES'][module_name]:
                         settings_dict = {k: v for k, v in vars(settings).items() if not k.startswith('__')}
                         self.feedmap['MODULES'][module_name]['SETTINGS'] = settings_dict
-                    if not 'TOPICS' in self.feedmap['MODULES'][module_name]:
+                    if 'TOPICS' not in self.feedmap['MODULES'][module_name]:
                         self.feedmap['MODULES'][module_name]['TOPICS'] = []
                     # Set the default values from the config in the modules if non-existent
-                    if not 'ADMIN_ONLY' in self.feedmap['MODULES'][module_name]:
+                    if 'ADMIN_ONLY' not in self.feedmap['MODULES'][module_name]:
                         self.feedmap['MODULES'][module_name]['ADMIN_ONLY'] = True
                     if hasattr(settings,'ADMIN_ONLY'):
                         self.feedmap['MODULES'][module_name]['ADMIN_ONLY'] = getattr(settings,'ADMIN_ONLY')
                     if hasattr(settings,'CHANNELS'):
                         for channel in getattr(settings,'CHANNELS'):
-                            if not channel in self.feedmap['MODULES'][module_name]['CHANNELS']:
+                            if channel not in self.feedmap['MODULES'][module_name]['CHANNELS']:
                                 self.feedmap['MODULES'][module_name]['CHANNELS'].append(channel)
                     if hasattr(settings,'TOPICS'):
                         for topic in getattr(settings,'TOPICS'):
-                            if not topic in self.feedmap['MODULES'][module_name]['TOPICS']:
+                            if topic not in self.feedmap['MODULES'][module_name]['TOPICS']:
                                 self.feedmap['MODULES'][module_name]['TOPICS'].append(topic)
-                            if not topic in self.feedmap['TOPICS']:
+                            if topic not in self.feedmap['TOPICS']:
                                 self.feedmap['TOPICS'][topic] = []
-                            if not module_name in self.feedmap['TOPICS'][topic]:
+                            if module_name not in self.feedmap['TOPICS'][topic]:
                                 self.feedmap['TOPICS'][topic].append(module_name)
                         for topic in list(self.feedmap['TOPICS'].keys()):
-                            if module_name in self.feedmap['TOPICS'][topic] and not topic in getattr(settings, 'TOPICS'):
+                            if module_name in self.feedmap['TOPICS'][topic] and topic not in getattr(settings, 'TOPICS'):
                                 self.log.info(f"Fixing   : Module '{module_name}' no longer covers the {topic} topic, removing from the {topic} list ...")
                                 self.feedmap['TOPICS'][topic].remove(module_name)
             # Clear out modules that no longer exist from the feedmap file
             for module_name in list(self.feedmap.keys()):
-                if not module_name in ('TOPICS', 'MODULES'):
+                if module_name not in ('TOPICS', 'MODULES'):
                     self.log.info(f"Fixing   : Now missing module '{module_name}' in old feedmap format found, removing leftover root node ...")
                     del self.feedmap[module_name]
             # Remove modules from the topics list that no longer exist
@@ -309,7 +309,7 @@ class MattermostManager(object):
     def runModule(self, module_name):
         try:
             history = shelve.open(self.modules[module_name]['cache'], writeback=True)
-            if not module_name in history:
+            if module_name not in history:
                 history[module_name] = []
                 first_run = True
             else:
@@ -325,11 +325,11 @@ class MattermostManager(object):
                     except:
                         channel, content = newspost
                         uploads = []
-                    if not [channel, content, uploads] in posts:
+                    if [channel, content, uploads] not in posts:
                         posts.append([channel, content, uploads])
                     if module_name in self.feedmap['MODULES']:
                         for newschannel in self.feedmap['MODULES'][module_name]['CHANNELS']:
-                            if not [newschannel, content, uploads] in posts:
+                            if [newschannel, content, uploads] not in posts:
                                 posts.append([newschannel, content, uploads])
                 for post in posts:
                     channel, content, uploads = post
@@ -337,7 +337,7 @@ class MattermostManager(object):
                     if not content.startswith('@') and not content.startswith('!'):
                         logcontent = content.replace('\n', '. ')[:40]
                         if not first_run:
-                            if not post in history[module_name]:
+                            if post not in history[module_name]:
                                 try:
                                     if not options.debug:
                                         self.log.info(f"Posting  : {module_name} => {channel} => {logcontent} ...")
@@ -350,14 +350,14 @@ class MattermostManager(object):
                             else:
                                 if options.debug:
                                     self.log.info(f"DbgMsg   : Already in post history for {module_name}: {channel} => {logcontent} ...")
-                        if not post in history[module_name]:
+                        if post not in history[module_name]:
                             if not options.debug:
                                 history[module_name].append(post)
                             else:
                                 self.log.info(f"DbgCache : {module_name} => {channel} => {logcontent} ...")
             if options.debug:
                 self.log.info(f"Complete : {module_name} module ...")
-        except Exception as e:
+        except Exception:
             if options.debug:
                 self.log.error(f"Error   : {module_name} ...\nTraceback: {traceback.format_exc()}")
         finally:
@@ -381,7 +381,7 @@ class MattermostManager(object):
             sys.modules[spec.name] = module
             try:
                 spec.loader.exec_module(module)
-            except Exception as e:
+            except Exception:
                 raise ImportError(f"Module {module_name} could not be executed...")
             func = getattr(module, 'query')
             if not callable(func):

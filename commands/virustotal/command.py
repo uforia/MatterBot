@@ -5,7 +5,6 @@ import logging
 import random
 import re
 import requests
-import traceback
 
 log = logging.getLogger('MatterBot')
 
@@ -139,7 +138,7 @@ def process(command, channel, username, params, files, conn):
                                                         tacticid = tactic['id']
                                                         tacticname = tactic['name']
                                                         tacticlink = tactic['link']
-                                                        if not tacticid in [_['id'] for _ in tacticslist]:
+                                                        if tacticid not in [_['id'] for _ in tacticslist]:
                                                             tacticslist.append({
                                                                 'id': tacticid,
                                                                 'name': tacticname,
@@ -151,7 +150,7 @@ def process(command, channel, username, params, files, conn):
                                                                     ttpid = ttp['id']
                                                                     ttpname = ttp['name']
                                                                     ttplink = ttp['link']
-                                                                    if not ttpid in [_['id'] for _ in ttplist]:
+                                                                    if ttpid not in [_['id'] for _ in ttplist]:
                                                                         ttplist.append({
                                                                             'id': ttpid,
                                                                             'name': ttpname,
@@ -266,7 +265,7 @@ def process(command, channel, username, params, files, conn):
                                     dns_record_types = ('A', 'NS', 'MX', 'CNAME', 'TXT')
                                     dns_records = {}
                                     for dns_record_type in dns_record_types:
-                                        if not dns_record_type in dns_records:
+                                        if dns_record_type not in dns_records:
                                             dns_records[dns_record_type] = set()
                                     for last_dns_record in last_dns_records:
                                         type, value = last_dns_record['type'], last_dns_record['value']

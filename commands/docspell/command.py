@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 
 import datetime
-import json
 import re
 import requests
-import traceback
 
 ### Dynamic configuration loader (do not change/edit)
 from importlib import import_module
@@ -63,7 +61,7 @@ def process(command, channel, username, params, files, conn):
         try:
             messages = []
             querytypes = ('search', 'upload')
-            if not params[0] in querytypes:
+            if params[0] not in querytypes:
                 querytype = 'search'
             else:
                 querytype = params[0]
@@ -117,7 +115,7 @@ def process(command, channel, username, params, files, conn):
                                                     }
                                                     with requests.get(url=url, headers=headers, timeout=(10, 30)) as download:
                                                         entry = {'filename': name, 'bytes': download.content}
-                                                        if not entry in files:
+                                                        if entry not in files:
                                                             files.append(entry)
                                             else:
                                                 attachments = '-'

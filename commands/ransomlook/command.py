@@ -4,7 +4,6 @@ import base64
 import collections
 import re
 import requests
-import traceback
 import urllib.parse
 
 ### Dynamic configuration loader (do not change/edit)
@@ -61,7 +60,7 @@ def process(command, channel, username, params, files, conn):
                 'tgmessages',
             )
             querytype = params[0].lower()
-            if not querytype in querytypes:
+            if querytype not in querytypes:
                 messages.append({'text': 'Please specify one of `%s`!' % '`, `'.join(querytypes)})
             if len(params)>1:
                 query = params[1:]
@@ -112,9 +111,9 @@ def process(command, channel, username, params, files, conn):
                                         message += '|\n'
                                         for field in fields:
                                             if field in ('fqdn', 'title'):
-                                                message += f"| :- "
+                                                message += "| :- "
                                             else:
-                                                message += f"| -: "
+                                                message += "| -: "
                                         message += '|\n'
                                         for location in locations:
                                             for field in fields:
@@ -149,9 +148,9 @@ def process(command, channel, username, params, files, conn):
                                             message += '|\n'
                                             for field in fields:
                                                 if field in ('post_title', 'description'):
-                                                    message += f"| :- "
+                                                    message += "| :- "
                                                 else:
-                                                    message += f"| -: "
+                                                    message += "| -: "
                                             message += '|\n'
                                             for post in posts:
                                                 if count > limit:
@@ -163,7 +162,7 @@ def process(command, channel, username, params, files, conn):
                                                             value = 'Unavailable'
                                                         message += f"| {value} "
                                                     else:
-                                                        message += f'| - '
+                                                        message += '| - '
                                                 count += 1
                                                 message += '|\n'
                                 if len(uploads):
@@ -226,9 +225,9 @@ def process(command, channel, username, params, files, conn):
                                         message += '|\n'
                                         for field in fields:
                                             if field in ('fqdn', 'title'):
-                                                message += f"| :- "
+                                                message += "| :- "
                                             else:
-                                                message += f"| -: "
+                                                message += "| -: "
                                         message += '|\n'
                                         for location in locations:
                                             for field in fields:
@@ -263,9 +262,9 @@ def process(command, channel, username, params, files, conn):
                                             message += '|\n'
                                             for field in fields:
                                                 if field in ('post_title', 'description'):
-                                                    message += f"| :- "
+                                                    message += "| :- "
                                                 else:
-                                                    message += f"| -: "
+                                                    message += "| -: "
                                             message += '|\n'
                                             for post in posts:
                                                 if count > limit:
@@ -277,7 +276,7 @@ def process(command, channel, username, params, files, conn):
                                                             value = 'Unavailable'
                                                         message += f"| {value} "
                                                     else:
-                                                        message += f'| - '
+                                                        message += '| - '
                                                 count += 1
                                                 message += '|\n'
                                 if len(uploads):
@@ -428,7 +427,7 @@ def process(command, channel, username, params, files, conn):
                                                 if count > limit:
                                                     break
                                                 timestamp = tgmessage
-                                                if not 'message' in tgmessages[tgmessage]:
+                                                if 'message' not in tgmessages[tgmessage]:
                                                     break
                                                 msg = tgmessages[tgmessage]['message'] if tgmessages[tgmessage]['message'] else None
                                                 if msg:
@@ -436,7 +435,7 @@ def process(command, channel, username, params, files, conn):
                                                 images = tgmessages[tgmessage]['image'] if len(tgmessages[tgmessage]['image']) else []
                                                 if filter:
                                                     if msg:
-                                                        if not filter.lower() in msg.lower():
+                                                        if filter.lower() not in msg.lower():
                                                             continue
                                                     else:
                                                         continue

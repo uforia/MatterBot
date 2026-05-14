@@ -3,7 +3,6 @@
 import datetime
 import re
 import requests
-import traceback
 
 ### Dynamic configuration loader (do not change/edit)
 from importlib import import_module
@@ -48,7 +47,7 @@ def process(command, channel, username, params, files, conn):
             messages.append({'text': 'OpenCVE: you need to specify one of `%s`!' % ('`, `'.join(querytypes),)})
         else:
             querytype = params[0].lower()
-            if not querytype in querytypes:
+            if querytype not in querytypes:
                 messages.append({'text': 'OpenCVE: you need to specify one of `%s`!' % ('`, `'.join(querytypes),)})
             else:
                 if len(params) < 2:
@@ -124,7 +123,7 @@ def process(command, channel, username, params, files, conn):
                                         break
                     if querytype == 'cve':
                         cve = params[0].lower()
-                        if not 'cve-' in cve:
+                        if 'cve-' not in cve:
                             cve = 'CVE-'+cve
                         cve = cve.upper()
                         url = settings.APIURL['opencve']['url']+'/cve/%s' % (cve,)

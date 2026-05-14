@@ -4,7 +4,6 @@ import base64
 import concurrent.futures
 import re
 import requests
-import traceback
 from concurrent.futures import ThreadPoolExecutor
 
 ### Dynamic configuration loader (do not change/edit)
@@ -60,7 +59,7 @@ def process(command, channel, username, params, files, conn):
                     if 'detail' in json_response:
                         # You don't have a registered account/API key to get samples!
                         detail = json_response['detail']
-                        if not 'not found' in detail.lower():
+                        if 'not found' not in detail.lower():
                             text = 'Malpedia hash search for `%s`: %s' % (params, detail)
                     elif 'zipped' in json_response:
                         # We found a sample!
@@ -151,7 +150,7 @@ def process(command, channel, username, params, files, conn):
                         entry = '`, `'.join(sorted(malwarenames, key=str.lower))
                         text += '\n**Malware family**: `' + entry + '`'
                     messages.append({'text': text})
-        except Exception as e:
+        except Exception:
             log.exception("malpedia module error")
             messages.append({'text': 'An error occurred searching Malpedia for `%s`:' % (params)},)
         finally:

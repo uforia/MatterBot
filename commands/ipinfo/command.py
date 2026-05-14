@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import requests
-import traceback
 
 ### Dynamic configuration loader (do not change/edit)
 from importlib import import_module

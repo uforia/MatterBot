@@ -5,7 +5,6 @@ import datetime
 import json
 import re
 import requests
-import traceback
 
 ### Dynamic configuration loader (do not change/edit)
 from importlib import import_module
@@ -93,7 +92,7 @@ def process(command, channel, username, params, files, conn):
                     else:
                         APIENDPOINT = APIENDPOINT.strip('/')+'/search?query=%s' % (filters,)
                 if APIENDPOINT != settings.APIURL['triage']['url']:
-                    if not querytype in ('sample',):
+                    if querytype not in ('sample',):
                         APIENDPOINT+='&limit=%d' % (settings.APIURL['triage']['apilimit'],)
                     headers = {
                         'User-Agent': 'Tria.ge Python MatterBot v0.1',
@@ -127,12 +126,12 @@ def process(command, channel, username, params, files, conn):
                                         count += len(data)
                                         for result in data:
                                             id = result['id']
-                                            if not id in results:
+                                            if id not in results:
                                                 results[id] = result
                                         if count > settings.APIURL['triage']['limit']:
                                             break
                                 else:
-                                    if not querytype in ('sample',):
+                                    if querytype not in ('sample',):
                                         messages.append({'text': 'An error occurred searching Tria.ge. Perhaps the query was invalid or the API errored out.'})
                                         messages.append({'text': 'Raw API response: `%s`' % (response.content,)})
                                         break
@@ -158,7 +157,7 @@ def process(command, channel, username, params, files, conn):
                         if filters:
                             header += ' filters: `%s`' % (filters.replace('+',' '),)
                         header += '**\n\n'
-                        if not querytype in ('sample',):
+                        if querytype not in ('sample',):
                             message = header
                             fields = collections.OrderedDict({
                                 'id': 'Triage ID',
@@ -254,11 +253,11 @@ def process(command, channel, username, params, files, conn):
                                     behaviourset = set()
                                     for signature in results[samplesection]:
                                         ttpname = signature['name']
-                                        if not ttpname in behaviourset:
+                                        if ttpname not in behaviourset:
                                             if 'ttp' in signature:
                                                 ttps = signature['ttp']
                                                 for ttp in ttps:
-                                                    if not ttp in ttpset:
+                                                    if ttp not in ttpset:
                                                         ttpset[ttp] = ttpname
                                             else:
                                                 behaviourset.add(ttpname)
@@ -283,9 +282,9 @@ def process(command, channel, username, params, files, conn):
                                             for ioctype in target['iocs']:
                                                 if ioctype in ioctypes:
                                                     for ioc in target['iocs'][ioctype]:
-                                                        if not ioctype in iocs:
+                                                        if ioctype not in iocs:
                                                             iocs[ioctype] = []
-                                                        if not ioc in iocs[ioctype]:
+                                                        if ioc not in iocs[ioctype]:
                                                             iocs[ioctype].append(ioc.replace('http','hxxp').replace('.','[.]',1))
                                     message += '| **Type** | **Value** |\n'
                                     message += '| -: | :- |\n'

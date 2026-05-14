@@ -3,7 +3,6 @@
 import logging
 import re
 import requests
-import traceback
 
 log = logging.getLogger('MatterBot')
 

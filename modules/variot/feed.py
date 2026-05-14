@@ -17,7 +17,6 @@ import logging
 import re
 import requests
 import shelve
-import traceback
 import unicodedata
 from pathlib import Path
 
@@ -57,9 +56,9 @@ def query(settings=None):
             else:
                 if Path('modules/variot/feed.py').is_file():
                     history = shelve.open('modules/variot/'+settings.HISTORY,writeback=True)
-        if not 'variot' in history:
+        if 'variot' not in history:
             history['variot'] = []
-    except Exception as e:
+    except Exception:
         log.exception("variot feed: history init error")
         raise
     try:
@@ -80,7 +79,7 @@ def query(settings=None):
                     last_update = entry['last_update_date']
                     cve = entry['cve'] if 'cve' in entry else None
                     historyitem = (var,last_update)
-                    if not historyitem in history['variot']:
+                    if historyitem not in history['variot']:
                         description = regex.sub('',unicodedata.normalize('NFKD',entry['description']['data'])).strip().replace('\n','. ')
                         if len(description)>400:
                             description = description[:396]+" ..."
@@ -109,10 +108,10 @@ def query(settings=None):
                     count += 1
             except IndexError:
                 return items # No more items
-            except Exception as e:
+            except Exception:
                 log.exception("variot feed: item-processing error")
             return items
-    except Exception as e:
+    except Exception:
         log.exception("variot feed: top-level error")
     return items
 

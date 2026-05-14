@@ -4,7 +4,6 @@ import collections
 import datetime
 import re
 import requests
-import traceback
 
 ### Dynamic configuration loader (do not change/edit)
 from importlib import import_module
@@ -135,7 +134,7 @@ def process(command, channel, username, params, files, conn):
                                 for detectionfield in detectionfields:
                                     result = None
                                     if detectionfield in json_response[query]['detections']:
-                                        if not detectionfield in ('risk',):
+                                        if detectionfield not in ('risk',):
                                             if json_response[query]['detections'][detectionfield]:
                                                 result = ":exclamation:"
                                             else:

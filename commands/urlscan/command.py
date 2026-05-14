@@ -3,7 +3,6 @@
 import concurrent.futures
 import re
 import requests
-import traceback
 from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urlparse
 
@@ -84,8 +83,8 @@ def process(command, channel, username, params, files, conn):
                             if len(json_response["results"]):
                                 length = 0
                                 message = "Urlscan.io search results for: `"+"`, `".join(params)+"`\n"
-                                message += f"\n| Timestamp | Title | IP | URL | Verdict | Details | Screenshot |"
-                                message += f"\n| -: | :- | -: | :- | :- |"
+                                message += "\n| Timestamp | Title | IP | URL | Verdict | Details | Screenshot |"
+                                message += "\n| -: | :- | -: | :- | :- |"
                                 fields = ['title', 'ip', 'url']
                                 candidates = []
                                 for result in json_response["results"]:
@@ -98,7 +97,7 @@ def process(command, channel, username, params, files, conn):
                                                     if field in result['page']:
                                                         fields_text += f"| `{result['page'][field].replace('.','[.]',1).replace(':','[:]',1).replace('http','hxxp').replace('|','-')}` "
                                                     else:
-                                                        fields_text += f"| - "
+                                                        fields_text += "| - "
                                                 verdicturl = result["result"]
                                                 details = verdicturl.replace('api/v1/','')
                                                 screenshot = result["screenshot"]

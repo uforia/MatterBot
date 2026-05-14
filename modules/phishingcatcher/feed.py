@@ -16,7 +16,6 @@ import logging
 import re
 import requests
 import shelve
-import traceback
 from pathlib import Path
 
 log = logging.getLogger('MatterBot')
@@ -73,9 +72,9 @@ def query(settings=None):
                 else:
                     if Path('modules/phishingcatcher/feed.py').is_file():
                         history = shelve.open('modules/phishingcatcher/'+settings.HISTORY,writeback=True)
-            if not 'phishingcatcher' in history:
+            if 'phishingcatcher' not in history:
                 history['phishingcatcher'] = []
-        except Exception as e:
+        except Exception:
             log.exception("phishingcatcher feed: history init error")
             raise
         suspicious_domains = []
@@ -90,7 +89,7 @@ def query(settings=None):
             while count < len(suspicious_domains):
                 domain, score = suspicious_domains[count]
                 score = score.replace(')','')
-                if not domain in history['phishingcatcher']:
+                if domain not in history['phishingcatcher']:
                     history['phishingcatcher'].append(domain)
                     try:
                         if int(score) > int(settings.THRESHOLD):

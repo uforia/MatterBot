@@ -6,7 +6,6 @@ import json
 import re
 import requests
 import sys
-import traceback
 import urllib.parse
 
 ### Dynamic configuration loader (do not change/edit)
@@ -206,7 +205,7 @@ def process(command, channel, username, params, files, conn):
                                                                 for tagListEntry in asset['tagList']:
                                                                     for tag in asset['tagList'][tagListEntry]:
                                                                         tagName = tag['tagName']
-                                                                        if not 'Cloud Agent' in tagName and not 'ScanTime' in tagName:
+                                                                        if 'Cloud Agent' not in tagName and 'ScanTime' not in tagName:
                                                                             tagList.add(tag['tagName'])
                                                                 tags = ','.join(sorted(tagList))
                                                                 for software in asset['softwareListData']['software']:
