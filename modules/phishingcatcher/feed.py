@@ -12,11 +12,14 @@
 # <channel>: basically the destination channel in Mattermost, e.g. 'Newsfeed', 'Incident', etc.
 # <content>: the content of the message, MD format possible
 
+import logging
 import re
 import requests
 import shelve
 import traceback
 from pathlib import Path
+
+log = logging.getLogger('MatterBot')
 
 def read_data_from_file(file_path):
     with open(file_path, 'r') as file:
@@ -73,7 +76,7 @@ def query(settings=None):
             if not 'phishingcatcher' in history:
                 history['phishingcatcher'] = []
         except Exception as e:
-            print(traceback.format_exc())
+            log.exception("phishingcatcher feed: history init error")
             raise
         suspicious_domains = []
         for line in data:
@@ -93,8 +96,8 @@ def query(settings=None):
                         if int(score) > int(settings.THRESHOLD):
                             content += '\n| `%s` | `%s` |' % (score, domain)
                             entries += 1
-                    except:
-                        print(score,domain)
+                    except Exception:
+                        log.debug(f"phishingcatcher: skipped malformed entry score={score!r} domain={domain!r}")
                 count += 1        
             if entries > 0:
                 message = "\n**PhishingCatcher** found `%d` new potential phishing domain(s):\n" % (entries,)

@@ -13,12 +13,16 @@
 # <content>: the content of the message, MD format possible
 
 import datetime
+import logging
 import re
 import requests
 import shelve
 import traceback
 import unicodedata
 from pathlib import Path
+
+log = logging.getLogger('MatterBot')
+
 
 def query(settings=None):
     if settings:
@@ -53,7 +57,7 @@ def query(settings=None):
         if not 'opencve' in history:
             history['opencve'] = []
     except Exception as e:
-        print(traceback.format_exc())
+        log.exception("opencve feed: history init error")
         raise
     if history:
         session = requests.Session()
@@ -131,7 +135,7 @@ def query(settings=None):
             except IndexError:
                 return items # No more items
             except Exception as e:
-                print(traceback.format_exc())
+                log.exception("opencve feed: item-processing error")
         return items
 
 if __name__ == "__main__":

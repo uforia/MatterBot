@@ -12,7 +12,11 @@
 # <channel>: basically the destination channel in Mattermost, e.g. 'Newsfeed', 'Incident', etc.
 # <content>: the content of the message, MD format possible
 
+import logging
 import requests
+
+log = logging.getLogger('MatterBot')
+
 
 def query(settings=None):
     if settings:
@@ -53,11 +57,11 @@ def query(settings=None):
                         items.append([channel, content])
                     count-=1
                 except Exception as e:
-                    print(e)
+                    log.exception("wikijs feed: item-processing error")
                     count-=1
             return items
-    except:
-        pass
+    except Exception:
+        log.exception("wikijs feed: top-level error")
 
 if __name__ == "__main__":
     print(query())

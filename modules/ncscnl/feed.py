@@ -14,10 +14,13 @@
 
 import bs4
 import feedparser
+import logging
 import re
 import shelve
 import traceback
 from pathlib import Path
+
+log = logging.getLogger('MatterBot')
 
 def query(settings=None):
     if settings:
@@ -53,7 +56,7 @@ def query(settings=None):
         if not 'ncscnl' in history:
             history['ncscnl'] = []
     except Exception as e:
-        print(traceback.format_exc())
+        log.exception("ncscnl feed: history init error")
         raise
     if history:
         while count < settings.ENTRIES:
