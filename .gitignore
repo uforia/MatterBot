@@ -152,3 +152,12 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# OS noise
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+desktop.ini
