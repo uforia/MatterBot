@@ -4,6 +4,7 @@ azure-storage-blob
 beautifulsoup4
 chardet
 ConfigArgParse
+dfir-unfurl[all]
 feedparser
 graphviz
 lxml
