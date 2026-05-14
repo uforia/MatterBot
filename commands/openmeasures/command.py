@@ -112,7 +112,9 @@ def _format(query, sites, payload, max_results):
 
         lines.append(f"**{i}. `{_cell(site)}`** · `{_cell(ts)}`")
         if text:
-            lines.append(f"> {_trim(_cell(text), 300)}")
+            # Wrap in inline-code so upstream post text can't inject
+            # @-mentions or markdown links via the blockquote.
+            lines.append(f"> `{_trim(_cell(text), 300)}`")
         if url:
             lines.append(f"  ↳ {url}")
         lines.append('')
