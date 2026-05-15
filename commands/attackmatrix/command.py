@@ -156,7 +156,16 @@ def process(command, channel, username, params, files, conn):
                                     actorttps = {}
                                     commonttps = {}
                                     for actor in json_response:
+                                        # `Actors` is in the categories tuple because the API exposes
+                                        # actor-to-actor relations on the same key. Skip it here so
+                                        # commonttps doesn't get a self-referential `Actors` bucket
+                                        # that the downstream renderer / graph code would treat as
+                                        # TTPs (closes #17 self-reference path A).
+                                        if not isinstance(json_response[actor], dict):
+                                            continue
                                         for category in categories:
+                                            if category == 'Actors':
+                                                continue
                                             if category in json_response[actor]:
                                                 commonttps[category] = {}
                                                 for entry in json_response[actor][category]:
@@ -180,14 +189,36 @@ def process(command, channel, username, params, files, conn):
                                     for actor in keywords:
                                         actorttps[actor] = {}
                                         APIENDPOINT = settings.APIURL['attackmatrix']['url']+'/explore/Actors/'+actor
-                                        with requests.get(APIENDPOINT, headers=headers, timeout=(10, 30)) as response:
-                                            json_response = response.json()
-                                            for commonttpcategory in commonttps:
-                                                if commonttpcategory in commonttps:
-                                                    if len(json_response[commonttpcategory]) == 0:
-                                                        del json_response[commonttpcategory]
-                                                        continue
-                                                for commonttp in commonttps[commonttpcategory]:
+                                        try:
+                                            with requests.get(APIENDPOINT, headers=headers, timeout=(10, 30)) as response:
+                                                json_response = response.json()
+                                        except (requests.RequestException, ValueError) as e:
+                                            # No module-level `log` is set up in attackmatrix yet;
+                                            # surface the failure to the operator via channel
+                                            # message and move on to the next actor.
+                                            messages.append({'text': 'AttackMatrix: per-actor follow-up failed for `'+actor+'`: `'+str(e)+'`'})
+                                            continue
+                                        if not isinstance(json_response, dict):
+                                            continue
+                                        # Subtract the common TTPs from the per-actor record so what
+                                        # remains is the actor's UNIQUE TTPs. Guard every step with
+                                        # `in` checks — the response shape varies (and may omit
+                                        # categories entirely) and the original code KeyErrored on
+                                        # any missing category (closes #17 self-reference path B
+                                        # / uforia's "actoroverlap sometimes errors on ttpoverlap"
+                                        # follow-up).
+                                        for commonttpcategory in commonttps:
+                                            if commonttpcategory == 'Actors':
+                                                continue
+                                            if commonttpcategory not in json_response:
+                                                continue
+                                            if not isinstance(json_response[commonttpcategory], dict):
+                                                continue
+                                            if len(json_response[commonttpcategory]) == 0:
+                                                del json_response[commonttpcategory]
+                                                continue
+                                            for commonttp in commonttps[commonttpcategory]:
+                                                if commonttp in json_response[commonttpcategory]:
                                                     del json_response[commonttpcategory][commonttp]
                                         actorttps[actor] = json_response
                                 for actor in keywords:
@@ -226,6 +257,12 @@ def process(command, channel, username, params, files, conn):
                                                fontcolor='white')
                                     # Add all TTPs to the graph
                                     for category in categories:
+                                        # Skip the self-referential Actors category — those nodes
+                                        # are already in the graph as actor-styled nodes; re-adding
+                                        # them as TTP-styled nodes would overwrite the style and
+                                        # create actor↔actor edges (closes #17 graph path).
+                                        if category == 'Actors':
+                                            continue
                                         if category in actorttps[actorid]:
                                             for ttpid in actorttps[actorid][category]:
                                                 entry = actorttps[actorid][category][ttpid]
@@ -240,6 +277,8 @@ def process(command, channel, username, params, files, conn):
                                                 graph.edge(actorid, ttpid)
                                 # Create the nodes for the TTPs they have in common
                                 for category in categories:
+                                    if category == 'Actors':
+                                        continue
                                     if category in commonttps:
                                         for ttpid in commonttps[category]:
                                             entry = commonttps[category][ttpid]
