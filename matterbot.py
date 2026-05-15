@@ -46,6 +46,7 @@ class MattermostManager(object):
         # by the number of distinct users who have ever talked to the bot
         # since process start (small for a single-team deployment).
         self._user_semaphores = {}
+        self._reload_lock = asyncio.Lock()
         self.mmDriver = Driver(options={
             'url'       : options.Matterbot['host'],
             'port'      : options.Matterbot['port'],
@@ -187,6 +188,28 @@ class MattermostManager(object):
                         return [_['user_id'] for _ in channel_members]
         except Exception:
             log.exception("An error occurred updating the welcome channel state!")
+
+    async def reload_commands(self):
+        """Re-discover and reload command modules in place. Returns the
+        report dict. Atomic: the live table is only swapped after a fully
+        built new table; in-flight commands keep their old process ref."""
+        modulepath = options.Modules['commanddir'].strip('/')
+        pkg_prefix = Path(modulepath).resolve().name
+        async with self._reload_lock:
+            loop = asyncio.get_running_loop()
+            commands, binds, report = await loop.run_in_executor(
+                self._command_executor,
+                command_loader.load_command_table,
+                modulepath, pkg_prefix, self.commands, True,
+            )
+            # Atomic rebind (single STORE_ATTR, GIL-protected). Dispatch in
+            # call_module() looks up self.commands[module]['process'] and
+            # submits it to the executor BEFORE the await, so any in-flight
+            # command holds its old callable and is unaffected by this swap.
+            self.commands = commands
+            self.binds = binds
+            await self.update_bindmap()
+            return report
 
     def bindmap_serializable(self):
         out = {}
@@ -614,6 +637,11 @@ class MattermostManager(object):
                     for modulename in params:
                         if modulename not in self.commands:
                             text = "@" + username + ", there is no `%s` module loaded. Use one of the help commands (`%s`) to see a list of available modules." % (modulename,"`, `".join(options.Matterbot['helpcmds']))
+                        # NOTE: these in-place 'chans' mutations are not
+                        # serialized against reload_commands(). A reload that
+                        # swaps self.commands between this edit and the next
+                        # use drops the change on the old table. Pre-existing;
+                        # reload_commands() newly makes it reachable at runtime.
                         elif command in ('!bind', '@bind'):
                             if channame in self.commands[modulename]['chans']:
                                 text = "The `%s` module is already available in the `%s` channel." % (modulename,self.channame_to_chandisplayname(channame))

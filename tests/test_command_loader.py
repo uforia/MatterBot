@@ -158,3 +158,18 @@ def test_binds_preserved_across_reload(tree):
         str(tree), "cmds", existing=cmds, do_reload=True)
     assert cmds2["foo"]["binds"] == ["runtime-bound"]
     assert "runtime-bound" in binds2 and "foo" not in binds2
+
+
+def test_returned_table_is_independent_of_existing(tree):
+    _write(tree, "foo", binds=["foo"], returns="v1")
+    cmds, _b, _r = command_loader.load_command_table(
+        str(tree), "cmds", existing=None, do_reload=False)
+    _write(tree, "foo", binds=["foo"], returns="v2")
+    cmds2, _b2, _r2 = command_loader.load_command_table(
+        str(tree), "cmds", existing=cmds, do_reload=True)
+    # In-flight safety: the OLD table's process ref still runs the OLD code
+    # after a reload, and the reload returns a NEW top-level dict (not the
+    # same object mutated in place).
+    assert cmds["foo"]["process"]("c", "ch", "u", [], [], None) == \
+        {"messages": [{"text": "v1"}]}
+    assert cmds2 is not cmds
