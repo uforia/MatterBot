@@ -920,6 +920,30 @@ class MattermostManager(object):
                 elif command in options.Matterbot['feedcmds']:
                     await self.log_message(userid, command, params, chaninfo, rootid)
                     await self.feed_message(userid, post, params, chaninfo, rootid)
+                elif command in options.Matterbot.get('lifecyclecmds', []):
+                    await self.log_message(userid, command, params, chaninfo, rootid)
+                    if command.lstrip('!@').lower() != 'reload':
+                        # PR 2 owns restart/update tokens; ignore them here.
+                        pass
+                    elif not self.isadmin(userid):
+                        await self.send_message(
+                            chanid,
+                            "@%s, you do not have permission to reload modules."
+                            % username, rootid)
+                    else:
+                        await self.send_message(
+                            chanid, "Reloading command modules…", rootid)
+                        try:
+                            report = await self.reload_commands()
+                            await self.send_message(
+                                chanid, self.format_reload_report(report),
+                                rootid)
+                        except Exception as exc:
+                            log.exception("reload_commands failed")
+                            await self.send_message(
+                                chanid,
+                                "Reload failed (modules unchanged): `%s`"
+                                % (exc,), rootid)
                 else:
                     await self.log_message(userid, command, params, chaninfo, rootid)
                     if not any(_ in post['message'] for _ in ('| **YES** |', '| **NO** |', 'I know about `!help')):
