@@ -4,11 +4,8 @@ import ast
 import asyncio
 import concurrent.futures
 import copy
-import fnmatch
-import importlib.util
 import json
 import logging
-import os
 import pathlib
 from pathlib import Path
 import re
@@ -17,6 +14,7 @@ import time
 import traceback
 import configargparse
 from mattermostdriver import Driver
+import command_loader
 
 
 class TokenAuth():
@@ -95,47 +93,20 @@ class MattermostManager(object):
         self.feedmap = self.load_feedmap()
         self.bindmap = self.load_bindmap()
         self.welcome_channel_members = self.start_welcome_channel()
-        # Load any new modules
-        for root, dirs, files in os.walk(modulepath):
-            for module in fnmatch.filter(files, "command.py"):
-                module_name = root.split('/')[-1].lower()
-                module = importlib.import_module(f"{_pkg_prefix}.{module_name}.command")
-                if module_name not in self.commands:
-                    module.settings.BINDS = None
-                    module.settings.CHANS = None
-                    defaults = importlib.import_module(f"{_pkg_prefix}.{module_name}.defaults")
-                    if hasattr(defaults, 'BINDS'):
-                        module.settings.BINDS = defaults.BINDS
-                    if hasattr(defaults, 'CHANS'):
-                        module.settings.CHANS = defaults.CHANS
-                    if 'settings.py' in files:
-                        overridesettings = importlib.import_module(f"{_pkg_prefix}.{module_name}.settings")
-                        if hasattr(overridesettings, 'BINDS'):
-                            module.settings.BINDS = overridesettings.BINDS
-                        if hasattr(overridesettings, 'CHANS'):
-                            module.settings.CHANS = overridesettings.CHANS
-                    self.commands[module_name] = {'binds': module.settings.BINDS, 'chans': module.settings.CHANS}
-                    self.binds.extend(module.settings.BINDS)
+        # Load command modules. self.commands may already be seeded from the
+        # bindmap (persisted channel bindings) by load_bindmap() above; pass it
+        # as `existing` so persisted binds/chans are preserved exactly as the
+        # original loader did. NOTE: self.binds populated by load_bindmap() is
+        # intentionally superseded here — load_command_table rebuilds it from
+        # the full table (persisted entries included, since existing= is passed).
+        self.commands, self.binds, _report = command_loader.load_command_table(
+            modulepath, _pkg_prefix, existing=self.commands, do_reload=False)
         try:
-            with open(options.Matterbot['bindmap'],'w') as f:
-                json.dump(self.commands,f)
+            with open(options.Matterbot['bindmap'], 'w') as f:
+                json.dump(self.bindmap_serializable(), f)
         except Exception:
-            log.exception("An error occurred writing the bindmap file: %s" % (options.Matterbot['bindmap'],))
-        # Resolve function calls and update the module help
-        for root, dirs, files in os.walk(modulepath):
-            for module in fnmatch.filter(files, "command.py"):
-                module_name = root.split('/')[-1].lower()
-                module = importlib.import_module(f"{_pkg_prefix}.{module_name}.command")
-                defaults = importlib.import_module(f"{_pkg_prefix}.{module_name}.defaults")
-                if hasattr(defaults, 'HELP'):
-                    HELP = defaults.HELP
-                if 'settings.py' in files:
-                    overridesettings = importlib.import_module(f"{_pkg_prefix}.{module_name}.settings")
-                    if hasattr(overridesettings, 'HELP'):
-                        HELP = overridesettings.HELP
-                self.commands[module_name]['process'] = getattr(module, 'process')
-                self.commands[module_name]['help'] = HELP
-        self.binds = sorted(list(set(self.binds)))
+            log.exception("An error occurred writing the bindmap file: %s"
+                          % (options.Matterbot['bindmap'],))
 
     def run_forever(self):
         """Drive the Mattermost websocket, reconnecting on disconnect with
@@ -217,16 +188,20 @@ class MattermostManager(object):
         except Exception:
             log.exception("An error occurred updating the welcome channel state!")
 
+    def bindmap_serializable(self):
+        out = {}
+        for name, entry in self.commands.items():
+            out[name] = {k: v for k, v in entry.items()
+                         if k not in ('process', 'help')}
+        return out
+
     async def update_bindmap(self):
         try:
-            self.bindmap = copy.deepcopy(self.commands)
-            for module in self.bindmap:
-                del self.bindmap[module]['help']
-                del self.bindmap[module]['process']
-            with open(options.Matterbot['bindmap'],'w') as f:
-                json.dump(self.bindmap,f)
+            with open(options.Matterbot['bindmap'], 'w') as f:
+                json.dump(self.bindmap_serializable(), f)
         except Exception:
-            log.exception("An error occurred updating the `%s` bindmap file; config changes were not successfully saved!" % (options.Matterbot['bindmap'],))
+            log.exception("An error occurred updating the `%s` bindmap file; config changes were not successfully saved!"
+                          % (options.Matterbot['bindmap'],))
 
     async def update_feedmap(self):
         try:
