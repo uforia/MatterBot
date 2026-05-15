@@ -15,6 +15,7 @@ import traceback
 import configargparse
 from mattermostdriver import Driver
 import command_loader
+import runtime_config
 
 
 class TokenAuth():
@@ -159,12 +160,13 @@ class MattermostManager(object):
 
     def load_feedmap(self):
         try:
-            feedmap = pathlib.Path(options.Matterbot['feedmap'])
+            feedmap_path = runtime_config.resolve_feedmap(options)
+            feedmap = pathlib.Path(feedmap_path)
             if feedmap.is_file():
-                with open(options.Matterbot['feedmap']) as f:
-                    log.info("Loaded existing feedmap file %s" % (options.Matterbot['feedmap']))
+                with open(feedmap_path) as f:
+                    log.info("Loaded existing feedmap file %s" % (feedmap_path))
                     return json.load(f)
-        except: # There is no existing feed map, or it failed loading; create an empty map instead.
+        except:
             raise
 
     def start_welcome_channel(self):
@@ -254,10 +256,11 @@ class MattermostManager(object):
     async def update_feedmap(self):
         try:
             self.newfeedmap = copy.deepcopy(self.feedmap)
-            with open(options.Matterbot['feedmap'],'w') as f:
-                json.dump(self.newfeedmap,f)
+            feedmap_path = runtime_config.resolve_feedmap(options)
+            with open(feedmap_path, 'w') as f:
+                json.dump(self.newfeedmap, f)
         except Exception:
-            log.exception("An error occurred updating the `%s` feedmap file; config changes were not successfully saved!" % (options.Matterbot['feedmap'],))
+            log.exception("An error occurred updating the `%s` feedmap file; config changes were not successfully saved!" % (runtime_config.resolve_feedmap(options),))
 
     async def handle_raw_message(self, raw_json: str):
         try:
@@ -996,10 +999,7 @@ if __name__ == '__main__' :
     options, unknown = parser.parse_known_args()
     options.Matterbot = ast.literal_eval(options.Matterbot)
     options.Modules = ast.literal_eval(options.Modules)
-    if not options.debug:
-        logging.basicConfig(level=logging.INFO, filename=options.Matterbot['logfile'], format='%(levelname)s - %(name)s - %(asctime)s - %(message)s')
-    else:
-        logging.basicConfig(level=logging.DEBUG,format='%(levelname)s - %(name)s - %(asctime)s - %(message)s')
+    runtime_config.configure_logging(options.Matterbot, options.debug)
     log = logging.getLogger('MatterBot')
     log.info('Starting MatterBot')
     mm = MattermostManager()
