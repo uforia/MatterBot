@@ -189,6 +189,31 @@ class MattermostManager(object):
         except Exception:
             log.exception("An error occurred updating the welcome channel state!")
 
+    def format_reload_report(self, report):
+        added = report.get("added", [])
+        refreshed = report.get("refreshed", [])
+        removed = report.get("removed", [])
+        failed = report.get("failed", {})
+        parts = [
+            "Module reload complete.",
+            "refreshed=%d" % len(refreshed),
+            "added=%d%s" % (len(added),
+                            (" (" + ", ".join(sorted(added)) + ")")
+                            if added else ""),
+            "removed=%d%s" % (len(removed),
+                              (" (" + ", ".join(sorted(removed)) + ")")
+                              if removed else ""),
+            "failed=%d" % len(failed),
+        ]
+        line = " ".join(parts)
+        if failed:
+            # Flatten newlines in the error so one failure stays one bullet
+            # line (a multi-line repr/traceback must not break the list).
+            line += "\n" + "\n".join(
+                "- `%s`: %s" % (name, str(err).replace("\n", " "))
+                for name, err in sorted(failed.items()))
+        return line
+
     async def reload_commands(self):
         """Re-discover and reload command modules in place. Returns the
         report dict. Atomic: the live table is only swapped after a fully
