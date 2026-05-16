@@ -130,6 +130,21 @@ class MattermostManager(object):
         except Exception:
             log.exception("websocket disconnect during shutdown failed")
 
+    def report_restart(self):
+        """If we just came back from an @restart, confirm in the originating
+        thread, then clear the marker."""
+        try:
+            m = lifecycle.read_restart_marker(options)
+            if m:
+                self.mmDriver.posts.create_post({
+                    'channel_id': m['channel_id'],
+                    'message': "Back up. ✅",
+                    'root_id': m.get('root_id') or '',
+                })
+                lifecycle.clear_restart_marker(options)
+        except Exception:
+            log.exception("report_restart failed (continuing)")
+
     def run_forever(self):
         """Drive the Mattermost websocket, reconnecting on disconnect with
         exponential backoff. Without this loop, any websocket termination
@@ -151,6 +166,9 @@ class MattermostManager(object):
                     pass
                 except Exception:
                     log.exception("welcome.reconcile failed (continuing)")
+                if not getattr(self, "_restart_reported", False):
+                    self.report_restart()
+                    self._restart_reported = True
                 log.info("Connecting Mattermost websocket")
                 self.mmDriver.init_websocket(self.handle_raw_message)
                 log.warning("Websocket loop returned (server closed connection?)")
