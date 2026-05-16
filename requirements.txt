@@ -25,4 +25,3 @@ Requests
 tldextract
 urllib3
 weasyprint
-pytest>=8.0

@@ -202,7 +202,11 @@ class MattermostManager(object):
                     for module in self.commands:
                         self.binds.extend(self.commands[module]['binds'])
                     log.info("Loaded existing bindmap file %s" % (options.Matterbot['bindmap']))
-        except: # There is no existing command map, or it failed loading; create an empty map instead.
+        except Exception:
+            # A corrupt/unreadable *existing* bindmap fails loud rather than
+            # being silently replaced with an empty map (that would drop every
+            # module binding unnoticed). A *missing* bindmap is normal and
+            # handled by the is_file() check above — it never reaches here.
             raise
 
     def load_feedmap(self):
@@ -213,7 +217,9 @@ class MattermostManager(object):
                 with open(feedmap_path) as f:
                     log.info("Loaded existing feedmap file %s" % (feedmap_path))
                     return json.load(f)
-        except:
+        except Exception:
+            # Same contract as load_bindmap: a corrupt existing feedmap fails
+            # loud; a missing one is handled by the is_file() check above.
             raise
 
     def start_welcome_channel(self):
@@ -992,7 +998,12 @@ class MattermostManager(object):
                     await self.feed_message(userid, post, params, chaninfo, rootid)
                 elif command in options.Matterbot.get('lifecyclecmds', []):
                     await self.log_message(userid, command, params, chaninfo, rootid)
-                    if command.lstrip('!@').lower() == 'restart':
+                    # lifecyclecmds entries are exactly "!x"/"@x"; strip the
+                    # single leading sigil. lstrip('!@') would also collapse
+                    # "@@x" -> "x", which is wrong if the list ever changes.
+                    token = (command[1:].lower()
+                             if command[:1] in ('!', '@') else command.lower())
+                    if token == 'restart':
                         if not self.isoperator(userid):
                             await self.send_message(
                                 chanid,
@@ -1008,7 +1019,7 @@ class MattermostManager(object):
                             else:
                                 log.warning("No supervisor — re-exec fallback")
                                 lifecycle.self_reexec()
-                    elif command.lstrip('!@').lower() != 'reload':
+                    elif token != 'reload':
                         # Unknown lifecycle token — inert.
                         pass
                     elif not self.isadmin(userid):

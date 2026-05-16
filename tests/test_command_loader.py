@@ -160,6 +160,28 @@ def test_binds_preserved_across_reload(tree):
     assert "runtime-bound" in binds2 and "foo" not in binds2
 
 
+def test_case_insensitive_dir_collision_is_reported(tree, monkeypatch):
+    # Two command dirs whose basenames collide after .lower() must surface
+    # in report["failed"], not silently shadow each other. Simulate the walk
+    # so the test is host-independent (macOS's FS is case-insensitive and
+    # cannot hold both Foo/ and foo/).
+    _write(tree, "foo", binds=["foo"], returns="v1")
+    real_walk = os.walk
+
+    def fake_walk(path):
+        for root, dirs, files in real_walk(path):
+            yield root, dirs, files
+            if os.path.basename(root) == "foo":
+                yield (os.path.join(os.path.dirname(root), "FOO"),
+                       [], ["command.py"])
+
+    monkeypatch.setattr(command_loader.os, "walk", fake_walk)
+    _cmds, _b, report = command_loader.load_command_table(
+        str(tree), "cmds", existing=None, do_reload=False)
+    assert "foo" in report["failed"]
+    assert "collision" in report["failed"]["foo"].lower()
+
+
 def test_returned_table_is_independent_of_existing(tree):
     _write(tree, "foo", binds=["foo"], returns="v1")
     cmds, _b, _r = command_loader.load_command_table(

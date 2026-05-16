@@ -1,0 +1,4 @@
+# Test-only dependencies. NOT installed into the production venv —
+# contrib/systemd/README.md installs requirements.txt only, so the bot's
+# runtime environment stays free of the test framework.
+pytest>=8.0,<9.0
