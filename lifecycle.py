@@ -32,17 +32,31 @@ def state_dir(options):
 
 
 def write_restart_marker(options, channel_id, root_id):
-    (state_dir(options) / RESTART_MARKER).write_text(json.dumps({
-        "channel_id": channel_id, "root_id": root_id, "ts": time.time(),
-    }))
+    # The marker's channel_id is round-tripped into a Mattermost post target
+    # on next start, so a local host user must not be able to plant a symlink
+    # for the bot to write through, nor pre-create it world-readable.
+    # O_NOFOLLOW refuses a symlinked final component; fchmod pins 0o600 even
+    # if the file pre-exists. (Parent-dir safety is StateDirectoryMode=0750.)
+    p = state_dir(options) / RESTART_MARKER
+    fd = os.open(str(p), os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW,
+                 0o600)
+    os.fchmod(fd, 0o600)
+    with os.fdopen(fd, "w") as f:
+        json.dump({"channel_id": channel_id, "root_id": root_id,
+                   "ts": time.time()}, f)
 
 
 def read_restart_marker(options):
     p = state_dir(options) / RESTART_MARKER
-    if not p.is_file():
+    try:
+        fd = os.open(str(p), os.O_RDONLY | os.O_NOFOLLOW)
+    except OSError:
+        # Missing (ENOENT) or a symlink we refuse to follow (ELOOP) → treat
+        # as no marker. Fail-closed: no "back up" post beats a steered one.
         return None
     try:
-        return json.loads(p.read_text())
+        with os.fdopen(fd, "r") as f:
+            return json.loads(f.read())
     except (ValueError, OSError):
         return None
 

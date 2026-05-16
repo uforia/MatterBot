@@ -19,6 +19,12 @@ import command_loader
 import runtime_config
 import lifecycle
 
+# Bound at import (not only in __main__) so MattermostManager error paths —
+# e.g. the fail-closed `except` in isadmin/isoperator — can log instead of
+# raising NameError when the class is used outside the script entrypoint.
+# getLogger is a singleton; the __main__ block still attaches handlers/level.
+log = logging.getLogger('MatterBot')
+
 
 class TokenAuth():
     def __call__(self, r):
@@ -479,13 +485,16 @@ class MattermostManager(object):
             # lowercased above); user ids are case-sensitive and must match
             # exactly. We normalize the role-name comparison to lowercase
             # but keep the userid comparison as-is.
-            botadmins = options.Matterbot['botadmins'] or []
+            botadmins = options.Matterbot.get('botadmins') or []
             normalized_roles = [str(e).lower() for e in botadmins]
-            if any(role in roles for role in normalized_roles) or userid in botadmins:
-                return True
+            return bool(any(role in roles for role in normalized_roles)
+                        or userid in botadmins)
         except Exception:
+            # Fail-closed AND unambiguous: explicit False (not None) so
+            # isoperator's `if self.isadmin(...)` can't silently fall through
+            # an indeterminate (e.g. transient Mattermost API) result.
             log.exception("isadmin check failed; treating as non-admin")
-            return None
+            return False
 
     def isoperator(self, userid):
         """True if the user is a bot admin OR a bot operator (botadmins ∪
@@ -498,12 +507,11 @@ class MattermostManager(object):
             roles = [_.lower() for _ in userinfo['roles'].split()]
             botoperators = options.Matterbot.get('botoperators') or []
             normalized = [str(e).lower() for e in botoperators]
-            if any(r in roles for r in normalized) or userid in botoperators:
-                return True
-            return False
+            return bool(any(r in roles for r in normalized)
+                        or userid in botoperators)
         except Exception:
             log.exception("isoperator check failed; treating as non-operator")
-            return None
+            return False
 
     def is_in_channel(self, chanid, userid=None):
         if not userid:
