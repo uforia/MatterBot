@@ -17,6 +17,7 @@ import configargparse
 from mattermostdriver import Driver
 import command_loader
 import runtime_config
+import lifecycle
 
 
 class TokenAuth():
