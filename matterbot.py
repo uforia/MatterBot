@@ -9,6 +9,7 @@ import logging
 import pathlib
 from pathlib import Path
 import re
+import signal
 import sys
 import time
 import traceback
@@ -48,6 +49,8 @@ class MattermostManager(object):
         # since process start (small for a single-team deployment).
         self._user_semaphores = {}
         self._reload_lock = asyncio.Lock()
+        self._shutdown_requested = False
+        self._exit_intent = None
         self.mmDriver = Driver(options={
             'url'       : options.Matterbot['host'],
             'port'      : options.Matterbot['port'],
@@ -110,6 +113,22 @@ class MattermostManager(object):
             log.exception("An error occurred writing the bindmap file: %s"
                           % (options.Matterbot['bindmap'],))
 
+    def _should_exit_after_ws(self):
+        return bool(self._shutdown_requested)
+
+    def request_shutdown(self, intent):
+        """Mark intent and stop the websocket so run_forever() exits cleanly."""
+        self._shutdown_requested = True
+        self._exit_intent = intent
+        try:
+            ws = getattr(self.mmDriver, "websocket", None)
+            if ws is not None and hasattr(ws, "disconnect"):
+                ws.disconnect()
+            elif ws is not None:
+                setattr(ws, "_alive", False)
+        except Exception:
+            log.exception("websocket disconnect during shutdown failed")
+
     def run_forever(self):
         """Drive the Mattermost websocket, reconnecting on disconnect with
         exponential backoff. Without this loop, any websocket termination
@@ -134,6 +153,9 @@ class MattermostManager(object):
                 log.info("Connecting Mattermost websocket")
                 self.mmDriver.init_websocket(self.handle_raw_message)
                 log.warning("Websocket loop returned (server closed connection?)")
+                if self._should_exit_after_ws():
+                    log.info("Shutdown requested (intent=%s) — exiting cleanly" % (self._exit_intent,))
+                    return
             except KeyboardInterrupt:
                 log.info("Interrupted — exiting")
                 raise
@@ -1021,4 +1043,8 @@ if __name__ == '__main__' :
     log = logging.getLogger('MatterBot')
     log.info('Starting MatterBot')
     mm = MattermostManager()
+    def _on_sigusr1(signum, frame):
+        mm.request_shutdown(mm._exit_intent or 'restart')
+    signal.signal(signal.SIGUSR1, _on_sigusr1)
     mm.run_forever()
+    sys.exit(0)

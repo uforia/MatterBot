@@ -37,3 +37,15 @@ def test_operator_true_for_role_name():
 
 def test_operator_false_for_plain_user():
     assert make("system_user", ["adminid"], ["opid"]).isoperator("rando") in (False, None)
+
+
+def test_should_exit_after_ws_true_when_requested():
+    mgr = object.__new__(matterbot.MattermostManager)
+    mgr._shutdown_requested = True
+    assert matterbot.MattermostManager._should_exit_after_ws(mgr) is True
+
+
+def test_should_exit_after_ws_false_by_default():
+    mgr = object.__new__(matterbot.MattermostManager)
+    mgr._shutdown_requested = False
+    assert matterbot.MattermostManager._should_exit_after_ws(mgr) is False
