@@ -965,8 +965,24 @@ class MattermostManager(object):
                     await self.feed_message(userid, post, params, chaninfo, rootid)
                 elif command in options.Matterbot.get('lifecyclecmds', []):
                     await self.log_message(userid, command, params, chaninfo, rootid)
-                    if command.lstrip('!@').lower() != 'reload':
-                        # PR 2 owns restart/update tokens; ignore them here.
+                    if command.lstrip('!@').lower() == 'restart':
+                        if not self.isoperator(userid):
+                            await self.send_message(
+                                chanid,
+                                "@%s, you do not have permission to restart the bot."
+                                % username, rootid)
+                        else:
+                            mgr_state = lifecycle.detect_service_manager(options)
+                            lifecycle.write_restart_marker(options, chanid, rootid)
+                            await self.send_message(
+                                chanid, "Restarting now — back shortly.", rootid)
+                            if mgr_state == "systemd":
+                                self.request_shutdown("restart")
+                            else:
+                                log.warning("No supervisor — re-exec fallback")
+                                lifecycle.self_reexec()
+                    elif command.lstrip('!@').lower() != 'reload':
+                        # Unknown lifecycle token — inert.
                         pass
                     elif not self.isadmin(userid):
                         await self.send_message(
