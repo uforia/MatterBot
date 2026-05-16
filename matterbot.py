@@ -446,6 +446,24 @@ class MattermostManager(object):
             log.exception("isadmin check failed; treating as non-admin")
             return None
 
+    def isoperator(self, userid):
+        """True if the user is a bot admin OR a bot operator (botadmins ∪
+        botoperators). Accepts Mattermost role names (case-insensitive) or
+        opaque user ids (exact match)."""
+        try:
+            if self.isadmin(userid):
+                return True
+            userinfo = self.mmDriver.users.get_user(userid)
+            roles = [_.lower() for _ in userinfo['roles'].split()]
+            botoperators = options.Matterbot.get('botoperators') or []
+            normalized = [str(e).lower() for e in botoperators]
+            if any(r in roles for r in normalized) or userid in botoperators:
+                return True
+            return False
+        except Exception:
+            log.exception("isoperator check failed; treating as non-operator")
+            return None
+
     def is_in_channel(self, chanid, userid=None):
         if not userid:
             userid = self.my_id
