@@ -39,7 +39,16 @@ def load_command_table(modulepath, pkg_prefix, existing=None, do_reload=False):
     found = {}
     for root, _dirs, files in os.walk(modulepath):
         if "command.py" in files:
-            found[os.path.basename(root).lower()] = files
+            key = os.path.basename(root).lower()
+            if key in found:
+                # Two command dirs whose names collide case-insensitively
+                # (e.g. Foo/ and foo/) would otherwise silently shadow each
+                # other — the operator loses a command they think is loaded.
+                # Report it and keep the first one walked.
+                report["failed"][key] = (
+                    "duplicate command dir (case-insensitive name collision)")
+                continue
+            found[key] = files
 
     def _imp(fqname):
         if do_reload and fqname in sys.modules:

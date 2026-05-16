@@ -1,0 +1,27 @@
+[Unit]
+Description=MatterBot feed poster
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=matterbot
+Group=matterbot
+WorkingDirectory=/opt/matterbot
+ExecStart=/opt/matterbot/.venv/bin/python /opt/matterbot/matterfeed.py --config /opt/matterbot/config.yaml
+Restart=always
+RestartSec=5
+StateDirectory=matterbot
+StateDirectoryMode=0750
+ReadWritePaths=/var/lib/matterbot
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+[Install]
+WantedBy=multi-user.target

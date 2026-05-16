@@ -16,6 +16,7 @@ import time
 import traceback
 import uuid
 from mattermostdriver import Driver
+import runtime_config
 
 
 class TokenAuth():
@@ -67,19 +68,21 @@ class MattermostManager(object):
 
     def load_feedmap(self):
         try:
-            with open(options.Modules['feedmap'],'r') as f:
+            feedmap_path = runtime_config.resolve_feedmap(options)
+            with open(feedmap_path, 'r') as f:
                 return json.load(f)
         except Exception:
             if options.debug:
-                self.log.exception(f"Error   : Cannot read {options.Modules['feedmap']} file. Announcements in additional channels might not work!")
+                self.log.exception(f"Error   : Cannot read {runtime_config.resolve_feedmap(options)} file. Announcements in additional channels might not work!")
             return {}
 
     def update_feedmap(self):
         try:
-            with open(options.Matterbot['feedmap'],'w') as f:
-                json.dump(self.feedmap,f)
+            feedmap_path = runtime_config.resolve_feedmap(options)
+            with open(feedmap_path, 'w') as f:
+                json.dump(self.feedmap, f)
         except Exception:
-            self.log.exception("An error occurred updating the `%s` feedmap file; config changes were not successfully saved!" % (options.Matterbot['feedmap'],))
+            self.log.exception("An error occurred updating the `%s` feedmap file; config changes were not successfully saved!" % (runtime_config.resolve_feedmap(options),))
 
     def createPost(self, channel, text, uploads = []):
         try:
@@ -423,10 +426,7 @@ if __name__ == '__main__' :
     options, unknown = parser.parse_known_args()
     options.Matterbot = ast.literal_eval(options.Matterbot)
     options.Modules = ast.literal_eval(options.Modules)
-    if not options.debug:
-        logging.basicConfig(level=logging.INFO, filename=options.Matterbot['logfile'], format='%(levelname)s - %(name)s - %(asctime)s - %(message)s')
-    else:
-        logging.basicConfig(level=logging.DEBUG,format='%(levelname)s - %(name)s - %(asctime)s - %(message)s')
+    runtime_config.configure_logging(options.Matterbot, options.debug)
     log = logging.getLogger('MatterFeed')
     log.info('>>> Starting matterfeed ...')
     if options.debug:

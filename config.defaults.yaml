@@ -9,8 +9,9 @@ Matterbot:
   botadmins: # Can be either a Mattermost userid or role name (e.g. 'system_admin')
     - "<your-mattermost-id-here>"
     - "system_admin"
-  logfile: "matterfeed.log"
+  logfile: "matterfeed.log" # Set to null, "" or "-" to log to stdout (journald). A path = file logging.
   bindmap: "bindmap.json"
+  # feedmap is the single source of truth; Modules.feedmap is a deprecated fallback alias.
   feedmap: "feedmap.json"
   helpcmds: # Do not change these, or things might break
     - "!help"
@@ -37,9 +38,13 @@ Matterbot:
     - "@unsub"
     - "!feeds"
     - "@feeds"
-  lifecyclecmds: # Do not change these, or things might break. PR 2 will append restart/update tokens.
+  lifecyclecmds: # Do not change these, or things might break.
     - "!reload"
     - "@reload"
+    - "!restart"
+    - "@restart"
+  botoperators: [] # Like botadmins (ids or role names). May use @restart (not bind/feed admin). Default: empty = admins-only.
+  service_manager: "systemd" # "systemd" or "none". "none" makes @restart re-exec the process instead of clean-exit.
   welcome: True # Send welcome messages to new users in a welcome channel?
   welcome_banner: "**Welcome to this Mattermost!**" # Put your single-line welcome banner here. Use the welcome_file for larger messages (e.g. ToS)
   welcome_channel: "abc" # Set this to the channel ID where the bot will welcome users

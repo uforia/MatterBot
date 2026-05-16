@@ -9,12 +9,21 @@ import logging
 import pathlib
 from pathlib import Path
 import re
+import signal
 import sys
 import time
 import traceback
 import configargparse
 from mattermostdriver import Driver
 import command_loader
+import runtime_config
+import lifecycle
+
+# Bound at import (not only in __main__) so MattermostManager error paths —
+# e.g. the fail-closed `except` in isadmin/isoperator — can log instead of
+# raising NameError when the class is used outside the script entrypoint.
+# getLogger is a singleton; the __main__ block still attaches handlers/level.
+log = logging.getLogger('MatterBot')
 
 
 class TokenAuth():
@@ -47,6 +56,8 @@ class MattermostManager(object):
         # since process start (small for a single-team deployment).
         self._user_semaphores = {}
         self._reload_lock = asyncio.Lock()
+        self._shutdown_requested = False
+        self._exit_intent = None
         self.mmDriver = Driver(options={
             'url'       : options.Matterbot['host'],
             'port'      : options.Matterbot['port'],
@@ -109,6 +120,37 @@ class MattermostManager(object):
             log.exception("An error occurred writing the bindmap file: %s"
                           % (options.Matterbot['bindmap'],))
 
+    def _should_exit_after_ws(self):
+        return bool(self._shutdown_requested)
+
+    def request_shutdown(self, intent):
+        """Mark intent and stop the websocket so run_forever() exits cleanly."""
+        self._shutdown_requested = True
+        self._exit_intent = intent
+        try:
+            ws = getattr(self.mmDriver, "websocket", None)
+            if ws is not None and hasattr(ws, "disconnect"):
+                ws.disconnect()
+            elif ws is not None:
+                setattr(ws, "_alive", False)
+        except Exception:
+            log.exception("websocket disconnect during shutdown failed")
+
+    def report_restart(self):
+        """If we just came back from an @restart, confirm in the originating
+        thread, then clear the marker."""
+        try:
+            m = lifecycle.read_restart_marker(options)
+            if m:
+                self.mmDriver.posts.create_post({
+                    'channel_id': m['channel_id'],
+                    'message': "Back up. ✅",
+                    'root_id': m.get('root_id') or '',
+                })
+                lifecycle.clear_restart_marker(options)
+        except Exception:
+            log.exception("report_restart failed (continuing)")
+
     def run_forever(self):
         """Drive the Mattermost websocket, reconnecting on disconnect with
         exponential backoff. Without this loop, any websocket termination
@@ -130,9 +172,15 @@ class MattermostManager(object):
                     pass
                 except Exception:
                     log.exception("welcome.reconcile failed (continuing)")
+                if not getattr(self, "_restart_reported", False):
+                    self.report_restart()
+                    self._restart_reported = True
                 log.info("Connecting Mattermost websocket")
                 self.mmDriver.init_websocket(self.handle_raw_message)
                 log.warning("Websocket loop returned (server closed connection?)")
+                if self._should_exit_after_ws():
+                    log.info("Shutdown requested (intent=%s) — exiting cleanly" % (self._exit_intent,))
+                    return
             except KeyboardInterrupt:
                 log.info("Interrupted — exiting")
                 raise
@@ -154,17 +202,24 @@ class MattermostManager(object):
                     for module in self.commands:
                         self.binds.extend(self.commands[module]['binds'])
                     log.info("Loaded existing bindmap file %s" % (options.Matterbot['bindmap']))
-        except: # There is no existing command map, or it failed loading; create an empty map instead.
+        except Exception:
+            # A corrupt/unreadable *existing* bindmap fails loud rather than
+            # being silently replaced with an empty map (that would drop every
+            # module binding unnoticed). A *missing* bindmap is normal and
+            # handled by the is_file() check above — it never reaches here.
             raise
 
     def load_feedmap(self):
         try:
-            feedmap = pathlib.Path(options.Matterbot['feedmap'])
+            feedmap_path = runtime_config.resolve_feedmap(options)
+            feedmap = pathlib.Path(feedmap_path)
             if feedmap.is_file():
-                with open(options.Matterbot['feedmap']) as f:
-                    log.info("Loaded existing feedmap file %s" % (options.Matterbot['feedmap']))
+                with open(feedmap_path) as f:
+                    log.info("Loaded existing feedmap file %s" % (feedmap_path))
                     return json.load(f)
-        except: # There is no existing feed map, or it failed loading; create an empty map instead.
+        except Exception:
+            # Same contract as load_bindmap: a corrupt existing feedmap fails
+            # loud; a missing one is handled by the is_file() check above.
             raise
 
     def start_welcome_channel(self):
@@ -254,10 +309,11 @@ class MattermostManager(object):
     async def update_feedmap(self):
         try:
             self.newfeedmap = copy.deepcopy(self.feedmap)
-            with open(options.Matterbot['feedmap'],'w') as f:
-                json.dump(self.newfeedmap,f)
+            feedmap_path = runtime_config.resolve_feedmap(options)
+            with open(feedmap_path, 'w') as f:
+                json.dump(self.newfeedmap, f)
         except Exception:
-            log.exception("An error occurred updating the `%s` feedmap file; config changes were not successfully saved!" % (options.Matterbot['feedmap'],))
+            log.exception("An error occurred updating the `%s` feedmap file; config changes were not successfully saved!" % (runtime_config.resolve_feedmap(options),))
 
     async def handle_raw_message(self, raw_json: str):
         try:
@@ -435,13 +491,33 @@ class MattermostManager(object):
             # lowercased above); user ids are case-sensitive and must match
             # exactly. We normalize the role-name comparison to lowercase
             # but keep the userid comparison as-is.
-            botadmins = options.Matterbot['botadmins'] or []
+            botadmins = options.Matterbot.get('botadmins') or []
             normalized_roles = [str(e).lower() for e in botadmins]
-            if any(role in roles for role in normalized_roles) or userid in botadmins:
-                return True
+            return bool(any(role in roles for role in normalized_roles)
+                        or userid in botadmins)
         except Exception:
+            # Fail-closed AND unambiguous: explicit False (not None) so
+            # isoperator's `if self.isadmin(...)` can't silently fall through
+            # an indeterminate (e.g. transient Mattermost API) result.
             log.exception("isadmin check failed; treating as non-admin")
-            return None
+            return False
+
+    def isoperator(self, userid):
+        """True if the user is a bot admin OR a bot operator (botadmins ∪
+        botoperators). Accepts Mattermost role names (case-insensitive) or
+        opaque user ids (exact match)."""
+        try:
+            if self.isadmin(userid):
+                return True
+            userinfo = self.mmDriver.users.get_user(userid)
+            roles = [_.lower() for _ in userinfo['roles'].split()]
+            botoperators = options.Matterbot.get('botoperators') or []
+            normalized = [str(e).lower() for e in botoperators]
+            return bool(any(r in roles for r in normalized)
+                        or userid in botoperators)
+        except Exception:
+            log.exception("isoperator check failed; treating as non-operator")
+            return False
 
     def is_in_channel(self, chanid, userid=None):
         if not userid:
@@ -922,8 +998,29 @@ class MattermostManager(object):
                     await self.feed_message(userid, post, params, chaninfo, rootid)
                 elif command in options.Matterbot.get('lifecyclecmds', []):
                     await self.log_message(userid, command, params, chaninfo, rootid)
-                    if command.lstrip('!@').lower() != 'reload':
-                        # PR 2 owns restart/update tokens; ignore them here.
+                    # lifecyclecmds entries are exactly "!x"/"@x"; strip the
+                    # single leading sigil. lstrip('!@') would also collapse
+                    # "@@x" -> "x", which is wrong if the list ever changes.
+                    token = (command[1:].lower()
+                             if command[:1] in ('!', '@') else command.lower())
+                    if token == 'restart':
+                        if not self.isoperator(userid):
+                            await self.send_message(
+                                chanid,
+                                "@%s, you do not have permission to restart the bot."
+                                % username, rootid)
+                        else:
+                            mgr_state = lifecycle.detect_service_manager(options)
+                            lifecycle.write_restart_marker(options, chanid, rootid)
+                            await self.send_message(
+                                chanid, "Restarting now — back shortly.", rootid)
+                            if mgr_state == "systemd":
+                                self.request_shutdown("restart")
+                            else:
+                                log.warning("No supervisor — re-exec fallback")
+                                lifecycle.self_reexec()
+                    elif token != 'reload':
+                        # Unknown lifecycle token — inert.
                         pass
                     elif not self.isadmin(userid):
                         await self.send_message(
@@ -996,11 +1093,12 @@ if __name__ == '__main__' :
     options, unknown = parser.parse_known_args()
     options.Matterbot = ast.literal_eval(options.Matterbot)
     options.Modules = ast.literal_eval(options.Modules)
-    if not options.debug:
-        logging.basicConfig(level=logging.INFO, filename=options.Matterbot['logfile'], format='%(levelname)s - %(name)s - %(asctime)s - %(message)s')
-    else:
-        logging.basicConfig(level=logging.DEBUG,format='%(levelname)s - %(name)s - %(asctime)s - %(message)s')
+    runtime_config.configure_logging(options.Matterbot, options.debug)
     log = logging.getLogger('MatterBot')
     log.info('Starting MatterBot')
     mm = MattermostManager()
+    def _on_sigusr1(signum, frame):
+        mm.request_shutdown(mm._exit_intent or 'restart')
+    signal.signal(signal.SIGUSR1, _on_sigusr1)
     mm.run_forever()
+    sys.exit(0)
