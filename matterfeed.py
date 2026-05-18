@@ -45,6 +45,7 @@ class MattermostManager(object):
         })
         self.me = self.mmDriver.users.get_user( user_id='me' )
         self.my_team_id = self.mmDriver.teams.get_team_by_name(options.Matterbot['teamname'])['id']
+        self.channels = {}
         self.channels = self.update_channels()
         self.test = {}
 
@@ -255,6 +256,7 @@ class MattermostManager(object):
     def runModules(self):
         while True:
             history = None
+            pool = None
             try:
                 success = 0
                 failed = 0
@@ -301,8 +303,9 @@ class MattermostManager(object):
                     self.log.error(f"Error   :{str(e)}")
                 failed += 1
             finally:
-                pool.stop()
-                pool.join()
+                if pool is not None:
+                    pool.stop()
+                    pool.join()
             self.log.info(f"Finished : {success}/{failed+success} modules ran successfully, sleeping {options.Modules['timer']} seconds ...")
             time.sleep(options.Modules['timer'])
 
