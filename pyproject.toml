@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "matterbot"
+version = "0.0.0"
+description = "Mattermost bot and threat-intel feed automation"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "GPL-3.0-only" }
+authors = [{ name = "MatterBot contributors" }]
+dynamic = ["dependencies"]
+
+[project.urls]
+Homepage = "https://github.com/uforia/matterbot/"
+Repository = "https://github.com/uforia/matterbot/"
+Issues = "https://github.com/uforia/matterbot/issues"
+
+[tool.setuptools]
+py-modules = ["matterbot", "matterfeed"]
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["commands*", "modules*"]
+namespaces = true
