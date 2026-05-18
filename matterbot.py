@@ -114,6 +114,9 @@ class MattermostManager(object):
                             module.settings.BINDS = overridesettings.BINDS
                         if hasattr(overridesettings, 'CHANS'):
                             module.settings.CHANS = overridesettings.CHANS
+                    if not isinstance(module.settings.BINDS, list) or not isinstance(module.settings.CHANS, list):
+                        log.error(f"Skipping command module {module_name}: BINDS and CHANS must both be lists")
+                        continue
                     self.commands[module_name] = {'binds': module.settings.BINDS, 'chans': module.settings.CHANS}
                     self.binds.extend(module.settings.BINDS)
         try:
@@ -125,15 +128,23 @@ class MattermostManager(object):
         for root, dirs, files in os.walk(modulepath):
             for module in fnmatch.filter(files, "command.py"):
                 module_name = root.split('/')[-1].lower()
+                if module_name not in self.commands:
+                    continue
                 module = importlib.import_module(f"{_pkg_prefix}.{module_name}.command")
                 defaults = importlib.import_module(f"{_pkg_prefix}.{module_name}.defaults")
+                HELP = {'DEFAULT': {'desc': 'No help available.'}}
                 if hasattr(defaults, 'HELP'):
                     HELP = defaults.HELP
                 if 'settings.py' in files:
                     overridesettings = importlib.import_module(f"{_pkg_prefix}.{module_name}.settings")
                     if hasattr(overridesettings, 'HELP'):
                         HELP = overridesettings.HELP
-                self.commands[module_name]['process'] = getattr(module, 'process')
+                process = getattr(module, 'process', None)
+                if not callable(process):
+                    log.error(f"Skipping command module {module_name}: process is missing or not callable")
+                    del self.commands[module_name]
+                    continue
+                self.commands[module_name]['process'] = process
                 self.commands[module_name]['help'] = HELP
         self.binds = sorted(list(set(self.binds)))
 
