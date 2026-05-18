@@ -47,6 +47,7 @@ Matterbot:
   logcmdparams: False
   command_workers: 8 # Max parallel module command executions. Lower (e.g. 1) effectively serializes commands
                      # if you suspect a module is not thread-safe; raise for more parallelism on a fast host.
+  command_timeout: 30 # Seconds to wait for a command module before timing out and recycling the worker pool.
   user_concurrency: 2 # Max concurrent commands per user. Raise for trusted teams, lower (e.g. 1) on
                       # public-ish deployments. Excess commands queue and may hit the 30s timeout.
 
