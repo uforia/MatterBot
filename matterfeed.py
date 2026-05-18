@@ -76,7 +76,7 @@ class MattermostManager(object):
 
     def update_feedmap(self):
         try:
-            with open(options.Matterbot['feedmap'],'w') as f:
+            with open(options.Modules['feedmap'],'w') as f:
                 json.dump(self.feedmap,f)
         except Exception:
             self.log.exception("An error occurred updating the `%s` feedmap file; config changes were not successfully saved!" % (options.Matterbot['feedmap'],))
@@ -435,7 +435,7 @@ if __name__ == '__main__' :
         log.info('>>> Debug logging disabled ...')
     try:
         current_dir = os.path.dirname(__file__)
-        module_path = options.Modules['moduledir'].strip('/')
+        module_path = os.path.abspath(os.path.expanduser(options.Modules['moduledir']))
         main(log)
     except KeyboardInterrupt:
         log.info('<<< Stopping matterfeed ...')
