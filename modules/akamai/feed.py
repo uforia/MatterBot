@@ -12,29 +12,23 @@
 # <channel>: basically the destination channel in Mattermost, e.g. 'Newsfeed', 'Incident', etc.
 # <content>: the content of the message, MD format possible
 
-import bs4
+import os
+import sys
+
 import feedparser
-import re
+
+try:
+    from feedutils import clean_description, load_settings
+except ImportError:
+    sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+    from feedutils import clean_description, load_settings
+
 
 def query(settings=None):
-    if settings:
-        try:
-            from types import SimpleNamespace
-            settings = SimpleNamespace(**settings)
-        except:
-            pass
-    else:
-        import defaults as settings
-        try:
-            import settings as _override
-            settings.__dict__.update({k: v for k, v in vars(_override).items() if not k.startswith('__')})
-        except ImportError:
-            pass
+    settings = load_settings(settings)
     items = []
     feed = feedparser.parse(settings.URL, agent='MatterBot RSS Automation 1.0')
     count = 0
-    stripchars = '`\\[\\]\'\"'
-    regex = re.compile('[%s]' % stripchars)
     while count < settings.ENTRIES:
         try:
             title = feed.entries[count].title
@@ -42,13 +36,10 @@ def query(settings=None):
             if "security" in link:
                 content = settings.NAME + ': [' + title + '](' + link + ')'
                 if len(feed.entries[count].description):
-                    description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
-                    if len(description)>400:
-                        description = description[:396]+' ...'
-                    content += '\n>'+description+'\n'
+                    content += '\n>' + clean_description(feed.entries[count].description) + '\n'
                 for channel in settings.CHANNELS:
                     items.append([channel, content])
-            count+=1
+            count += 1
         except IndexError:
             return items # No more items
     return items
