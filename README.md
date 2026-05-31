@@ -351,6 +351,12 @@ Usage is simple:
 2) For every module you want to use, check the respective configuration in `commands/.../`. **You must make create your own `settings.py` for every module in the `commands/.../` directory you want to use!** This is necessary so the bot can override the default configuration from `defaults.py`.. If you do not want to use a module, the easiest way to disable it is to move the directory somewhere else (or delete it), so it will not be detected on startup.
 3) Start up the `matterbot.py`.
 
+### Reloading modules without a restart
+
+After you `git pull` a new or changed command module set on the host, an admin can run `@reload` (or `!reload`) in any channel the bot watches. The bot re-discovers `commands/*`, reloads them in place, and replies with a summary (`refreshed=… added=… removed=… failed=…`). The websocket stays connected; no restart is needed. This works whether the bot runs under `tmux`/`screen`, daemonized, or directly. A module that fails to import is reported and skipped — it never takes down the running bot, and its previously loaded version is retained.
+
+**Limitation:** in-process reload uses `importlib.reload`. It cannot evict code from objects that already hold references, and does not reset module-global singletons, caches, or threads a module spawned at import. It is correct for shallow command changes. For deep changes (new long-lived state, dependency upgrades, native extensions), restart the process.
+
 ## Configuring Matterbot behavior
 
 When doing threat intelligence investigations, it is crucial to observe Operational Security (OPSEC) best practices. Therefore, by default:

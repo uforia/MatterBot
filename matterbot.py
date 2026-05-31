@@ -4,11 +4,8 @@ import ast
 import asyncio
 import concurrent.futures
 import copy
-import fnmatch
-import importlib.util
 import json
 import logging
-import os
 import pathlib
 from pathlib import Path
 import re
@@ -17,6 +14,7 @@ import time
 import traceback
 import configargparse
 from mattermostdriver import Driver
+import command_loader
 
 
 class TokenAuth():
@@ -48,6 +46,7 @@ class MattermostManager(object):
         # by the number of distinct users who have ever talked to the bot
         # since process start (small for a single-team deployment).
         self._user_semaphores = {}
+        self._reload_lock = asyncio.Lock()
         self.mmDriver = Driver(options={
             'url'       : options.Matterbot['host'],
             'port'      : options.Matterbot['port'],
@@ -95,47 +94,20 @@ class MattermostManager(object):
         self.feedmap = self.load_feedmap()
         self.bindmap = self.load_bindmap()
         self.welcome_channel_members = self.start_welcome_channel()
-        # Load any new modules
-        for root, dirs, files in os.walk(modulepath):
-            for module in fnmatch.filter(files, "command.py"):
-                module_name = root.split('/')[-1].lower()
-                module = importlib.import_module(f"{_pkg_prefix}.{module_name}.command")
-                if module_name not in self.commands:
-                    module.settings.BINDS = None
-                    module.settings.CHANS = None
-                    defaults = importlib.import_module(f"{_pkg_prefix}.{module_name}.defaults")
-                    if hasattr(defaults, 'BINDS'):
-                        module.settings.BINDS = defaults.BINDS
-                    if hasattr(defaults, 'CHANS'):
-                        module.settings.CHANS = defaults.CHANS
-                    if 'settings.py' in files:
-                        overridesettings = importlib.import_module(f"{_pkg_prefix}.{module_name}.settings")
-                        if hasattr(overridesettings, 'BINDS'):
-                            module.settings.BINDS = overridesettings.BINDS
-                        if hasattr(overridesettings, 'CHANS'):
-                            module.settings.CHANS = overridesettings.CHANS
-                    self.commands[module_name] = {'binds': module.settings.BINDS, 'chans': module.settings.CHANS}
-                    self.binds.extend(module.settings.BINDS)
+        # Load command modules. self.commands may already be seeded from the
+        # bindmap (persisted channel bindings) by load_bindmap() above; pass it
+        # as `existing` so persisted binds/chans are preserved exactly as the
+        # original loader did. NOTE: self.binds populated by load_bindmap() is
+        # intentionally superseded here — load_command_table rebuilds it from
+        # the full table (persisted entries included, since existing= is passed).
+        self.commands, self.binds, _report = command_loader.load_command_table(
+            modulepath, _pkg_prefix, existing=self.commands, do_reload=False)
         try:
-            with open(options.Matterbot['bindmap'],'w') as f:
-                json.dump(self.commands,f)
+            with open(options.Matterbot['bindmap'], 'w') as f:
+                json.dump(self.bindmap_serializable(), f)
         except Exception:
-            log.exception("An error occurred writing the bindmap file: %s" % (options.Matterbot['bindmap'],))
-        # Resolve function calls and update the module help
-        for root, dirs, files in os.walk(modulepath):
-            for module in fnmatch.filter(files, "command.py"):
-                module_name = root.split('/')[-1].lower()
-                module = importlib.import_module(f"{_pkg_prefix}.{module_name}.command")
-                defaults = importlib.import_module(f"{_pkg_prefix}.{module_name}.defaults")
-                if hasattr(defaults, 'HELP'):
-                    HELP = defaults.HELP
-                if 'settings.py' in files:
-                    overridesettings = importlib.import_module(f"{_pkg_prefix}.{module_name}.settings")
-                    if hasattr(overridesettings, 'HELP'):
-                        HELP = overridesettings.HELP
-                self.commands[module_name]['process'] = getattr(module, 'process')
-                self.commands[module_name]['help'] = HELP
-        self.binds = sorted(list(set(self.binds)))
+            log.exception("An error occurred writing the bindmap file: %s"
+                          % (options.Matterbot['bindmap'],))
 
     def run_forever(self):
         """Drive the Mattermost websocket, reconnecting on disconnect with
@@ -217,16 +189,67 @@ class MattermostManager(object):
         except Exception:
             log.exception("An error occurred updating the welcome channel state!")
 
+    def format_reload_report(self, report):
+        added = report.get("added", [])
+        refreshed = report.get("refreshed", [])
+        removed = report.get("removed", [])
+        failed = report.get("failed", {})
+        parts = [
+            "Module reload complete.",
+            "refreshed=%d" % len(refreshed),
+            "added=%d%s" % (len(added),
+                            (" (" + ", ".join(sorted(added)) + ")")
+                            if added else ""),
+            "removed=%d%s" % (len(removed),
+                              (" (" + ", ".join(sorted(removed)) + ")")
+                              if removed else ""),
+            "failed=%d" % len(failed),
+        ]
+        line = " ".join(parts)
+        if failed:
+            # Flatten newlines in the error so one failure stays one bullet
+            # line (a multi-line repr/traceback must not break the list).
+            line += "\n" + "\n".join(
+                "- `%s`: %s" % (name, str(err).replace("\n", " "))
+                for name, err in sorted(failed.items()))
+        return line
+
+    async def reload_commands(self):
+        """Re-discover and reload command modules in place. Returns the
+        report dict. Atomic: the live table is only swapped after a fully
+        built new table; in-flight commands keep their old process ref."""
+        modulepath = options.Modules['commanddir'].strip('/')
+        pkg_prefix = Path(modulepath).resolve().name
+        async with self._reload_lock:
+            loop = asyncio.get_running_loop()
+            commands, binds, report = await loop.run_in_executor(
+                self._command_executor,
+                command_loader.load_command_table,
+                modulepath, pkg_prefix, self.commands, True,
+            )
+            # Atomic rebind (single STORE_ATTR, GIL-protected). Dispatch in
+            # call_module() looks up self.commands[module]['process'] and
+            # submits it to the executor BEFORE the await, so any in-flight
+            # command holds its old callable and is unaffected by this swap.
+            self.commands = commands
+            self.binds = binds
+            await self.update_bindmap()
+            return report
+
+    def bindmap_serializable(self):
+        out = {}
+        for name, entry in self.commands.items():
+            out[name] = {k: v for k, v in entry.items()
+                         if k not in ('process', 'help')}
+        return out
+
     async def update_bindmap(self):
         try:
-            self.bindmap = copy.deepcopy(self.commands)
-            for module in self.bindmap:
-                del self.bindmap[module]['help']
-                del self.bindmap[module]['process']
-            with open(options.Matterbot['bindmap'],'w') as f:
-                json.dump(self.bindmap,f)
+            with open(options.Matterbot['bindmap'], 'w') as f:
+                json.dump(self.bindmap_serializable(), f)
         except Exception:
-            log.exception("An error occurred updating the `%s` bindmap file; config changes were not successfully saved!" % (options.Matterbot['bindmap'],))
+            log.exception("An error occurred updating the `%s` bindmap file; config changes were not successfully saved!"
+                          % (options.Matterbot['bindmap'],))
 
     async def update_feedmap(self):
         try:
@@ -639,6 +662,11 @@ class MattermostManager(object):
                     for modulename in params:
                         if modulename not in self.commands:
                             text = "@" + username + ", there is no `%s` module loaded. Use one of the help commands (`%s`) to see a list of available modules." % (modulename,"`, `".join(options.Matterbot['helpcmds']))
+                        # NOTE: these in-place 'chans' mutations are not
+                        # serialized against reload_commands(). A reload that
+                        # swaps self.commands between this edit and the next
+                        # use drops the change on the old table. Pre-existing;
+                        # reload_commands() newly makes it reachable at runtime.
                         elif command in ('!bind', '@bind'):
                             if channame in self.commands[modulename]['chans']:
                                 text = "The `%s` module is already available in the `%s` channel." % (modulename,self.channame_to_chandisplayname(channame))
@@ -892,6 +920,30 @@ class MattermostManager(object):
                 elif command in options.Matterbot['feedcmds']:
                     await self.log_message(userid, command, params, chaninfo, rootid)
                     await self.feed_message(userid, post, params, chaninfo, rootid)
+                elif command in options.Matterbot.get('lifecyclecmds', []):
+                    await self.log_message(userid, command, params, chaninfo, rootid)
+                    if command.lstrip('!@').lower() != 'reload':
+                        # PR 2 owns restart/update tokens; ignore them here.
+                        pass
+                    elif not self.isadmin(userid):
+                        await self.send_message(
+                            chanid,
+                            "@%s, you do not have permission to reload modules."
+                            % username, rootid)
+                    else:
+                        await self.send_message(
+                            chanid, "Reloading command modules…", rootid)
+                        try:
+                            report = await self.reload_commands()
+                            await self.send_message(
+                                chanid, self.format_reload_report(report),
+                                rootid)
+                        except Exception as exc:
+                            log.exception("reload_commands failed")
+                            await self.send_message(
+                                chanid,
+                                "Reload failed (modules unchanged): `%s`"
+                                % (exc,), rootid)
                 else:
                     await self.log_message(userid, command, params, chaninfo, rootid)
                     if not any(_ in post['message'] for _ in ('| **YES** |', '| **NO** |', 'I know about `!help')):

@@ -37,6 +37,9 @@ Matterbot:
     - "@unsub"
     - "!feeds"
     - "@feeds"
+  lifecyclecmds: # Do not change these, or things might break. PR 2 will append restart/update tokens.
+    - "!reload"
+    - "@reload"
   welcome: True # Send welcome messages to new users in a welcome channel?
   welcome_banner: "**Welcome to this Mattermost!**" # Put your single-line welcome banner here. Use the welcome_file for larger messages (e.g. ToS)
   welcome_channel: "abc" # Set this to the channel ID where the bot will welcome users
