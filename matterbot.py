@@ -472,7 +472,7 @@ class MattermostManager(object):
         messages = []
         if not params:
             if command in ('!feeds', '@feeds'):
-                if (self.my_id and userid) in channame:
+                if chaninfo['type'] == 'D':
                     text =  "**Feeds do not work in direct messages.**\n"
                     messages.append(text)
                 else:
@@ -603,7 +603,7 @@ class MattermostManager(object):
             if command in ('!map', '@map'):
                 if len(self.commands):
                     chans = set()
-                    if (self.my_id and userid) in channame:
+                    if chaninfo['type'] == 'D':
                         text =  "**List of modules in direct message:**\n"
                     else:
                         text =  "**List of modules for channel: `%s`**\n" % (self.channame_to_chandisplayname(channame,))
