@@ -485,7 +485,7 @@ class MattermostManager(object):
                         text += "\n| :- | :- |"
                         if 'TOPICS' in self.feedmap:
                             for topic in sorted(self.feedmap['TOPICS']):
-                                availablefeeds = self.feedmap['TOPICS'][topic]
+                                availablefeeds = list(self.feedmap['TOPICS'][topic])
                                 for module_name in self.feedmap['MODULES']:
                                     if 'NAME' in self.feedmap['MODULES'][module_name]:
                                         if channame in self.feedmap['MODULES'][module_name]['CHANNELS']:
