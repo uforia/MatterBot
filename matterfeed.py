@@ -243,6 +243,8 @@ class MattermostManager(object):
         except Exception as e:
             if options.debug:
                 self.log.error(f"Error   : {str(e)}\nTraceback: {traceback.format_exc()}")
+            else:
+                self.log.error(f"Error   : Cannot discover feed modules: {str(e)}")
         finally:
             sys.path.remove(module_path)
 
@@ -360,9 +362,11 @@ class MattermostManager(object):
                                 self.log.info(f"DbgCache : {module_name} => {channel} => {logcontent} ...")
             if options.debug:
                 self.log.info(f"Complete : {module_name} module ...")
-        except Exception:
+        except Exception as e:
             if options.debug:
                 self.log.error(f"Error   : {module_name} ...\nTraceback: {traceback.format_exc()}")
+            else:
+                self.log.error(f"Error   : {module_name} module failed: {str(e)}")
         finally:
             if history:
                 history.sync()
@@ -395,6 +399,8 @@ class MattermostManager(object):
         except Exception as e:
             if options.debug:
                 self.log.error(f"Error   :{str(e)}\nTraceback: {traceback.format_exc()}")
+            else:
+                self.log.error(f"Error   : {module_name} module call failed: {str(e)}")
             return None
         finally:
             if spec and spec.name in sys.modules:
