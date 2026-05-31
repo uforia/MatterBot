@@ -31,8 +31,10 @@ class MattermostManager(object):
         # the asyncio event loop. See call_module(). Worker count is
         # configurable via Matterbot.command_workers — set to 1 if a module
         # turns out not to be thread-safe; raise for more parallelism.
+        self._command_executor_workers = options.Matterbot.get('command_workers', 8)
+        self._command_timeout = options.Matterbot.get('command_timeout', 30)
         self._command_executor = concurrent.futures.ThreadPoolExecutor(
-            max_workers=options.Matterbot.get('command_workers', 8),
+            max_workers=self._command_executor_workers,
             thread_name_prefix='mb-cmd',
         )
         # Maximum number of in-flight module dispatches per user. Prevents a
@@ -147,6 +149,15 @@ class MattermostManager(object):
                 self.commands[module_name]['process'] = process
                 self.commands[module_name]['help'] = HELP
         self.binds = sorted(list(set(self.binds)))
+
+    def _recycle_command_executor(self):
+        old_executor = self._command_executor
+        self._command_executor = concurrent.futures.ThreadPoolExecutor(
+            max_workers=self._command_executor_workers,
+            thread_name_prefix='mb-cmd',
+        )
+        old_executor.shutdown(wait=False, cancel_futures=True)
+        log.warning("Recycled command executor after a command timeout")
 
     def run_forever(self):
         """Drive the Mattermost websocket, reconnecting on disconnect with
@@ -924,9 +935,10 @@ class MattermostManager(object):
 
                             async def _run_module(module):
                                 try:
-                                    async with asyncio.timeout(30):
+                                    async with asyncio.timeout(self._command_timeout):
                                         await self.call_module(module, command, channame, rootid, username, params, files, self.mmDriver)
                                 except asyncio.TimeoutError:
+                                    self._recycle_command_executor()
                                     log.warning(
                                         f"Command timed out: module={module} command={command} "
                                         f"user={username} channel={channame}"
