@@ -72,7 +72,7 @@ class MattermostManager(object):
         self.my_team_name = options.Matterbot['teamname']
         self.my_team_id = self.mmDriver.teams.get_team_by_name(self.my_team_name)['id']
         # Load an existing module channel binding map if present
-        modulepath = options.Modules['commanddir'].strip('/')
+        modulepath = str(Path(options.Modules['commanddir']).expanduser().resolve())
         # Put the PARENT of the command directory on sys.path so modules can
         # be imported as `<dirname>.<command>.command` — the fully-qualified
         # dotted path avoids name collisions with installed PyPI packages
@@ -81,7 +81,7 @@ class MattermostManager(object):
         # otherwise resolve `import unfurl.command` against the installed
         # distribution and fail because it has no `command` submodule. Same
         # collision shape applies to commands/holehe/ vs the holehe pkg.
-        _mp = Path(modulepath).resolve()
+        _mp = Path(modulepath)
         _pkg_prefix = _mp.name
         if str(_mp.parent) not in sys.path:
             sys.path.insert(0, str(_mp.parent))
