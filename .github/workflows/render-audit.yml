@@ -1,0 +1,48 @@
+name: Render audit (fence gate)
+
+# Why this exists:
+#   commands/*/command.py render untrusted feed / API / CLI-tool output into
+#   Mattermost Markdown. Content interpolated into a ``` code fence can close
+#   the fence early and render the rest as live Markdown — forged headings,
+#   @channel pings, phishing links (see docs/render-sanitization-rationale.md).
+#
+#   Every existing fence site was routed through
+#   matterbot_formatting.sanitize_block (PRs #253, #255), so the fence vector is
+#   at zero. This gate keeps it there: it fails if any command module
+#   interpolates content into a ``` fence without a sanitizer.
+#
+# Scope:
+#   The fence vector ONLY. render_audit's broader `inline` and
+#   `adhoc-stripchars` sets are still open (tracked in #254) and are
+#   deliberately NOT gated here, so this stays a hard, low-noise invariant.
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'commands/**.py'
+      - 'render_audit.py'
+      - '.github/workflows/render-audit.yml'
+  # Allow manual re-runs from the Actions tab.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fence-gate:
+    name: render_audit --vectors fence
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # render_audit.py is stdlib-only, so no dependency install is needed.
+      - name: Fail if any command module interpolates into a code fence unsanitized
+        run: python render_audit.py --check --vectors fence
