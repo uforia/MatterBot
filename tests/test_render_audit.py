@@ -1,6 +1,8 @@
+import os
+import tempfile
 import unittest
 
-from render_audit import audit_modules, audit_source, format_report
+from render_audit import Finding, audit_modules, audit_source, format_report, main, select_vectors
 
 
 class AuditSourceTests(unittest.TestCase):
@@ -74,6 +76,42 @@ class FormatReportTests(unittest.TestCase):
         report = format_report(findings)
         self.assertIn("chatgpt", report)
         self.assertIn("fence", report)
+
+
+class SelectVectorsTests(unittest.TestCase):
+    def test_filters_to_requested_vector(self):
+        findings = [
+            Finding("a", 1, "fence", "x"),
+            Finding("b", 2, "inline", "y"),
+            Finding("c", 3, "adhoc-stripchars", "z"),
+        ]
+        self.assertEqual(["fence"], [f.vector for f in select_vectors(findings, ["fence"])])
+
+    def test_keeps_multiple_requested_vectors(self):
+        findings = [Finding("a", 1, "fence", "x"), Finding("b", 2, "inline", "y")]
+        self.assertEqual(2, len(select_vectors(findings, ["fence", "inline"])))
+
+
+class MainVectorGateTests(unittest.TestCase):
+    def _write_fixture(self, root, source):
+        moddir = os.path.join(root, "evilmod")
+        os.makedirs(moddir)
+        with open(os.path.join(moddir, "command.py"), "w", encoding="utf-8") as fh:
+            fh.write(source)
+
+    def test_fence_gate_fails_on_a_fence_site(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self._write_fixture(tmp, "r = '```%s```' % x\n")
+            self.assertEqual(1, main(["--root", tmp, "--check", "--vectors", "fence"]))
+
+    def test_fence_gate_ignores_inline_only(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self._write_fixture(tmp, "t = f'`{v}`'\n")
+            self.assertEqual(0, main(["--root", tmp, "--check", "--vectors", "fence"]))
+
+    def test_unknown_vector_is_rejected(self):
+        with self.assertRaises(SystemExit):
+            main(["--root", ".", "--check", "--vectors", "bogus"])
 
 
 if __name__ == "__main__":

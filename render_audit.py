@@ -23,6 +23,8 @@ from pathlib import Path
 
 Finding = namedtuple("Finding", ["module", "line", "vector", "snippet"])
 
+VECTORS = ("fence", "inline", "adhoc-stripchars")
+
 _FENCE = "```"
 # An interpolation marker on the same line: %-formatting, str.format, f-string
 # placeholder, or a `` % `` expression.
@@ -53,6 +55,12 @@ def audit_modules(items):
     for module, source in items:
         findings.extend(audit_source(source, module))
     return findings
+
+
+def select_vectors(findings, vectors):
+    """Keep only findings whose vector is in `vectors`."""
+    wanted = set(vectors)
+    return [f for f in findings if f.vector in wanted]
 
 
 def iter_command_sources(root):
@@ -96,9 +104,19 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="Audit command modules for unsanitized render sites.")
     parser.add_argument("--root", default="commands", help="commands directory to scan (default: commands)")
     parser.add_argument("--check", action="store_true", help="exit non-zero if any findings (CI lint mode)")
+    parser.add_argument(
+        "--vectors",
+        default=",".join(VECTORS),
+        help=f"comma-separated vectors to report/gate on (default: all). Choices: {', '.join(VECTORS)}",
+    )
     args = parser.parse_args(argv)
 
-    findings = audit_modules(iter_command_sources(args.root))
+    vectors = [v.strip() for v in args.vectors.split(",") if v.strip()]
+    unknown = [v for v in vectors if v not in VECTORS]
+    if unknown:
+        parser.error(f"unknown vector(s): {', '.join(unknown)}. Choices: {', '.join(VECTORS)}")
+
+    findings = select_vectors(audit_modules(iter_command_sources(args.root)), vectors)
     print(format_report(findings))
     if args.check and findings:
         return 1
