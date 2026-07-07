@@ -6,6 +6,8 @@ from urllib.parse import urlsplit
 
 import requests
 
+from matterbot_formatting import sanitize_block, sanitize_inline
+
 log = logging.getLogger("MatterBot")
 
 ### Dynamic configuration loader (do not change/edit)
@@ -37,6 +39,12 @@ _settings_dict = {
 }
 settings = SimpleNamespace(**_settings_dict)
 ### Loader end, actual module functionality starts here
+
+
+def _wrap_output(domain, body, truncation_note):
+    """Wrap Wayback output: the enumerated paths go inside a code fence via
+    sanitize_block and the domain in inline code via sanitize_inline."""
+    return f"**Wayback directory enumeration for `{sanitize_inline(domain)}`:**\n```\n{sanitize_block(body)}\n```{truncation_note}"
 
 # Strict RFC-1123 hostname check — rejects URLs with paths, IPs, and shell
 # metacharacters so the operator-supplied string is safe to interpolate into
@@ -193,7 +201,7 @@ def process(command, channel, username, params, files, conn):
         body = body[: settings.MAX_OUTPUT_CHARS]
         truncated = True
 
-    wrapped = f"**Wayback directory enumeration for `{domain}`:**\n```\n{body}\n```{truncation_note}"
+    wrapped = _wrap_output(domain, body, truncation_note)
     if truncated:
         wrapped += (
             f"\n_Output truncated at {settings.MAX_OUTPUT_CHARS} characters._"

@@ -4,6 +4,8 @@ import ipaddress
 import re
 import requests
 
+from matterbot_formatting import sanitize_block, sanitize_inline
+
 ### Dynamic configuration loader (do not change/edit)
 from importlib import import_module
 from types import SimpleNamespace
@@ -31,6 +33,13 @@ _settings_dict = {
 }
 settings = SimpleNamespace(**_settings_dict)
 ### Loader end, actual module functionality starts here
+
+
+def _wrap_output(header, body):
+    """Wrap hackertarget output: the tool body goes inside a code fence via
+    sanitize_block. The caller builds the header and sanitizes its interpolated
+    subject with sanitize_inline before passing it in."""
+    return f"{header}\n```\n{sanitize_block(body)}\n```"
 
 HOSTNAME_RE = re.compile(
     r'^(?=.{1,253}$)'
@@ -179,13 +188,13 @@ def process(command, channel, username, params, files, conn):
     if truncated_lines:
         rendered_body += f"\n…({total - max_lines} more line(s) omitted)"
 
-    header = f"**hackertarget {sub}** ({cfg['label']}) for `{normalized}`:"
-    text = f"{header}\n```\n{rendered_body}\n```"
+    header = f"**hackertarget {sub}** ({cfg['label']}) for `{sanitize_inline(normalized)}`:"
+    text = _wrap_output(header, rendered_body)
     if len(text) > max_chars:
         # Pull back inside the code fence so the closing ``` survives.
         head_room = max_chars - len(header) - len('\n```\n\n```\n_…output truncated._')
         if head_room > 0:
-            text = f"{header}\n```\n{rendered_body[:head_room]}\n```\n_…output truncated._"
+            text = _wrap_output(header, rendered_body[:head_room]) + "\n_…output truncated._"
 
     messages.append({'text': text})
     return {'messages': messages}
