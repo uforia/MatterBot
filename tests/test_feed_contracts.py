@@ -67,6 +67,13 @@ class CheckFeedModuleTests(unittest.TestCase):
             d = _make_module(tmp, "nodefaults", "def query(settings):\n    return []\n", defaults_src=None)
             self.assertTrue(any("defaults.py" in v for v in check_feed_module(d)))
 
+    def test_defaults_without_NAME_is_flagged(self):
+        # matterfeed reads settings.NAME unconditionally, so a module whose
+        # defaults omit it crashes feed discovery.
+        with tempfile.TemporaryDirectory() as tmp:
+            d = _make_module(tmp, "noname", "def query(settings):\n    return []\n", defaults_src="URL = 'x'\n")
+            self.assertTrue(any("NAME" in v for v in check_feed_module(d)))
+
 
 class RealFeedTreeSmokeTest(unittest.TestCase):
     def test_every_feed_module_satisfies_the_load_contract(self):

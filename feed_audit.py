@@ -30,6 +30,17 @@ def _has_top_level_function(tree, name):
     )
 
 
+def _has_top_level_assignment(tree, name):
+    for node in tree.body:
+        if isinstance(node, ast.Assign):
+            if any(isinstance(t, ast.Name) and t.id == name for t in node.targets):
+                return True
+        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            if node.target.id == name:
+                return True
+    return False
+
+
 def check_feed_module(module_dir):
     """Return a list of contract-violation strings for one module dir (empty = OK)."""
     module_dir = Path(module_dir)
@@ -52,9 +63,12 @@ def check_feed_module(module_dir):
         violations.append("missing defaults.py")
     else:
         try:
-            ast.parse(defaults_py.read_text(encoding="utf-8", errors="replace"))
+            defaults_tree = ast.parse(defaults_py.read_text(encoding="utf-8", errors="replace"))
         except SyntaxError as e:
             violations.append(f"defaults.py has a syntax error at line {e.lineno}: {e.msg}")
+        else:
+            if not _has_top_level_assignment(defaults_tree, "NAME"):
+                violations.append("defaults.py does not define NAME (matterfeed reads settings.NAME unconditionally)")
 
     return violations
 
