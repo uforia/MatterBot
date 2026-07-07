@@ -1,6 +1,14 @@
 import unittest
 
-from matterbot_formatting import defang_ioc, format_scalar, safe_markdown_cell
+from matterbot_formatting import (
+    defang_ioc,
+    format_scalar,
+    safe_markdown_cell,
+    sanitize_block,
+    sanitize_blockquote,
+    sanitize_heading_echo,
+    sanitize_inline,
+)
 
 
 class DefangIocTests(unittest.TestCase):
@@ -38,6 +46,69 @@ class MarkdownFormattingTests(unittest.TestCase):
 
     def test_format_scalar_defangs_before_formatting(self):
         self.assertEqual("`example[.]com`", format_scalar("example.com", "domain-name"))
+
+
+class SanitizeInlineTests(unittest.TestCase):
+    def test_strips_backticks_so_inline_wrap_cannot_break(self):
+        self.assertEqual("abc", sanitize_inline("a`b`c"))
+
+    def test_collapses_newlines(self):
+        self.assertEqual("a b", sanitize_inline("a\nb"))
+
+    def test_none_becomes_empty_string(self):
+        self.assertEqual("", sanitize_inline(None))
+
+    def test_benign_text_unchanged(self):
+        self.assertEqual("hello world", sanitize_inline("hello world"))
+
+
+class SanitizeBlockTests(unittest.TestCase):
+    def test_neutralizes_fence_breakout(self):
+        out = sanitize_block("```py\nevil\n```")
+        self.assertNotIn("```", out)
+
+    def test_preserves_visible_backtick_count(self):
+        self.assertEqual(3, sanitize_block("```").count("`"))
+
+    def test_single_backtick_unchanged(self):
+        self.assertEqual("a`b", sanitize_block("a`b"))
+
+    def test_none_becomes_empty_string(self):
+        self.assertEqual("", sanitize_block(None))
+
+
+class SanitizeBlockquoteTests(unittest.TestCase):
+    def test_escapes_leading_gt(self):
+        self.assertEqual("\\> forged quote", sanitize_blockquote("> forged quote"))
+
+    def test_escapes_leading_gt_per_line(self):
+        self.assertEqual("a\n\\> b", sanitize_blockquote("a\n> b"))
+
+    def test_preserves_indent_before_escaped_gt(self):
+        self.assertEqual("  \\> x", sanitize_blockquote("  > x"))
+
+    def test_benign_text_unchanged(self):
+        self.assertEqual("not a quote", sanitize_blockquote("not a quote"))
+
+    def test_none_becomes_empty_string(self):
+        self.assertEqual("", sanitize_blockquote(None))
+
+
+class SanitizeHeadingEchoTests(unittest.TestCase):
+    def test_escapes_leading_hash(self):
+        self.assertEqual("\\# forged heading", sanitize_heading_echo("# forged heading"))
+
+    def test_escapes_leading_gt(self):
+        self.assertEqual("\\> forged", sanitize_heading_echo("> forged"))
+
+    def test_collapses_newlines_to_single_line(self):
+        self.assertEqual("a b", sanitize_heading_echo("a\nb"))
+
+    def test_benign_text_unchanged(self):
+        self.assertEqual("query result", sanitize_heading_echo("query result"))
+
+    def test_none_becomes_empty_string(self):
+        self.assertEqual("", sanitize_heading_echo(None))
 
 
 if __name__ == "__main__":
