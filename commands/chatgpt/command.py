@@ -2,6 +2,8 @@
 
 import requests
 
+from matterbot_formatting import sanitize_block, sanitize_inline
+
 ### Dynamic configuration loader (do not change/edit)
 from importlib import import_module
 from types import SimpleNamespace
@@ -27,6 +29,18 @@ _settings_dict = {
 settings = SimpleNamespace(**_settings_dict)
 ### Loader end, actual module functionality starts here
 
+def _format_answer(content):
+    """Render a model answer inside a fenced code block, neutralizing any
+    ``` in the (untrusted) model output so it cannot break out of the fence."""
+    return '\n```%s\n```' % (sanitize_block(content),)
+
+
+def _format_error(message):
+    """Render an API error message inside inline code, stripping backticks so
+    the (upstream) message cannot break out of the inline-code wrapper."""
+    return 'An error occurred querying OpenAI: `%s`' % (sanitize_inline(message),)
+
+
 def process(command, channel, username, params, files, conn):
     if len(params)>0:
         params = ' '.join(params)
@@ -44,9 +58,9 @@ def process(command, channel, username, params, files, conn):
             answer = response.json()
             reply = None
             if 'error' in answer:
-                reply = "An error occurred querying OpenAI: `"+answer['error']['message']+'`'
+                reply = _format_error(answer['error']['message'])
             if 'choices' in answer:
-                reply = '\n```%s\n```' % (answer['choices'][0]['message']['content'][1:],)
+                reply = _format_answer(answer['choices'][0]['message']['content'][1:])
             if reply:
                 return {'messages': [
                     {'text': reply},
