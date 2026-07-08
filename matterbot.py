@@ -181,7 +181,18 @@ class MattermostManager(object):
                 except Exception:
                     log.exception("welcome.reconcile failed (continuing)")
                 log.info("Connecting Mattermost websocket")
-                self.mmDriver.init_websocket(self.handle_raw_message)
+                # Python 3.14 removed the implicit loop creation in
+                # asyncio.get_event_loop(); mattermostdriver.init_websocket
+                # still relies on it (driver.py:150). Give this thread a fresh
+                # event loop per attempt and close it afterwards — the driver
+                # never closes it, so reusing/leaking loops across reconnects
+                # would leak the loop's self-pipe file descriptors.
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    self.mmDriver.init_websocket(self.handle_raw_message)
+                finally:
+                    loop.close()
                 log.warning("Websocket loop returned (server closed connection?)")
             except KeyboardInterrupt:
                 log.info("Interrupted — exiting")
