@@ -8,6 +8,7 @@ import fnmatch
 import importlib.util
 import json
 import logging
+import multiprocessing
 import pebble
 import os
 import shelve
@@ -265,7 +266,15 @@ class MattermostManager(object):
                 self.feedmap = self.load_feedmap()
                 self.modules = self.findModules()
                 self.channels = self.update_channels()
-                with pebble.ProcessPool(max_workers=options.Modules['threads']) as pool:
+                # Python 3.14 changed the default multiprocessing start method
+                # on Linux from 'fork' to 'forkserver'. Under forkserver the
+                # worker is a fresh interpreter that re-imports matterfeed.py as
+                # a plain module (not __main__), so it cannot unpickle the bound
+                # method self.runModule nor see the __main__-scoped `options`
+                # global — every module fails instantly. Pin 'fork' to restore
+                # the pre-3.14 behavior this pool relies on.
+                mp_context = multiprocessing.get_context('fork')
+                with pebble.ProcessPool(max_workers=options.Modules['threads'], context=mp_context) as pool:
                     futures = []
                     for module_name in self.modules:
                         self.log.info(f"Starting : {module_name} module ...")
