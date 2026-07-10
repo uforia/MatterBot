@@ -386,6 +386,16 @@ class MattermostManager(object):
         try:
             # Load the module
             importlib.invalidate_caches()
+            # findModules() removes module_path from sys.path once discovery is
+            # done, but a feed module -- and the FeedResult normalisation below --
+            # may `import feedutils` from the modules dir. Re-add it (append, so
+            # it can never shadow a stdlib/site-packages name; feedutils lives
+            # only here). This is safe w.r.t. the modules/socket feed shadowing
+            # stdlib socket: socket is already cached in sys.modules from
+            # matterfeed's own startup imports, so a later `import socket`
+            # resolves from the cache and never re-scans sys.path.
+            if module_path not in sys.path:
+                sys.path.append(module_path)
             module_file = os.path.join(module_path, module_name, "feed.py")
             if not os.path.exists(module_file):
                 raise ImportError(f"No feed.py found for {module_name} ...")
