@@ -403,8 +403,16 @@ class MattermostManager(object):
             if not callable(func):
                 raise AttributeError(f"The 'query' function is not callable in {module_name} ...")
 
-            # Return a handle to the module query function entry point
-            return func(*args, **kwargs)
+            # Run the module and normalise its return. A module may return the
+            # legacy plain list of posts, or a feedutils.FeedResult carrying
+            # both posts and per-source errors. Log any partial errors here,
+            # centrally, so a module never has to swallow them silently, and
+            # hand the posts back to the caller unchanged either way.
+            import feedutils
+            items, errors = feedutils.split_result(func(*args, **kwargs))
+            for source, message in errors:
+                self.log.info(f"Partial  : {module_name} module: {source}: {message}")
+            return items
         except Exception as e:
             if options.debug:
                 self.log.error(f"Error   :{str(e)}\nTraceback: {traceback.format_exc()}")
