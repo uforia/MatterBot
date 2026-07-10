@@ -14,6 +14,7 @@
 
 import bs4
 import feedparser
+import feedutils
 import ipaddress
 import re
 import requests
@@ -74,46 +75,51 @@ def query(settings=None):
         except ImportError:
             pass
     items = []
+    errors = []
     user_agent = 'MatterBot RSS Automation 1.0'
     headers = {
         'Content-Type': 'text/json',
         'User-Agent': f"{user_agent}",
     }
     for url in settings.URLS:
-        title = url
-        feed = feedparser.parse(settings.URLS[url], agent=user_agent)
-        count = 0
-        stripchars = '`\\[\\]\'\"'
-        regex = re.compile('[%s]' % stripchars)
-        while count < settings.ENTRIES:
-            try:
-                link = feed.entries[count].link
-                content = settings.NAME + ': [' + title + '](' + link + ')'
-                if len(feed.entries[count].description):
-                    description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
-                    if len(description)>400:
-                        description = description[:396]+' ...'
-                    content += '\n>'+description+'\n'
-                upload = None
-                if 'media_content' in feed.entries[count]:
-                    uploads = []
-                    for media in feed.entries[count]['media_content']:
-                        if 'url' in media:
-                            url = media['url']
-                            body = _safe_fetch(url, headers)
-                            if body is not None:
-                                filename = url.split('/')[-1]
-                                upload = {'filename': filename, 'bytes': body}
-                                uploads.append(upload)
-                for channel in settings.CHANNELS:
-                    if upload:
-                        items.append([channel, content, {'uploads': uploads}])
-                    else:
-                        items.append([channel, content])
-                count+=1
-            except IndexError:
-                return items # No more items
-    return items
+        try:
+            title = url
+            feed = feedparser.parse(settings.URLS[url], agent=user_agent)
+            count = 0
+            stripchars = '`\\[\\]\'\"'
+            regex = re.compile('[%s]' % stripchars)
+            while count < settings.ENTRIES:
+                try:
+                    link = feed.entries[count].link
+                    content = settings.NAME + ': [' + title + '](' + link + ')'
+                    if len(feed.entries[count].description):
+                        description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
+                        if len(description)>400:
+                            description = description[:396]+' ...'
+                        content += '\n>'+description+'\n'
+                    upload = None
+                    if 'media_content' in feed.entries[count]:
+                        uploads = []
+                        for media in feed.entries[count]['media_content']:
+                            if 'url' in media:
+                                url = media['url']
+                                body = _safe_fetch(url, headers)
+                                if body is not None:
+                                    filename = url.split('/')[-1]
+                                    upload = {'filename': filename, 'bytes': body}
+                                    uploads.append(upload)
+                    for channel in settings.CHANNELS:
+                        if upload:
+                            items.append([channel, content, {'uploads': uploads}])
+                        else:
+                            items.append([channel, content])
+                    count+=1
+                except IndexError:
+                    break # No more items
+        except Exception as e:
+            errors.append((title, str(e)))  # title holds the source key; url is reassigned during media handling
+            continue
+    return feedutils.result(items, errors)
 
 if __name__ == "__main__":
     print(query())
