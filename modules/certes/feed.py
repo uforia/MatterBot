@@ -38,7 +38,12 @@ def query(settings=None):
         regex = re.compile('[%s]' % stripchars)
         while count < settings.ENTRIES:
             try:
-                title = feed.entries[count].title
+                entry = feed.entries[count]
+            except IndexError:
+                break  # No more entries in this feed; continue with the next URL
+            count += 1
+            try:
+                title = entry.title
                 if settings.TRANSLATION:
                     from_lan = "es"
                     to_lan = "en"
@@ -51,13 +56,14 @@ def query(settings=None):
                     if packageSelection not in installed_packages:
                         package.install_from_path(packageSelection.download())
                     title = translate.translate(title, from_lan, to_lan)
-                link = feed.entries[count].link
+                link = entry.link
                 content = settings.NAME + ': [' + title + '](' + link + ')'
                 for channel in settings.CHANNELS:
                     items.append([channel, content])
-                count+=1
-            except IndexError:
-                return items # No more items
+            except Exception:
+                # A malformed or blocked entry (e.g. an anti-bot 403 page parsed
+                # as junk) must not discard the items already collected.
+                continue
     return items
 
 if __name__ == "__main__":

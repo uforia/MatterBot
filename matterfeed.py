@@ -302,7 +302,7 @@ class MattermostManager(object):
                             if options.debug:
                                 self.log.error(f"Error   : {module_name} module ...\nTraceback: {str(e)}\n{traceback.format_exc()}")
                             else:
-                                self.log.info(f"Error    : {module_name} module ...")
+                                self.log.info(f"Error    : {module_name} module failed: {type(e).__name__}: {e}")
                             failed += 1
                         finally:
                             if not future.done():
