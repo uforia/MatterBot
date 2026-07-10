@@ -14,7 +14,6 @@
 
 from argostranslate import package, translate
 import feedparser
-import re
 
 def query(settings=None):
     if settings:
@@ -31,11 +30,20 @@ def query(settings=None):
         except ImportError:
             pass
     items = []
+    from_lan = "es"
+    to_lan = "en"
+    if settings.TRANSLATION:
+        # Install the translation package once, up front, and only when it is
+        # missing. The previous code ran update_package_index() -- a network
+        # fetch of the remote package index -- for every single entry, which
+        # blows the module timeout once the working feeds have many entries.
+        if not any(p.from_code == from_lan and p.to_code == to_lan for p in package.get_installed_packages()):
+            package.update_package_index()
+            packageSelection = next(filter(lambda x: x.from_code == from_lan and x.to_code == to_lan, package.get_available_packages()))
+            package.install_from_path(packageSelection.download())
     for URL in settings.URLS:
         feed = feedparser.parse(URL, agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36")
         count = 0
-        stripchars = '`\\[\\]\'\"'
-        regex = re.compile('[%s]' % stripchars)
         while count < settings.ENTRIES:
             try:
                 entry = feed.entries[count]
@@ -45,16 +53,6 @@ def query(settings=None):
             try:
                 title = entry.title
                 if settings.TRANSLATION:
-                    from_lan = "es"
-                    to_lan = "en"
-                    # Check for new language packages to install (initial setup)
-                    installed_packages = package.get_installed_packages()
-                    package.update_package_index()
-                    updateIndex = package.get_available_packages()
-                    # Filter for correct language packages
-                    packageSelection = next(filter(lambda x: x.from_code == from_lan and x.to_code == to_lan, updateIndex))
-                    if packageSelection not in installed_packages:
-                        package.install_from_path(packageSelection.download())
                     title = translate.translate(title, from_lan, to_lan)
                 link = entry.link
                 content = settings.NAME + ': [' + title + '](' + link + ')'
