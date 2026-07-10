@@ -5,6 +5,8 @@ import re
 import shutil
 import subprocess
 
+from matterbot_formatting import sanitize_block, sanitize_inline
+
 log = logging.getLogger("MatterBot")
 
 ### Dynamic configuration loader (do not change/edit)
@@ -36,6 +38,12 @@ _settings_dict = {
 }
 settings = SimpleNamespace(**_settings_dict)
 ### Loader end, actual module functionality starts here
+
+
+def _wrap_output(email, body):
+    """Wrap Holehe output: the results go inside a code fence via sanitize_block
+    and the email in inline code via sanitize_inline."""
+    return f"**Holehe results for `{sanitize_inline(email)}`:**\n```\n{sanitize_block(body)}\n```"
 
 # Strict RFC-5321-ish local + RFC-1123 domain. Rejects whitespace, quotes, and
 # shell metacharacters so the operator-supplied string is safe to pass as a
@@ -152,7 +160,7 @@ def process(command, channel, username, params, files, conn):
         body = body[: settings.MAX_OUTPUT_CHARS]
         truncated = True
 
-    wrapped = f"**Holehe results for `{email}`:**\n```\n{body}\n```"
+    wrapped = _wrap_output(email, body)
     if truncated:
         wrapped += (
             f"\n_Output truncated at {settings.MAX_OUTPUT_CHARS} characters._"

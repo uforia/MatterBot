@@ -8,6 +8,8 @@ import requests
 import sys
 import urllib.parse
 
+from matterbot_formatting import sanitize_block, sanitize_inline
+
 ### Dynamic configuration loader (do not change/edit)
 from importlib import import_module
 from types import SimpleNamespace
@@ -35,6 +37,13 @@ _settings_dict = {
 }
 settings = SimpleNamespace(**_settings_dict)
 ### Loader end, actual module functionality starts here
+
+
+def _format_api_error(err, content):
+    """Render a Qualys API error: the exception message in inline code via
+    sanitize_inline and the raw response content inside a code fence via
+    sanitize_block, so neither can break out of its Markdown context."""
+    return 'The Qualys Cyber Security Asset Management API call returned an unexpected result/error: `%s`\n```%s```' % (sanitize_inline(err), sanitize_block(content))
 
 def getToken():
     try:
@@ -308,7 +317,7 @@ def process(command, channel, username, params, files, conn):
                                 messages.append({'text': f'No Qualys assets were found matching for `{querytype}`: `{query}`.'})
                         except Exception as e:
                             log.exception("qualys module error")
-                            messages.append({'text': 'The Qualys Cyber Security Asset Management API call returned an unexpected result/error: `%s`\n```%s```' % (str(e), response.content)})
+                            messages.append({'text': _format_api_error(str(e), response.content)})
                 else:
                     messages.append({'text': 'The Qualys module could not obtain a valid JWT token. Check your credentials and/or subscription permissions.'})
     except Exception as e:

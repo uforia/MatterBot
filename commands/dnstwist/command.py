@@ -5,6 +5,8 @@ import io
 import logging
 import re
 
+from matterbot_formatting import sanitize_block, sanitize_inline
+
 log = logging.getLogger("MatterBot")
 
 ### Dynamic configuration loader (do not change/edit)
@@ -36,6 +38,13 @@ _settings_dict = {
 }
 settings = SimpleNamespace(**_settings_dict)
 ### Loader end, actual module functionality starts here
+
+
+def _wrap_output(mode, domain, body, truncation_note):
+    """Wrap DNSTwist output: the tool body goes inside a code fence via
+    sanitize_block and the domain in inline code via sanitize_inline, so
+    neither can break out of its Markdown context."""
+    return f"**DNSTwist {mode} for `{sanitize_inline(domain)}`:**\n```\n{sanitize_block(body)}\n```{truncation_note}"
 
 # Strict RFC-1123 hostname check — rejects URLs with paths, IPs, and shell
 # metacharacters so the operator-supplied string is safe to pass to dnstwist.
@@ -151,9 +160,7 @@ def process(command, channel, username, params, files, conn):
             if registered_only
             else "permutations (no DNS resolution)"
         )
-        wrapped = (
-            f"**DNSTwist {mode} for `{domain}`:**\n```\n{body}\n```{truncation_note}"
-        )
+        wrapped = _wrap_output(mode, domain, body, truncation_note)
         if truncated:
             wrapped += (
                 f"\n_Output truncated at {settings.MAX_OUTPUT_CHARS} characters._"
