@@ -14,7 +14,6 @@
 
 from argostranslate import package, translate
 import feedparser
-import re
 from urllib.parse import unquote
 
 
@@ -35,10 +34,19 @@ def query(settings=None):
             pass
     items = []
     feed = feedparser.parse(settings.URL, agent='MatterBot RSS Automation 1.0')
+    from_lan = "sq"
+    to_lan = "en"
+    if settings.TRANSLATION:
+        # Install the translation package once, up front, and only when it is
+        # missing. The previous code ran update_package_index() -- a network
+        # fetch of the remote package index -- for every entry, which blows the
+        # module timeout once a feed has many entries.
+        if not any(p.from_code == from_lan and p.to_code == to_lan for p in package.get_installed_packages()):
+            package.update_package_index()
+            packageSelection = next(filter(lambda x: x.from_code == from_lan and x.to_code == to_lan, package.get_available_packages()))
+            package.install_from_path(packageSelection.download())
     count = 0
     category = "Rekomandime"
-    stripchars = '`\\[\\]\'\"'
-    regex = re.compile('[%s]' % stripchars)
     while count < settings.ENTRIES:
         try:
             title = feed.entries[count].title
@@ -46,16 +54,6 @@ def query(settings=None):
             for tag in tags:
                 if category in tag['term']:
                     if settings.TRANSLATION:
-                        from_lan = "sq"
-                        to_lan = "en"
-                        # Check for new language packages to install (initial setup)
-                        installed_packages = package.get_installed_packages()
-                        package.update_package_index()
-                        updateIndex = package.get_available_packages()
-                        # Filter for correct language packages
-                        packageSelection = next(filter(lambda x: x.from_code == from_lan and x.to_code == to_lan, updateIndex))
-                        if packageSelection not in installed_packages:
-                            package.install_from_path(packageSelection.download())
                         title = translate.translate(title, from_lan, to_lan)
                     link = feed.entries[count].link
                     link = unquote(link)

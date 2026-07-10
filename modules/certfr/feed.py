@@ -14,7 +14,6 @@
 
 from argostranslate import package, translate
 import feedparser
-import re
 
 def query(settings=None):
     if settings:
@@ -33,23 +32,22 @@ def query(settings=None):
     items = []
     feed = feedparser.parse(settings.URL, agent='MatterBot RSS Automation 1.0')
     reversedFeed = list(reversed(feed.entries))
+    from_lan = "fr"
+    to_lan = "en"
+    if settings.TRANSLATION:
+        # Install the translation package once, up front, and only when it is
+        # missing. The previous code ran update_package_index() -- a network
+        # fetch of the remote package index -- for every entry, which blows the
+        # module timeout once a feed has many entries.
+        if not any(p.from_code == from_lan and p.to_code == to_lan for p in package.get_installed_packages()):
+            package.update_package_index()
+            packageSelection = next(filter(lambda x: x.from_code == from_lan and x.to_code == to_lan, package.get_available_packages()))
+            package.install_from_path(packageSelection.download())
     count = 0
-    stripchars = '`\\[\\]\'\"'
-    regex = re.compile('[%s]' % stripchars)
     while count < settings.ENTRIES:
         try:
             title = reversedFeed[count].title
             if settings.TRANSLATION:
-                from_lan = "fr"
-                to_lan = "en"
-                # Check for new language packages to install (initial setup)
-                installed_packages = package.get_installed_packages()
-                package.update_package_index()
-                updateIndex = package.get_available_packages()
-                # Filter for correct language packages
-                packageSelection = next(filter(lambda x: x.from_code == from_lan and x.to_code == to_lan, updateIndex))
-                if packageSelection not in installed_packages:
-                    package.install_from_path(packageSelection.download())
                 title = translate.translate(title, from_lan, to_lan)
             link = reversedFeed[count].link
             content = settings.NAME + ': [' + title + '](' + link + ')'
