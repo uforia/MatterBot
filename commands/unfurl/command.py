@@ -2,6 +2,8 @@
 
 import logging
 
+from matterbot_formatting import sanitize_block, sanitize_inline
+
 log = logging.getLogger("MatterBot")
 
 ### Dynamic configuration loader (do not change/edit)
@@ -33,6 +35,13 @@ _settings_dict = {
 }
 settings = SimpleNamespace(**_settings_dict)
 ### Loader end, actual module functionality starts here
+
+
+def _format_tree(url, tree):
+    """Render the unfurl output: the (untrusted) tool tree goes inside a fenced
+    code block via sanitize_block so it cannot break out, and the user-supplied
+    URL is wrapped in inline code via sanitize_inline."""
+    return f"**Unfurl tree for `{sanitize_inline(url)}`:**\n```\n{sanitize_block(tree)}\n```"
 
 
 def process(command, channel, username, params, files, conn):
@@ -67,7 +76,7 @@ def process(command, channel, username, params, files, conn):
 
         if not tree:
             messages.append(
-                {"text": f"Unfurl produced no output for `{url}`."}
+                {"text": f"Unfurl produced no output for `{sanitize_inline(url)}`."}
             )
             return {"messages": messages}
 
@@ -76,7 +85,7 @@ def process(command, channel, username, params, files, conn):
             tree = tree[: settings.MAX_OUTPUT_CHARS]
             truncated = True
 
-        body = f"**Unfurl tree for `{url}`:**\n```\n{tree}\n```"
+        body = _format_tree(url, tree)
         if truncated:
             body += (
                 f"\n_Output truncated at {settings.MAX_OUTPUT_CHARS} characters; "
