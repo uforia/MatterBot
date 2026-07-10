@@ -451,6 +451,15 @@ if __name__ == '__main__' :
         log.info('>>> WARNING: debug logging enabled ...')
     else:
         log.info('>>> Debug logging disabled ...')
+    # argostranslate logs every translated line at INFO ("('paragraphs:', ...)",
+    # "('apply_packaged_translation', ...)"), which floods the feed log. Import it
+    # here in the parent (before the fork pool starts) so its logger exists, then
+    # pin it to WARNING; forked workers inherit this and never reset it to INFO.
+    try:
+        import argostranslate.utils  # noqa: F401 -- import runs its own logger.setLevel(logging.INFO)
+        logging.getLogger('argostranslate.utils').setLevel(logging.WARNING)
+    except ImportError:
+        pass  # translation modules not installed / not in use
     try:
         current_dir = os.path.dirname(__file__)
         module_path = os.path.abspath(os.path.expanduser(options.Modules['moduledir']))
