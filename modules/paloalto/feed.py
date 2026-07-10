@@ -13,6 +13,7 @@
 # <content>: the content of the message, MD format possible
 
 import feedparser
+import feedutils
 import re
 
 
@@ -32,28 +33,33 @@ def query(settings=None):
         except ImportError:
             pass
     items = []
+    errors = []
     for URL in settings.URLS:
-        feed = feedparser.parse(URL, agent='MatterBot RSS Automation 1.0')
-        count = 0
-        stripchars = '`\\[\\]\'\"'
-        regex = re.compile('[%s]' % stripchars)
-        while count < settings.ENTRIES:
-            try:
-                title = feed.entries[count].title
-                filtered = False
-                if "security" in URL and "Severity: CRITICAL" in title: # Check for critical advisories
+        try:
+            feed = feedparser.parse(URL, agent='MatterBot RSS Automation 1.0')
+            count = 0
+            stripchars = '`\\[\\]\'\"'
+            regex = re.compile('[%s]' % stripchars)
+            while count < settings.ENTRIES:
+                try:
+                    title = feed.entries[count].title
+                    filtered = False
+                    if "security" in URL and "Severity: CRITICAL" in title: # Check for critical advisories
+                            filtered = True
+                    elif "unit42" in URL:
                         filtered = True
-                elif "unit42" in URL:
-                    filtered = True
-                if filtered:
-                    link = feed.entries[count].link
-                    content = settings.NAME + ': [' + title + '](' + link + ')'
-                    for channel in settings.CHANNELS:
-                        items.append([channel, content])
-                count += 1
-            except IndexError:
-                return items # No more items
-    return items
+                    if filtered:
+                        link = feed.entries[count].link
+                        content = settings.NAME + ': [' + title + '](' + link + ')'
+                        for channel in settings.CHANNELS:
+                            items.append([channel, content])
+                    count += 1
+                except IndexError:
+                    break # No more items
+        except Exception as e:
+            errors.append((URL, str(e)))
+            continue
+    return feedutils.result(items, errors)
 
 if __name__ == "__main__":
     print(query())
