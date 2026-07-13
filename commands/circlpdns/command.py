@@ -83,6 +83,7 @@ def _cell(value):
 
 
 @cmdutils.handles(cmdutils.IP, cmdutils.IPV6, cmdutils.CIDR, cmdutils.DOMAIN)
+@cmdutils.aitool
 def process(command, channel, username, params, files, conn):
     messages = []
     if not params:
