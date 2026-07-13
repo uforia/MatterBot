@@ -152,8 +152,12 @@ def process(command, channel, username, params, files, conn):
                                 message += "\n\n"
                             if len(message):
                                 messages.append({'text': message})
-        except Exception as e:
+        except Exception:
+            # Never interpolate str(e) into a channel message: for this module the
+            # API key is in the request URL, and an HTTP error's string carries that
+            # URL, so str(e) leaks the key into the channel. The traceback is logged
+            # server-side above; the channel gets a flat, credential-free line.
             log.exception("proxycheck module error")
-            messages.append({'text': 'An error occurred in the ProxyCheck module:\nError: `%s`' % (str(e),)})
+            messages.append({'text': 'The ProxyCheck lookup failed; see the bot log for details.'})
         finally:
             return {'messages': messages}
