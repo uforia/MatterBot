@@ -61,6 +61,13 @@ class _Feed:
         self.entries = entries
 
 
+class _Score:
+    """Stand-in for a bs4 element selected as a CVSS score cell."""
+
+    def __init__(self, text):
+        self.text = text
+
+
 class FortinetFilterTests(unittest.TestCase):
     def setUp(self):
         self.fortinet = _load_fortinet()
@@ -133,6 +140,52 @@ class FortinetFilterTests(unittest.TestCase):
         self.assertEqual(1, len(items))
         self.assertIn("Fortinet: [Critical bug - CVSS: `9.8`]", items[0][1])
         self.assertIn("https://example.invalid/high", items[0][1])
+
+
+class FortinetFilterPolarityTests(FortinetFilterTests):
+    """Issue #269: FILTER used to *post* advisories whose severity was unknown."""
+
+    def test_entry_with_no_cvss_on_the_page_is_not_posted(self):
+        # checkPage() finds no score elements -> severity unknown -> must not post.
+        entries = [_Entry("Unscored advisory", "https://example.invalid/none")]
+        items = self._run(entries, {"https://example.invalid/none": []})
+        self.assertEqual([], items)
+
+    def test_entry_whose_page_failed_to_load_is_not_posted(self):
+        # checkPage() returns False when the request raised -> severity unknown.
+        entries = [_Entry("Unreachable advisory", "https://example.invalid/dead")]
+        items = self._run(entries, {"https://example.invalid/dead": False})
+        self.assertEqual([], items)
+
+    def test_score_exactly_at_threshold_is_posted(self):
+        entries = [_Entry("Borderline", "https://example.invalid/edge")]
+        items = self._run(entries, {"https://example.invalid/edge": ("cvss", "7.0")})
+        self.assertEqual(1, len(items))
+        self.assertIn("CVSS: `7.0`", items[0][1])
+
+    def test_zero_score_is_a_score_not_an_absent_one(self):
+        # `if cvss:` used to treat a legitimate CVSS of 0.0 as "no score".
+        self.fortinet.importScore = lambda: 0.0
+        entries = [_Entry("Informational", "https://example.invalid/zero")]
+        items = self._run(entries, {"https://example.invalid/zero": ("cvss", "0.0")})
+        self.assertEqual(1, len(items))
+        self.assertIn("CVSS: `0.0`", items[0][1])
+
+    def test_highest_score_on_the_page_is_the_one_compared(self):
+        # A page listing several CVEs must be judged on its most severe score.
+        scores = [_Score("3.1"), _Score("9.1"), _Score("5.0")]
+        entries = [_Entry("Multi-CVE advisory", "https://example.invalid/multi")]
+        items = self._run(entries, {"https://example.invalid/multi": scores})
+        self.assertEqual(1, len(items))
+        self.assertIn("CVSS: `9.1`", items[0][1])
+
+    def test_unparseable_score_cells_are_ignored(self):
+        # Header/label cells swept up by the selector must not raise.
+        scores = [_Score("CVSS Rating"), _Score("8.2")]
+        entries = [_Entry("Advisory", "https://example.invalid/hdr")]
+        items = self._run(entries, {"https://example.invalid/hdr": scores})
+        self.assertEqual(1, len(items))
+        self.assertIn("CVSS: `8.2`", items[0][1])
 
 
 if __name__ == "__main__":
