@@ -7,7 +7,9 @@ name = "matterbot"
 version = "0.0.0"
 description = "Mattermost bot and threat-intel feed automation"
 readme = "README.md"
-requires-python = ">=3.9"
+# matterbot.py uses asyncio.timeout(), which is 3.11+. The previous >=3.9 was
+# already inaccurate before the AI analyst existed.
+requires-python = ">=3.11"
 license = { text = "GPL-3.0-only" }
 authors = [{ name = "MatterBot contributors" }]
 dynamic = ["dependencies"]
@@ -18,7 +20,7 @@ Repository = "https://github.com/uforia/matterbot/"
 Issues = "https://github.com/uforia/matterbot/issues"
 
 [tool.setuptools]
-py-modules = ["matterbot", "matterfeed"]
+py-modules = ["matterbot", "matterfeed", "ai_analyst"]
 
 [tool.setuptools.dynamic]
 dependencies = { file = ["requirements.txt"] }
