@@ -87,7 +87,8 @@ _DEFANG_HINT = re.compile(r'\[\.\]|\(\.\)|\{\.\}|hxxp', re.IGNORECASE)
 # because they are cheap ("xyz", "top", "click", "icu", ...). Real 2-letter
 # ccTLDs (ml, cc, io, ...) do not need to be listed here -- they are covered by
 # the generic ccTLD rule in _is_plausible_tld(), unless they collide with a file
-# extension below.
+# extension below. Bias toward inclusion: a missed real IOC is worse than a
+# stray filename, which is why the gate errs permissive when unsure.
 _COMMON_TLDS = frozenset({
     'com', 'net', 'org', 'edu', 'gov', 'mil', 'int', 'info', 'biz', 'name', 'pro',
     'mobi', 'asia', 'coop', 'aero', 'museum', 'jobs', 'travel', 'xyz', 'top',
@@ -95,12 +96,20 @@ _COMMON_TLDS = frozenset({
     'live', 'click', 'link', 'icu', 'cyou', 'buzz', 'fun', 'win', 'bid', 'loan',
     'men', 'work', 'rest', 'vip', 'host', 'press', 'cloud', 'digital', 'systems',
     'solutions', 'email', 'network', 'company', 'group', 'world', 'today', 'life',
+    # Abuse-heavy gTLDs used in phishing/malware campaigns (task-3 sweep)
+    'monster', 'download', 'security', 'stream', 'review', 'date', 'party',
+    'science', 'accountant', 'cricket', 'faith', 'trade', 'webcam', 'racing',
+    'quest', 'fit', 'bar', 'sbs', 'lol', 'cfd', 'wiki', 'agency', 'support',
+    'services', 'capital', 'finance', 'space', 'press',
 })
 # File extensions that would otherwise be misread as a domain -- either because
 # they collide with a real 2-letter ccTLD (a run-of-the-mill "config.py" would
 # otherwise pass as a Paraguayan domain), or because they are just common enough
 # in SOC chat ("error.log", "malware.exe") to fire constantly. Checked BEFORE the
 # generic ccTLD rule, so the collision always resolves to "not a domain".
+# NOTE: .zip and .mov remain blocklisted (payload.zip, clip.mov are ubiquitous in
+# analyst prose). Genuine .zip/.mov domains are rare but rescuable via defanging
+# (evil[.]zip) or labelling (domain=evil.zip), which signals analyst intent.
 _FILE_EXT_BLOCKLIST = frozenset({
     'py', 'sh', 'js', 'md', 'db', 'so', 'rb', 'pl', 'go', 'rs', 'ts', 'cs', 'ps', 'vb',
     'exe', 'dll', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'pdf', 'zip', 'rar',
@@ -108,6 +117,7 @@ _FILE_EXT_BLOCKLIST = frozenset({
     'ini', 'cfg', 'conf', 'bak', 'tmp', 'dat', 'bin', 'sys', 'reg', 'bat', 'cmd',
     'ps1', 'vbs', 'jar', 'apk', 'iso', 'dmg', 'msi', 'scr', 'lnk', 'hta', 'pem',
     'crt', 'key', 'sql', 'lock', 'toml', 'class', 'jsp', 'asp', 'aspx', 'php',
+    'mov', 'mp4', 'avi', 'mkv', 'flv', 'wmv', 'webm', 'gif', 'png', 'jpg', 'jpeg',
 })
 
 

@@ -158,6 +158,59 @@ class ExtractIndicatorsTests(unittest.TestCase):
         found = ai_analyst.extract_indicators("hxxps://evil[.]example[.]com/path?x=y")
         self.assertEqual(found, {'https://evil.example.com/path?x=y': 'url'})
 
+    # -- Task 3: abuse-heavy gTLDs that were previously rejected --
+    # Missed real IOCs are the worst failure mode. Added to the allowlist:
+    # monster, download, security, and related abuse-prone gTLDs.
+
+    def test_monster_tld_domain_classifies(self):
+        # .monster is a real abuse-heavy gTLD used in phishing campaigns.
+        found = ai_analyst.extract_indicators("b.monster")
+        self.assertEqual(found, {'b.monster': 'domain'})
+
+    def test_download_tld_domain_classifies(self):
+        # .download is a real abuse-heavy gTLD used in malware delivery.
+        found = ai_analyst.extract_indicators("e.download")
+        self.assertEqual(found, {'e.download': 'domain'})
+
+    def test_security_tld_domain_classifies(self):
+        # .security is a real abuse-heavy gTLD.
+        found = ai_analyst.extract_indicators("c2.security")
+        self.assertEqual(found, {'c2.security': 'domain'})
+
+    def test_stream_tld_domain_classifies(self):
+        found = ai_analyst.extract_indicators("evil.stream")
+        self.assertEqual(found, {'evil.stream': 'domain'})
+
+    def test_review_tld_domain_classifies(self):
+        found = ai_analyst.extract_indicators("phish.review")
+        self.assertEqual(found, {'phish.review': 'domain'})
+
+    # -- Regression: file extensions must remain blocked --
+    # .zip and .mov collide with extremely common filenames (payload.zip, clip.mov)
+    # and must stay blocked. Analysts can defang or label them to bypass the gate.
+
+    def test_zip_filename_remains_blocked(self):
+        # Bare .zip must NOT be treated as a domain (too common: payload.zip).
+        # Defanging rescues the genuine domain case: evil[.]zip -> 'domain'
+        found = ai_analyst.extract_indicators("payload.zip is the sample")
+        self.assertEqual(found, {})
+
+    def test_mov_filename_remains_blocked(self):
+        # Bare .mov must NOT be treated as a domain (too common: clip.mov).
+        # Defanging rescues the genuine domain case: video[.]mov -> 'domain'
+        found = ai_analyst.extract_indicators("clip.mov was extracted")
+        self.assertEqual(found, {})
+
+    def test_defanged_zip_domain_survives_the_gate(self):
+        # Even though .zip is blocklisted, defanging signals analyst intent.
+        found = ai_analyst.extract_indicators("evil[.]zip")
+        self.assertEqual(found, {'evil.zip': 'domain'})
+
+    def test_labelled_zip_domain_survives_the_gate(self):
+        # Labelling also signals analyst intent.
+        found = ai_analyst.extract_indicators("domain=malicious.zip")
+        self.assertEqual(found, {'malicious.zip': 'domain'})
+
 
 class SanitizeToolOutputTests(unittest.TestCase):
     """Module output now leaves the host for a third-party LLM. Redact it."""
