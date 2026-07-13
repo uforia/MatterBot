@@ -87,6 +87,46 @@ class RunModuleTests(unittest.TestCase):
         )
 
 
+class AIWiringTests(unittest.TestCase):
+    def test_aitool_is_loaded_from_module_defaults(self):
+        source = MATTERBOT.read_text()
+        self.assertIn("'aitool'", source,
+                      "the command registry must carry an 'aitool' key")
+        self.assertIn("AITOOL", source)
+
+    def test_ai_is_only_constructed_when_enabled(self):
+        source = MATTERBOT.read_text()
+        self.assertIn("AIAnalyst", source)
+        self.assertIn("getattr(options, 'AI', None)", source,
+                      "a config.yaml with no AI: block must not raise")
+
+    def test_thread_normalisation_is_delegated_to_ai_analyst(self):
+        # Keep logic OUT of matterbot.py: it cannot be imported under the dep-free
+        # runner, so anything living there is effectively untested.
+        self.assertIn("normalise_thread", MATTERBOT.read_text())
+
+    def test_dispatch_routes_the_ai_bind(self):
+        node = _method("handle_post")
+        self.assertIsNotNone(node)
+        called = {n.func.attr for n in ast.walk(node)
+                  if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)}
+        self.assertIn("handle", called,
+                      "handle_post must dispatch the @ai bind to AIAnalyst.handle()")
+
+
+class ConfigDefaultsTests(unittest.TestCase):
+    def test_ai_block_is_present_and_disabled_by_default(self):
+        config = (ROOT / "config.defaults.yaml").read_text()
+        self.assertIn("\nAI:", config)
+        self.assertRegex(config, r"enabled:\s*False")
+        for key in ("base_url", "model", "api_key", "bind", "evidence",
+                    "max_tool_calls_per_turn", "max_tool_calls_per_thread",
+                    "max_iterations", "timeout", "max_history_turns",
+                    "max_evidence_chars", "modules", "blocked_modules",
+                    "temperature", "system_prompt"):
+            self.assertIn(f"{key}:", config, f"AI config key {key} is missing")
+
+
 class PackagingTests(unittest.TestCase):
     def test_ai_analyst_is_shipped_as_a_py_module(self):
         pyproject = (ROOT / "pyproject.toml").read_text()
