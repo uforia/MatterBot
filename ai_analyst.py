@@ -466,3 +466,171 @@ def build_tool_definitions(registry, relevant_types):
             },
         })
     return tools
+
+
+def normalise_thread(payload, exclude_post_id=None):
+    """Turn a raw mmDriver.posts.get_thread() payload into ordered posts.
+
+    Lives here rather than in matterbot.py so it is testable: matterbot.py cannot
+    be imported under the dependency-free CI runner. The caller passes the driver's
+    dict through untouched.
+
+    The current post is excluded: the webhook fires once the post exists, so the
+    thread we fetch usually already contains the message we are answering, and it
+    must be applied separately (see AIAnalyst.handle) for the pending-pivot handoff
+    to land on this turn.
+    """
+    posts = ((payload or {}).get('posts') or {}).values()
+    ordered = sorted(posts, key=lambda p: (p.get('create_at') or 0, p.get('id') or ''))
+    return [p for p in ordered if p.get('id') != exclude_post_id]
+
+
+# A pivot is approved the way analysts actually approve one: by saying yes, not by
+# re-typing the indicator. The reading is deliberately shallow -- and deliberately
+# refuses to read a HEDGED yes as a yes. "ok but why would that domain matter?"
+# starts with an affirmative and approves nothing; any negation or contrast word
+# disqualifies the whole message. A missed yes costs one extra round-trip; a
+# false yes runs a lookup the analyst did not ask for.
+_AFFIRMATIVE_WORDS = {
+    'yes', 'y', 'yeah', 'yep', 'yup', 'sure', 'ok', 'okay', 'affirmative',
+    'proceed', 'please',
+}
+_AFFIRMATIVE_PHRASES = (
+    'go ahead', 'do it', 'please do', 'go for it', 'pull it', 'check it', 'yes please',
+)
+_NEGATIONS = {
+    'no', 'nope', 'nah', 'not', "don't", 'dont', 'never', 'but', 'except',
+    'without', 'skip', 'hold', 'wait', 'stop',
+}
+
+_MODES = ('full', 'brief')
+
+
+def _strip_bind(text, bind):
+    """Lowercase the message and drop a leading bind mention, if present."""
+    words = (text or '').strip().split()
+    if words and words[0].lower() == bind.lower():
+        words = words[1:]
+    return ' '.join(words).strip().lower()
+
+
+def is_affirmative(text, bind):
+    """Whether a user turn approves the pivot the analyst just proposed."""
+    words = _strip_bind(text, bind).split()
+    # A mode toggle is not an answer; look past it ("@ai full yes").
+    if words and words[0] in _MODES:
+        words = words[1:]
+    if not words:
+        return False
+    cleaned = [w.strip(_STRIP) for w in words]
+    # Any negation or contrast anywhere disqualifies. A hedged yes is not a yes.
+    if any(word in _NEGATIONS for word in cleaned):
+        return False
+    norm = ' '.join(cleaned)
+    if any(norm.startswith(phrase) for phrase in _AFFIRMATIVE_PHRASES):
+        return True
+    return cleaned[0] in _AFFIRMATIVE_WORDS
+
+
+def evidence_mode(text, bind):
+    """The `@ai full` / `@ai brief` toggle, or None if this turn does not set one.
+
+    Only the word immediately after the bind counts, so "give me the full picture"
+    is prose, not a mode switch.
+    """
+    words = _strip_bind(text, bind).split()
+    if words and words[0] in _MODES:
+        return words[0]
+    return None
+
+
+class ThreadState(object):
+    """Everything the analyst knows about a case, derived from the thread alone.
+
+    Nothing here is persisted: reconstruct() rebuilds it from the Mattermost posts
+    on every turn. That is what makes a restart or a redeploy cost zero session
+    loss, and what keeps two cases in one channel from bleeding into each other.
+    """
+
+    def __init__(self, mode='compact'):
+        self.history = []           # [{'role': 'user'|'assistant', 'content': str}]
+        self.authorized = {}        # indicator -> type; the model MAY look these up
+        self.pending = {}           # indicator -> type; proposed, awaiting a yes
+        self.mode = mode            # 'compact' | 'full'
+        self.tool_calls_used = 0    # tools already spent in this thread
+
+
+def apply_user_message(state, text, bind):
+    """Fold one user turn into the state.
+
+    Order matters. A pending pivot is consumed by *this* message before the
+    message's own indicators are added, because that is the sequence the analyst
+    experienced: the bot proposed, and now they are answering it.
+    """
+    if state.pending and is_affirmative(text, bind):
+        state.authorized.update(state.pending)
+    # Either way the proposal is now answered; it does not stay open across turns.
+    # An analyst who instead NAMES an indicator authorizes exactly that one, below.
+    state.pending = {}
+    mode = evidence_mode(text, bind)
+    if mode:
+        state.mode = 'full' if mode == 'full' else 'compact'
+    # Anything the analyst names, the analyst has authorized. This is the only way
+    # an indicator legitimately enters the authorized set unprompted.
+    state.authorized.update(extract_indicators(text))
+
+
+def reconstruct(posts, bot_id, default_mode, max_history_turns, bind):
+    """Rebuild ThreadState from a thread's posts, chronologically ordered.
+
+    `posts` are dicts with 'user_id', 'message' and 'props' (see normalise_thread).
+    The current, unanswered post must NOT be in this list -- the caller applies it
+    via apply_user_message(), so the pending-pivot handoff lands on it.
+    """
+    state = ThreadState(mode=default_mode)
+    open_reply_id = None    # the ai_message_id of the reply we are still assembling
+    for post in posts:
+        message = post.get('message') or ''
+        props = post.get('props') or {}
+        if post.get('user_id') == bot_id:
+            if props.get(PROP_KEY) != PROP_REPLY:
+                # Evidence dumps, progress notes, and output from ordinary
+                # @-commands sharing this thread. None of it is the analyst's
+                # narrative, so none of it is the model's memory.
+                continue
+            msg_id = props.get(PROP_MSG_ID)
+            is_continuation = (
+                msg_id is not None
+                and msg_id == open_reply_id
+                and state.history
+                and state.history[-1]['role'] == 'assistant'
+            )
+            if is_continuation:
+                # A split reply: same logical message, more text. Do NOT re-charge
+                # the tool budget -- every part carries the same ai_tool_calls.
+                state.history[-1]['content'] += '\n' + message
+            else:
+                try:
+                    state.tool_calls_used += int(props.get(PROP_TOOL_CALLS) or 0)
+                except (TypeError, ValueError):
+                    pass
+                state.history.append({'role': 'assistant', 'content': message})
+                open_reply_id = msg_id
+            # Recompute against the WHOLE reply, since the pivot may be named in a
+            # later part. Whatever the bot named that is not yet authorized is a
+            # proposal awaiting a yes.
+            state.pending = {
+                value: itype
+                for value, itype in extract_indicators(state.history[-1]['content']).items()
+                if value not in state.authorized
+            }
+        else:
+            open_reply_id = None
+            apply_user_message(state, message, bind)
+            state.history.append({'role': 'user', 'content': message})
+    # Bound the model's context, NOT its authorization: the cap trims history only.
+    # authorized/pending/mode/budget were folded from every post above, so an
+    # indicator named 30 turns ago stays approved after it scrolls out of context.
+    if max_history_turns and len(state.history) > max_history_turns:
+        state.history = state.history[-max_history_turns:]
+    return state
