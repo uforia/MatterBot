@@ -488,6 +488,60 @@ class NormaliseThreadTests(unittest.TestCase):
         self.assertEqual(ai_analyst.normalise_thread(None, None), [])
         self.assertEqual(ai_analyst.normalise_thread({}, None), [])
 
+    # -- Bug (review finding #1): split-reply parts must rejoin in SEND order,
+    # not id order (#task-4 review) --
+
+    def test_orders_split_reply_parts_by_ai_part_not_id(self):
+        # send_message() posts every part of a split reply back-to-back, so
+        # create_at (millisecond resolution) routinely TIES between two
+        # parts. Here both parts share create_at=1000 and the post ids sort
+        # BACKWARDS relative to send order ('b7m3' < ... no, 'b7m3' > 'xk2n'
+        # is false too -- the point is id order must simply not matter: only
+        # ai_part may break the tie).
+        payload = {
+            'posts': {
+                'b7m3n': {'id': 'b7m3n', 'create_at': 1000, 'message': 'second', 'props': {'ai_part': 1}},
+                'xk2np': {'id': 'xk2np', 'create_at': 1000, 'message': 'first', 'props': {'ai_part': 0}},
+            },
+        }
+        posts = ai_analyst.normalise_thread(payload)
+        self.assertEqual([p['id'] for p in posts], ['xk2np', 'b7m3n'])
+
+    def test_ai_part_beats_id_even_when_id_sorts_the_opposite_way(self):
+        # Same as above but with the id ordering flipped, to prove the sort
+        # is not accidentally still keying off id.
+        payload = {
+            'posts': {
+                'aaa': {'id': 'aaa', 'create_at': 5000, 'message': 'second', 'props': {'ai_part': 1}},
+                'zzz': {'id': 'zzz', 'create_at': 5000, 'message': 'first', 'props': {'ai_part': 0}},
+            },
+        }
+        posts = ai_analyst.normalise_thread(payload)
+        self.assertEqual([p['id'] for p in posts], ['zzz', 'aaa'])
+
+    def test_missing_or_invalid_ai_part_does_not_crash_and_reads_as_zero(self):
+        payload = {
+            'posts': {
+                'a': {'id': 'a', 'create_at': 1000, 'message': 'no props at all'},
+                'b': {'id': 'b', 'create_at': 1000, 'message': 'none part', 'props': {'ai_part': None}},
+                'c': {'id': 'c', 'create_at': 1000, 'message': 'non-int part', 'props': {'ai_part': 'oops'}},
+            },
+        }
+        posts = ai_analyst.normalise_thread(payload)  # must not raise
+        self.assertEqual(len(posts), 3)
+
+    def test_create_at_still_wins_when_it_actually_differs(self):
+        # ai_part only breaks a TIE; a genuinely later post must still sort
+        # after an earlier one regardless of its ai_part.
+        payload = {
+            'posts': {
+                'later': {'id': 'later', 'create_at': 2000, 'message': 'later', 'props': {'ai_part': 0}},
+                'earlier': {'id': 'earlier', 'create_at': 1000, 'message': 'earlier', 'props': {'ai_part': 9}},
+            },
+        }
+        posts = ai_analyst.normalise_thread(payload)
+        self.assertEqual([p['id'] for p in posts], ['earlier', 'later'])
+
 
 class AffirmativeTests(unittest.TestCase):
     def test_affirmatives(self):
@@ -508,6 +562,37 @@ class AffirmativeTests(unittest.TestCase):
             "yeah I don't think so",
         ):
             self.assertFalse(ai_analyst.is_affirmative(text, '@ai'), text)
+
+    # -- Bug (review finding #2): a redirect must not read as approval
+    # (#task-4 review) --
+
+    def test_full_approval_matrix_stays_true(self):
+        # 'go ahead and pull the C2 infra' is a prefix match on the
+        # unambiguous phrase 'go ahead' -- that prefix matching must survive.
+        for text in (
+            'yes', 'yes please', 'yep', 'sure', 'ok',
+            'go ahead', 'go ahead and pull the C2 infra',
+            'do it', 'please do', 'proceed', '@ai yes', '@ai full yes',
+        ):
+            self.assertTrue(ai_analyst.is_affirmative(text, '@ai'), text)
+
+    def test_full_rejection_matrix_stays_false(self):
+        for text in (
+            'no', 'nope', 'not that one',
+            'ok but why would that domain matter?',
+            'yes, but not the IP', 'sure, except the hash',
+            "yeah I don't think so",
+            'what about the domain?', '',
+        ):
+            self.assertFalse(ai_analyst.is_affirmative(text, '@ai'), text)
+
+    def test_redirect_sentence_fragment_is_not_an_approval(self):
+        # 'pull it' / 'check it' are sentence fragments the analyst uses to
+        # REDIRECT the bot's proposal, not to approve it. Reading them as a
+        # prefix-matched approval silently promotes `pending` to
+        # `authorized` and runs a lookup nobody asked for -- the costly
+        # direction, since a false negative only costs one round-trip.
+        self.assertFalse(ai_analyst.is_affirmative('pull it up in VT instead', '@ai'))
 
 
 class EvidenceModeParseTests(unittest.TestCase):
@@ -633,6 +718,95 @@ class ReconstructTests(unittest.TestCase):
         # @ioc output from an ordinary command can live in the same thread.
         posts = [_user('@ai check 8.8.8.8'), {'user_id': BOT, 'message': '| ioc |', 'props': {}}]
         self.assertEqual(len(_reconstruct(posts).history), 1)
+
+    # -- Bug (review finding #1): a split reply must rejoin in SEND order even
+    # when create_at ties and post ids sort the other way (#task-4 review) --
+
+    def test_split_reply_rejoins_in_send_order_despite_tied_create_at_and_backwards_ids(self):
+        # Reproduces the reviewer's exact scenario: part 1 (the pivot
+        # proposal) has an id that sorts BEFORE part 0's id (the sentence
+        # that leads up to it), and both parts share one create_at because
+        # send_message() posts them back-to-back in a tight loop. Only
+        # ai_part encodes true send order.
+        payload = {
+            'posts': {
+                'b7m3n': {
+                    'id': 'b7m3n', 'user_id': BOT, 'create_at': 1000,
+                    'message': 'It resolves to evil.example.com — pull it?',
+                    'props': {
+                        ai_analyst.PROP_KEY: ai_analyst.PROP_REPLY,
+                        ai_analyst.PROP_TOOL_CALLS: 3,
+                        ai_analyst.PROP_MSG_ID: 'm1',
+                        ai_analyst.PROP_PART: 1,
+                    },
+                },
+                'xk2np': {
+                    'id': 'xk2np', 'user_id': BOT, 'create_at': 1000,
+                    'message': 'The IP is clean.',
+                    'props': {
+                        ai_analyst.PROP_KEY: ai_analyst.PROP_REPLY,
+                        ai_analyst.PROP_TOOL_CALLS: 3,
+                        ai_analyst.PROP_MSG_ID: 'm1',
+                        ai_analyst.PROP_PART: 0,
+                    },
+                },
+                'root': {
+                    'id': 'root', 'user_id': HUMAN, 'create_at': 500,
+                    'message': '@ai check 8.8.8.8', 'props': {},
+                },
+            },
+        }
+        posts = ai_analyst.normalise_thread(payload)
+        state = ai_analyst.reconstruct(posts, BOT, 'compact', 20, '@ai')
+        content = state.history[-1]['content']
+        self.assertLess(
+            content.index('The IP is clean.'), content.index('pull it?'),
+            'parts rejoined out of send order: %r' % content,
+        )
+        # The split reply's tool budget must still be charged exactly once.
+        self.assertEqual(state.tool_calls_used, 3)
+
+    def test_three_part_split_reply_rejoins_in_send_order_with_shuffled_ids(self):
+        payload = {
+            'posts': {
+                'm-id-c': {
+                    'id': 'm-id-c', 'user_id': BOT, 'create_at': 2000,
+                    'message': 'third part',
+                    'props': {
+                        ai_analyst.PROP_KEY: ai_analyst.PROP_REPLY,
+                        ai_analyst.PROP_TOOL_CALLS: 1,
+                        ai_analyst.PROP_MSG_ID: 'm2',
+                        ai_analyst.PROP_PART: 2,
+                    },
+                },
+                'a-id-first': {
+                    'id': 'a-id-first', 'user_id': BOT, 'create_at': 2000,
+                    'message': 'first part',
+                    'props': {
+                        ai_analyst.PROP_KEY: ai_analyst.PROP_REPLY,
+                        ai_analyst.PROP_TOOL_CALLS: 1,
+                        ai_analyst.PROP_MSG_ID: 'm2',
+                        ai_analyst.PROP_PART: 0,
+                    },
+                },
+                'z-id-mid': {
+                    'id': 'z-id-mid', 'user_id': BOT, 'create_at': 2000,
+                    'message': 'second part',
+                    'props': {
+                        ai_analyst.PROP_KEY: ai_analyst.PROP_REPLY,
+                        ai_analyst.PROP_TOOL_CALLS: 1,
+                        ai_analyst.PROP_MSG_ID: 'm2',
+                        ai_analyst.PROP_PART: 1,
+                    },
+                },
+            },
+        }
+        posts = ai_analyst.normalise_thread(payload)
+        state = ai_analyst.reconstruct(posts, BOT, 'compact', 20, '@ai')
+        content = state.history[-1]['content']
+        self.assertLess(content.index('first part'), content.index('second part'))
+        self.assertLess(content.index('second part'), content.index('third part'))
+        self.assertEqual(state.tool_calls_used, 1)
 
 
 if __name__ == "__main__":

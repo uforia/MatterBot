@@ -468,6 +468,24 @@ def build_tool_definitions(registry, relevant_types):
     return tools
 
 
+def _sort_part(post):
+    """A post's ai_part, coerced to int for sorting; 0 if missing or bogus.
+
+    send_message() posts every part of a split reply back-to-back in a tight
+    loop, so create_at (millisecond resolution) routinely TIES between two
+    parts of the same reply. When it ties, the only field that records true
+    send order is ai_part -- create_at and the post id both do not. Treating
+    a missing/None/non-int ai_part (an ordinary, non-split post, or a post
+    from before this field existed) as 0 keeps it sorting first among ties
+    without raising.
+    """
+    part = (post.get('props') or {}).get(PROP_PART)
+    try:
+        return int(part)
+    except (TypeError, ValueError):
+        return 0
+
+
 def normalise_thread(payload, exclude_post_id=None):
     """Turn a raw mmDriver.posts.get_thread() payload into ordered posts.
 
@@ -479,9 +497,23 @@ def normalise_thread(payload, exclude_post_id=None):
     thread we fetch usually already contains the message we are answering, and it
     must be applied separately (see AIAnalyst.handle) for the pending-pivot handoff
     to land on this turn.
+
+    Sort key is (create_at, ai_part, id) -- NOT (create_at, id). A long reply is
+    split across several posts in send_message()'s tight loop (see matterbot.py),
+    so two parts of the same reply routinely share one create_at; id is then the
+    tiebreak, and a Mattermost post id is random-ish, not send-ordered. Without
+    ai_part in the key, a tied-timestamp split reply rejoins in whatever order the
+    ids happen to sort -- e.g. the pivot proposal ("...pull it?") ahead of the
+    sentence that leads up to it -- and the model is fed a scrambled version of
+    its own previous turn. ai_part is written by send_message() for exactly this
+    purpose; id remains the final tiebreak only so ordering stays deterministic
+    when ai_part also ties (e.g. two ordinary, unrelated posts in the same ms).
     """
     posts = ((payload or {}).get('posts') or {}).values()
-    ordered = sorted(posts, key=lambda p: (p.get('create_at') or 0, p.get('id') or ''))
+    ordered = sorted(
+        posts,
+        key=lambda p: (p.get('create_at') or 0, _sort_part(p), p.get('id') or ''),
+    )
     return [p for p in ordered if p.get('id') != exclude_post_id]
 
 
@@ -491,16 +523,26 @@ def normalise_thread(payload, exclude_post_id=None):
 # starts with an affirmative and approves nothing; any negation or contrast word
 # disqualifies the whole message. A missed yes costs one extra round-trip; a
 # false yes runs a lookup the analyst did not ask for.
+#
+# 'pull it' / 'check it' are deliberately NOT here (review finding #2): they are
+# sentence fragments an analyst also uses to REDIRECT the bot's proposal --
+# "pull it up in VT instead" -- and a naive prefix match on them silently
+# promoted `pending` to `authorized`, running a lookup nobody approved. The
+# real approval path is the analyst answering the bot's "...want me to pull
+# it?" with one of the phrases actually below.
 _AFFIRMATIVE_WORDS = {
     'yes', 'y', 'yeah', 'yep', 'yup', 'sure', 'ok', 'okay', 'affirmative',
     'proceed', 'please',
 }
 _AFFIRMATIVE_PHRASES = (
-    'go ahead', 'do it', 'please do', 'go for it', 'pull it', 'check it', 'yes please',
+    'go ahead', 'do it', 'please do', 'go for it', 'yes please',
 )
 _NEGATIONS = {
     'no', 'nope', 'nah', 'not', "don't", 'dont', 'never', 'but', 'except',
     'without', 'skip', 'hold', 'wait', 'stop',
+    # Redirect/contrast: "pull it up in VT instead" starts with a fragment
+    # that could otherwise look affirmative but names a DIFFERENT action.
+    'instead',
 }
 
 _MODES = ('full', 'brief')
