@@ -87,18 +87,20 @@ def query(settings=None):
         except ImportError:
             pass
     items = []
+    # The threshold is a constant for the whole run: read it once, not once per
+    # entry. importScore() re-runs a sys.path insert and an import every call.
+    THRESHOLD = importScore() if settings.FILTER else None
+    stripchars = '`\\[\\]\'\"'
+    regex = re.compile('[%s]' % stripchars)
     for URL in settings.URLS:
         feed = feedparser.parse(str(URL), agent='MatterBot RSS Automation 1.0')
         count = 0
-        stripchars = '`\\[\\]\'\"'
-        regex = re.compile('[%s]' % stripchars)
         while count < settings.ENTRIES:
             try:
                 title = feed.entries[count].title
                 link = feed.entries[count].link
                 content = None
                 if settings.FILTER:
-                    THRESHOLD = importScore()
                     # FILTER means "only post advisories that meet the threshold", so an
                     # advisory whose severity we cannot establish -- no CVSS on the page,
                     # or the page did not load -- is skipped. It is not evidence of a

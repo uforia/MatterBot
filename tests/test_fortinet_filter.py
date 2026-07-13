@@ -188,5 +188,42 @@ class FortinetFilterPolarityTests(FortinetFilterTests):
         self.assertIn("CVSS: `8.2`", items[0][1])
 
 
+class FortinetThresholdHoistTests(FortinetFilterTests):
+    """Issue #275: the threshold is a constant, but was re-read for every entry."""
+
+    def test_threshold_is_read_once_per_run_not_once_per_entry(self):
+        calls = []
+
+        def counting_importScore():
+            calls.append(1)
+            return 7.0
+
+        self.fortinet.importScore = counting_importScore
+        self.settings["URLS"] = ["https://example.invalid/a", "https://example.invalid/b"]
+        entries = [
+            _Entry("One", "https://example.invalid/1"),
+            _Entry("Two", "https://example.invalid/2"),
+            _Entry("Three", "https://example.invalid/3"),
+        ]
+        scores = {e.link: ("cvss", "9.8") for e in entries}
+        items = self._run(entries, scores)
+
+        # 2 URLs x 3 entries = 6 posts, but importScore() re-runs a sys.path
+        # insert and an import on every call, so it must run exactly once.
+        self.assertEqual(6, len(items))
+        self.assertEqual(1, len(calls), f"importScore() called {len(calls)}x, expected 1")
+
+    def test_threshold_is_not_read_at_all_when_filtering_is_off(self):
+        def exploding_importScore():
+            raise AssertionError("importScore() must not run when FILTER is off")
+
+        self.fortinet.importScore = exploding_importScore
+        self.settings["FILTER"] = False
+        entries = [_Entry("Anything", "https://example.invalid/x")]
+        items = self._run(entries, {})
+        self.assertEqual(1, len(items))
+        self.assertIn("Fortinet: [Anything](https://example.invalid/x)", items[0][1])
+
+
 if __name__ == "__main__":
     unittest.main()
