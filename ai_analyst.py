@@ -30,8 +30,10 @@ Three rules shape the design:
    inside LLMClient, never at module top.
 """
 
+import json
 import logging
 import re
+import time
 
 from commands import cmdutils
 
@@ -676,3 +678,115 @@ def reconstruct(posts, bot_id, default_mode, max_history_turns, bind):
     if max_history_turns and len(state.history) > max_history_turns:
         state.history = state.history[-max_history_turns:]
     return state
+
+
+class LLMError(Exception):
+    """An LLM call failed. Its message is safe to log, never to post verbatim."""
+
+
+# Worth one retry: the endpoint is busy or briefly down, not wrong.
+_RETRYABLE_STATUS = (429, 500, 502, 503, 504)
+
+
+class LLMClient(object):
+    """Minimal OpenAI-compatible chat-completions client.
+
+    A thin `requests` wrapper, deliberately, rather than the openai SDK: it matches
+    how the rest of this codebase talks to APIs and adds no dependency. `requests`
+    is imported lazily so ai_analyst stays importable under the dependency-free test
+    runner; tests inject a fake `session`.
+    """
+
+    def __init__(self, base_url, api_key, model, timeout, temperature=0,
+                 max_tokens=None, session=None):
+        self.base_url = (base_url or '').rstrip('/')
+        self.api_key = api_key
+        self.model = model
+        self.timeout = timeout
+        self.temperature = temperature
+        self.max_tokens = max_tokens
+        self._session = session
+
+    @property
+    def session(self):
+        if self._session is None:
+            import requests  # lazy: keeps module import stdlib-only for CI
+            self._session = requests.Session()
+        return self._session
+
+    def chat(self, messages, tools):
+        """One chat-completions round-trip. Synchronous; the caller threads it."""
+        payload = {
+            'model': self.model,
+            'messages': messages,
+            # Analysis, not prose: we want the same evidence to give the same read.
+            'temperature': self.temperature,
+        }
+        if self.max_tokens:
+            payload['max_tokens'] = self.max_tokens
+        if tools:
+            # An empty `tools` array is rejected outright by some endpoints, so omit
+            # the key rather than send [].
+            payload['tools'] = tools
+            payload['tool_choice'] = 'auto'
+        headers = {
+            'Authorization': f'Bearer {self.api_key}',
+            'Content-Type': 'application/json',
+        }
+        url = f'{self.base_url}/chat/completions'
+
+        response = None
+        for attempt in (0, 1):
+            try:
+                response = self.session.post(
+                    url, headers=headers, json=payload, timeout=self.timeout)
+            except Exception as exc:
+                # NEVER interpolate the request into the error: it carries the
+                # Authorization header, and this string reaches the log.
+                if attempt:
+                    raise LLMError(f'LLM request failed: {type(exc).__name__}') from exc
+                continue
+            if response.status_code in _RETRYABLE_STATUS and not attempt:
+                time.sleep(1)
+                continue
+            break
+
+        if response is None or response.status_code != 200:
+            status = response.status_code if response is not None else 'no response'
+            raise LLMError(f'LLM endpoint returned HTTP {status}')
+        try:
+            message = response.json()['choices'][0]['message']
+        except Exception as exc:
+            raise LLMError('LLM returned a malformed response') from exc
+        return {
+            'content': message.get('content') or '',
+            'tool_calls': self._normalise_tool_calls(message.get('tool_calls')),
+            # The provider's own assistant message, echoed back verbatim on the next
+            # request -- the tool-calling protocol requires the exact object.
+            'raw_message': message,
+        }
+
+    @staticmethod
+    def _normalise_tool_calls(tool_calls):
+        normalised = []
+        for call in tool_calls or []:
+            function = call.get('function') or {}
+            raw_args = function.get('arguments')
+            arguments = {}
+            if isinstance(raw_args, dict):
+                arguments = raw_args
+            elif isinstance(raw_args, str) and raw_args.strip():
+                try:
+                    parsed = json.loads(raw_args)
+                    if isinstance(parsed, dict):
+                        arguments = parsed
+                except ValueError:
+                    # A model emitting junk arguments must not crash the turn; the
+                    # executor rejects the empty query cleanly instead.
+                    log.warning('ai: could not parse tool arguments as JSON')
+            normalised.append({
+                'id': call.get('id'),
+                'name': function.get('name'),
+                'arguments': arguments,
+            })
+        return normalised
