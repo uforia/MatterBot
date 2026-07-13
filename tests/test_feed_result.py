@@ -55,6 +55,60 @@ class SplitResultTests(unittest.TestCase):
         self.assertEqual([["news", "a"]], src)
 
 
+class MalformedErrorTests(unittest.TestCase):
+    """Issue #271: a bad error entry must not destroy the posts of the same run.
+
+    `callModule` does `for source, message in errors:` *after* the module's posts
+    have been collected. An entry that will not unpack into two values raised
+    ValueError there, which the outer handler turned into "the module call
+    failed" -- throwing away every post the module had successfully gathered.
+    """
+
+    def _consume(self, value):
+        """Stand in for what callModule does with a query() return value."""
+        items, errors = feedutils.split_result(value)
+        logged = [f"{source}: {message}" for source, message in errors]  # must not raise
+        return items, logged
+
+    def test_bare_string_error_does_not_discard_the_posts(self):
+        r = feedutils.result(items=[["news", "kept"]], errors=["everything broke"])
+        items, logged = self._consume(r)
+        self.assertEqual([["news", "kept"]], items)
+        self.assertEqual([f"{feedutils.UNKNOWN_SOURCE}: everything broke"], logged)
+
+    def test_wrong_arity_error_does_not_discard_the_posts(self):
+        r = feedutils.result(items=[["news", "kept"]], errors=[("feed", "403", "extra")])
+        items, logged = self._consume(r)
+        self.assertEqual([["news", "kept"]], items)
+        self.assertEqual(1, len(logged))
+        # Nothing is silently dropped: both fields survive into the message.
+        self.assertIn("403", logged[0])
+        self.assertIn("extra", logged[0])
+
+    def test_none_error_entry_does_not_discard_the_posts(self):
+        r = feedutils.result(items=[["news", "kept"]], errors=[None])
+        items, _ = self._consume(r)
+        self.assertEqual([["news", "kept"]], items)
+
+    def test_exception_object_as_error_is_stringified(self):
+        r = feedutils.result(items=[], errors=[("feed", ValueError("bad payload"))])
+        _, errors = feedutils.split_result(r)
+        self.assertEqual([("feed", "bad payload")], errors)
+
+    def test_hand_built_feedresult_is_normalised_too(self):
+        # A module can bypass result() and construct the namedtuple directly;
+        # the guarantee has to hold at the boundary callModule reads from.
+        r = feedutils.FeedResult(items=[["news", "kept"]], errors=["oops"])
+        items, logged = self._consume(r)
+        self.assertEqual([["news", "kept"]], items)
+        self.assertEqual([f"{feedutils.UNKNOWN_SOURCE}: oops"], logged)
+
+    def test_well_formed_errors_are_untouched(self):
+        r = feedutils.result(items=[], errors=[("http://x/feed", "403 blocked")])
+        _, errors = feedutils.split_result(r)
+        self.assertEqual([("http://x/feed", "403 blocked")], errors)
+
+
 class ResultFactoryTests(unittest.TestCase):
     def test_empty_result_is_two_empty_lists(self):
         r = feedutils.result()
@@ -74,14 +128,17 @@ class ResultFactoryTests(unittest.TestCase):
         self.assertEqual([("feed", "err")], r.errors)
 
     def test_is_a_named_2_tuple(self):
-        r = feedutils.result(items=[1], errors=[2])
-        self.assertEqual((([1]), ([2])), (r.items, r.errors))
+        # The error entry here is a well-formed (source, message) pair: result()
+        # now enforces that shape at construction, so a placeholder scalar would
+        # be normalised and obscure what this test is actually about.
+        r = feedutils.result(items=[1], errors=[("feed", "err")])
+        self.assertEqual(([1], [("feed", "err")]), (r.items, r.errors))
         # namedtuple: unpackable and indexable, so existing list-style handling
         # of a FeedResult (were one passed straight through) still degrades
         # predictably rather than raising oddly.
         items, errors = r
         self.assertEqual([1], items)
-        self.assertEqual([2], errors)
+        self.assertEqual([("feed", "err")], errors)
 
 
 if __name__ == "__main__":
