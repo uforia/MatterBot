@@ -60,4 +60,41 @@ Modules:
   timeout: 60
   threads: 8
 
+# Optional conversational AI analyst. Leave `enabled: False` (or delete this whole
+# block) and MatterBot behaves exactly as it always has: the @ai bind is never
+# registered and nothing else changes.
+#
+# Requires an OpenAI-compatible endpoint serving a model that supports native
+# function calling. A model without tool-calling support will NOT work.
+AI:
+  enabled: False
+  base_url: "http://localhost:11434/v1" # Any OpenAI-compatible endpoint (Ollama shown; vLLM,
+                                        # LiteLLM and the cloud APIs all speak this).
+  model: "<a function-calling-capable model>"
+  api_key: "<your-api-key-here, or 'ollama' for a keyless local endpoint>"
+  bind: "@ai"          # The mention that starts a case. Coexists with @ioc and friends.
+  evidence: "compact"  # "compact": narrative + a one-line sources footer.
+                       # "full": narrative, then the raw module tables as follow-up posts.
+                       # An analyst overrides this per-thread with `@ai full` / `@ai brief`.
+  # Which modules the AI may use. A module must BOTH declare AITOOL = True (the
+  # developer saying "this is safe to expose") AND pass these lists (the operator
+  # saying "this deployment wants it exposed"). Empty `modules` = every AITOOL
+  # module. These lists can only ever RESTRICT; they cannot expose a non-AITOOL
+  # module, and they cannot override a user's channel ACLs.
+  modules: []          # e.g. ["abuseipdb", "circlpdns", "crtsh"]
+  blocked_modules: []  # e.g. ["threatbook"] to withhold a paid-quota module
+  max_tool_calls_per_turn: 8    # Bounds a single runaway turn.
+  max_tool_calls_per_thread: 40 # Bounds a long case. Both cap paid-API spend.
+  max_iterations: 6             # LLM <-> tool round-trips before the turn gives up.
+  max_evidence_chars: 4000      # Per-tool cap on module output, so one noisy module
+                                # cannot flood the thread or the model's context.
+  timeout: 60                   # Seconds per LLM call.
+  temperature: 0                # Analysis, not prose: same evidence, same read.
+  max_tokens: 0                 # 0 = let the endpoint decide.
+  max_history_turns: 20         # Thread-reconstruction cap. Trims the model's context
+                                # only; indicator authorization is never trimmed.
+  system_prompt: ""             # Optional override of the built-in analyst prompt. The
+                                # safety guardrails are enforced in code, not here, so
+                                # overriding this cannot widen what the AI can do.
+
 debug: False
