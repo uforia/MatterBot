@@ -131,6 +131,118 @@ When doing threat intelligence investigations, it is crucial to observe Operatio
 
 - Use the MatterBot modules binding/unbinding feature (see above) to only enable MatterBot modules that align with your 'risk appetite' for each individual Mattermost channel.
 
+## AI Analyst (optional)
+
+MatterBot can run an optional conversational AI analyst. You talk to it in a
+Mattermost thread, in plain language, and it uses MatterBot's own command modules
+as tools to investigate the case with you:
+
+> **you:** `@ai we're seeing beacons to 8.8.8[.]8 and a dropped file d41d8cd98f00b204e9800998ecf8427e, thoughts?`
+>
+> **bot:** *The hash is a known Emotet loader (MalwareBazaar, ThreatFox). The IP is
+> clean across AbuseIPDB and passive DNS — it looks like staging infrastructure
+> rather than the C2. The sample resolves to `bad.example.com`; want me to pull the
+> linked infrastructure?*
+>
+> **you:** `yes`
+
+The thread is the case. Reply in it to continue; start a new `@ai` message in the
+channel to open a fresh one. The AI reads **only its own thread** — never the rest
+of the channel.
+
+### Requirements
+
+- **An OpenAI-compatible endpoint serving a model with native function-calling
+  support.** This is a hard requirement: a model that cannot emit tool calls will
+  not work, and there is no text-protocol fallback. Ollama (with a tool-capable
+  model), vLLM, LiteLLM and the cloud APIs all work.
+- At least one command module with `AITOOL = True`.
+- No new Python dependency — the client is a thin `requests` wrapper.
+
+### Enabling it
+
+Add (or uncomment) the `AI:` block in your `config.yaml` — see
+`config.defaults.yaml` for the fully annotated version:
+
+```yaml
+AI:
+  enabled: True
+  base_url: "http://localhost:11434/v1"
+  model: "<a function-calling-capable model>"
+  api_key: "ollama"
+  bind: "@ai"
+  evidence: "compact"
+```
+
+**With no `AI:` block, or `enabled: False`, the feature is completely inert:** the
+`@ai` bind is never registered and MatterBot behaves exactly as it did before.
+
+### What the AI can and cannot do
+
+The safety rules are enforced **in code, at the tool executor** — not asked for in
+the prompt. Threat-intel results contain attacker-influenceable text (WHOIS fields,
+filenames, page content, submitted comments), so indirect prompt injection is a real
+risk, and the answer to it is that a hijacked model still cannot do anything it was
+not already allowed to do:
+
+- **It can only look up indicators you named.** If it discovers a new indicator worth
+  pivoting to, it *proposes* it and waits — say "yes" and it proceeds. It cannot query
+  an unapproved indicator no matter what any prompt, or any tool result, tells it.
+  Note that a bare "yes" approves *every* indicator the AI proposed that turn, so read
+  what it proposed before you approve — a pivot is still only ever a read-only,
+  ACL-checked, rate-capped lookup, but approve the ones you meant to.
+- **It cannot bypass your ACLs.** A module you may not use, the AI may not use on your
+  behalf (`isallowed_module`).
+- **It cannot hand a module the wrong kind of indicator** — the module's `ACCEPTS`
+  declaration is checked first.
+- **It has no write or destructive tools.** v1 is read-only lookups only.
+- **It is rate-capped** per turn and per case, bounding runaway loops and paid-API spend.
+- **It never sees your API keys.** Module output is redacted (`sanitize_tool_output`)
+  before it reaches the model or the channel — including on the success path, because
+  the AI is the first feature that sends module output **off your host** to an LLM
+  endpoint.
+
+Every tool call the AI makes is logged server-side, and so is every call it was
+**denied** — with the user, channel, module, indicator and reason.
+
+### Choosing which modules the AI can use
+
+Two independent switches, and a module needs **both**:
+
+1. **Developer opt-in**, in a module's `defaults.py` (or your `settings.py` override):
+
+   ```python
+   ACCEPTS = ['ip', 'ipv6']   # required: the indicator types this module handles
+   AITOOL = True              # this module is safe to expose to an AI
+   ```
+
+2. **Operator opt-in**, in the `AI:` config block:
+
+   ```yaml
+   AI:
+     modules: ["abuseipdb", "circlpdns", "crtsh"]  # empty = every AITOOL module
+     blocked_modules: ["threatbook"]               # withhold a paid-quota module
+   ```
+
+These lists can only ever **restrict**: they cannot expose a module that has not set
+`AITOOL`, and they cannot override a user's channel ACLs.
+
+MatterBot ships with a curated starter set opted in — `abuseipdb`, `circlpdns`,
+`crtsh`, `ipinfo`, `malwarebazaar`, `threatfox` and `urlhaus` — which between them
+cover every indicator type. Everything else is off by default, so paid-quota and
+free-text modules are never silently reachable by a model.
+
+### Evidence modes
+
+- `compact` (default): an analyst-voice narrative plus a one-line
+  `Queried: threatfox(8.8.8.8) → ok` sources footer.
+- `full`: the narrative, then the raw module tables as follow-up posts — the same
+  output an `@`-command gives you, capped at `max_evidence_chars` per tool.
+
+Switch per-thread with `@ai full …` or `@ai brief …`; the choice sticks for that case.
+Raw evidence is tagged and is *not* replayed into the model's context on later turns,
+so turning it on does not inflate token cost as the case grows.
+
 ## Writing your own module
 
 - For `matterfeed.py`, it is relatively simple to copy an existing module and alter it to your own needs. Make sure to update the `pathlib` construct to reflect the right module and directory names.

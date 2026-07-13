@@ -4,6 +4,10 @@ BINDS = ['@threatfox', '@ioc', '@tf']
 # Indicator types this module accepts under a shared bind like @ioc (see cmdutils.accepts).
 # IPv4 only -- the module validates with a v4 regex and does not handle IPv6.
 ACCEPTS = ['ip', 'md5', 'sha1', 'sha256']
+# Offer this module to the AI analyst as a tool (see the AI: block in the config).
+# Read-only and opt-in; withdraw it with AITOOL = False in settings.py, or centrally
+# via AI.blocked_modules.
+AITOOL = True
 CHANS = ['debug']
 APIURL = {
     'threatfox':   {
