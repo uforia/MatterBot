@@ -211,6 +211,139 @@ class ExtractIndicatorsTests(unittest.TestCase):
         found = ai_analyst.extract_indicators("domain=malicious.zip")
         self.assertEqual(found, {'malicious.zip': 'domain'})
 
+    # -- Task 3 (review round 2): a hand-curated TLD list cannot win against
+    # ~1450 real delegated TLDs. These are real IANA TLDs that a curated list
+    # missed -- and a reviewer showed each one is silently dropped, bare, in
+    # prose, with nothing anywhere saying so. The fix replaces the curated list
+    # with the authoritative IANA set, so membership -- not a hand-picked
+    # table -- decides plausibility.
+
+    def test_bond_tld_domain_classifies(self):
+        found = ai_analyst.extract_indicators("seeing beacons to c2.bond, thoughts?")
+        self.assertEqual(found, {'c2.bond': 'domain'})
+
+    def test_gdn_tld_domain_classifies(self):
+        found = ai_analyst.extract_indicators("evil.gdn")
+        self.assertEqual(found, {'evil.gdn': 'domain'})
+
+    def test_surf_tld_domain_classifies(self):
+        found = ai_analyst.extract_indicators("evil.surf")
+        self.assertEqual(found, {'evil.surf': 'domain'})
+
+    def test_kim_tld_domain_classifies(self):
+        found = ai_analyst.extract_indicators("evil.kim")
+        self.assertEqual(found, {'evil.kim': 'domain'})
+
+    def test_mom_tld_domain_classifies(self):
+        found = ai_analyst.extract_indicators("phish.mom")
+        self.assertEqual(found, {'phish.mom': 'domain'})
+
+    def test_wang_tld_domain_classifies(self):
+        found = ai_analyst.extract_indicators("c2.wang")
+        self.assertEqual(found, {'c2.wang': 'domain'})
+
+    def test_moe_tld_domain_classifies(self):
+        found = ai_analyst.extract_indicators("c2.moe")
+        self.assertEqual(found, {'c2.moe': 'domain'})
+
+    def test_ninja_tld_domain_classifies(self):
+        found = ai_analyst.extract_indicators("c2.ninja")
+        self.assertEqual(found, {'c2.ninja': 'domain'})
+
+    def test_wtf_tld_domain_classifies(self):
+        found = ai_analyst.extract_indicators("c2.wtf")
+        self.assertEqual(found, {'c2.wtf': 'domain'})
+
+    def test_zone_tld_domain_classifies(self):
+        found = ai_analyst.extract_indicators("evil.zone")
+        self.assertEqual(found, {'evil.zone': 'domain'})
+
+    def test_ltd_tld_domain_classifies(self):
+        found = ai_analyst.extract_indicators("evil.ltd")
+        self.assertEqual(found, {'evil.ltd': 'domain'})
+
+    def test_center_tld_domain_classifies(self):
+        found = ai_analyst.extract_indicators("evil.center")
+        self.assertEqual(found, {'evil.center': 'domain'})
+
+    def test_fund_tld_domain_classifies(self):
+        found = ai_analyst.extract_indicators("c2.fund")
+        self.assertEqual(found, {'c2.fund': 'domain'})
+
+    def test_ceo_tld_domain_classifies(self):
+        found = ai_analyst.extract_indicators("evil.ceo")
+        self.assertEqual(found, {'evil.ceo': 'domain'})
+
+    def test_exposed_tld_domain_classifies(self):
+        found = ai_analyst.extract_indicators("evil.exposed")
+        self.assertEqual(found, {'evil.exposed': 'domain'})
+
+    # -- Prose false positives must still reject: none of these are real TLDs --
+
+    def test_yml_extension_is_not_a_domain(self):
+        found = ai_analyst.extract_indicators("config.yml has the settings")
+        self.assertEqual(found, {})
+
+    def test_passwd_file_is_not_a_domain(self):
+        found = ai_analyst.extract_indicators("check etc.passwd for the hash")
+        self.assertEqual(found, {})
+
+    def test_help_desk_prose_is_not_a_domain(self):
+        found = ai_analyst.extract_indicators("open a help.desk ticket")
+        self.assertEqual(found, {})
+
+    def test_oauth_token_prose_is_not_a_domain(self):
+        found = ai_analyst.extract_indicators("refresh the oauth.token before retrying")
+        self.assertEqual(found, {})
+
+    # -- Removing the 2-letter-ccTLD escape hatch must not reopen these --
+
+    def test_py_filename_remains_blocked_bare(self):
+        found = ai_analyst.extract_indicators("run script.py to reproduce")
+        self.assertEqual(found, {})
+
+    def test_sh_filename_remains_blocked_bare(self):
+        found = ai_analyst.extract_indicators("kick off run.sh first")
+        self.assertEqual(found, {})
+
+    def test_defanged_mov_domain_survives_the_gate(self):
+        found = ai_analyst.extract_indicators("evil[.]mov")
+        self.assertEqual(found, {'evil.mov': 'domain'})
+
+    def test_defanged_py_domain_survives_the_gate(self):
+        found = ai_analyst.extract_indicators("bad[.]py")
+        self.assertEqual(found, {'bad.py': 'domain'})
+
+    # -- Regression: real domains, IPs, CIDRs still behave --
+
+    def test_tk_tld_domain_still_classifies(self):
+        found = ai_analyst.extract_indicators("phish.tk")
+        self.assertEqual(found, {'phish.tk': 'domain'})
+
+    def test_multi_label_cctld_still_classifies(self):
+        found = ai_analyst.extract_indicators("host.co.uk")
+        self.assertEqual(found, {'host.co.uk': 'domain'})
+
+    def test_punycode_domain_still_classifies(self):
+        found = ai_analyst.extract_indicators("xn--80ak6aa92e.com")
+        self.assertEqual(found, {'xn--80ak6aa92e.com': 'domain'})
+
+    def test_bare_ip_still_classifies(self):
+        found = ai_analyst.extract_indicators("8.8.8.8")
+        self.assertEqual(found, {'8.8.8.8': 'ip'})
+
+    def test_cidr_only_not_bare_ip(self):
+        found = ai_analyst.extract_indicators("10.0.0.0/8")
+        self.assertEqual(found, {'10.0.0.0/8': 'cidr'})
+
+    def test_two_ips_arrow_joined_still_both_yielded(self):
+        found = ai_analyst.extract_indicators("8.8.8.8->1.1.1.1")
+        self.assertEqual(found, {'8.8.8.8': 'ip', '1.1.1.1': 'ip'})
+
+    def test_defanged_url_with_path_still_classifies(self):
+        found = ai_analyst.extract_indicators("hxxps://evil[.]example[.]com/path?x=y")
+        self.assertEqual(found, {'https://evil.example.com/path?x=y': 'url'})
+
 
 class SanitizeToolOutputTests(unittest.TestCase):
     """Module output now leaves the host for a third-party LLM. Redact it."""
