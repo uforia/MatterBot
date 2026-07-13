@@ -408,6 +408,25 @@ _LABELLED_CRED_RE = re.compile(
     r'([^\s"\'<>]{6,})'
 )
 _BEARER_RE = re.compile(r'(?i)\b(bearer)\s+([A-Za-z0-9._\-]{8,})')
+# handle() interpolates module output raw into a
+# <untrusted_tool_result source=... query=...>...</untrusted_tool_result>
+# wrapper. Attacker-controlled text (WHOIS fields, filenames, page content)
+# can contain a literal closing tag followed by a forged <system>/<user>/
+# <assistant> block, escaping the wrapper and injecting an apparent new
+# conversation turn. Neutralize both here -- the one chokepoint every module
+# result passes through on every path (_prepare_output) -- rather than at the
+# interpolation site in handle(), so the redaction contract stays single-
+# sourced and cannot be bypassed by a future call site that forgets it.
+_CLOSING_DELIM_RE = re.compile(r'(?i)</\s*untrusted_tool_result\s*>')
+_FORGED_ROLE_OPEN_RE = re.compile(r'(?i)<(system|user|assistant)\b')
+
+
+def _defang_tag(match):
+    # Insert a zero-width space right after the opening `<` -- invisible to a
+    # human or model reading the text, but it stops the string from being
+    # recognisable as real tag syntax once it lands inside the wrapper.
+    whole = match.group(0)
+    return '<​' + whole[1:]
 
 
 def sanitize_tool_output(text):
@@ -424,6 +443,8 @@ def sanitize_tool_output(text):
     out = _QUERY_CRED_RE.sub(lambda m: f'{m.group(1)}{REDACTED}', text)
     out = _LABELLED_CRED_RE.sub(lambda m: f'{m.group(1)}{m.group(2)}{REDACTED}', out)
     out = _BEARER_RE.sub(lambda m: f'{m.group(1)} {REDACTED}', out)
+    out = _CLOSING_DELIM_RE.sub(_defang_tag, out)
+    out = _FORGED_ROLE_OPEN_RE.sub(_defang_tag, out)
     return out
 
 
@@ -836,21 +857,46 @@ _TRUNCATION_NOTE = (
 )
 
 
+# _run_tool_call() itself generates exactly two sentinel messages, on the
+# exception path and the empty-result path, and both follow one fixed, fully
+# anchored shape (`entry` and `value` at that point are drawn from the
+# registry/classifier, never raw attacker text). Matching those anchors --
+# instead of a loose substring scan across the WHOLE result -- means only
+# _run_tool_call's own code path can produce a 'failed'/'no data' status: a
+# module's genuine, successful output that happens to mention either phrase
+# as part of real data (an attacker-controlled field, e.g.) is no longer
+# relabelled and dropped from evidence.
+_FAILED_SENTINEL_RE = re.compile(r'\AThe `[^`]*` lookup failed with an internal error\.\Z')
+_NO_DATA_SENTINEL_RE = re.compile(r'\AThe `[^`]*` module returned no data for `[^`]*`\.\Z')
+# A real "this call timed out" notice (crtsh/ghunt/holehe/httpx/... each emit
+# one -- see commands/*/command.py's subprocess.TimeoutExpired branches) IS
+# the module's entire output: one short, standalone line, because the module
+# gave up before fetching anything else. A large, otherwise-normal result
+# that merely mentions "timed out" somewhere inside a WHOIS/page-content
+# field is not that -- it is real, structured evidence (multiple lines/
+# fields) and must stay 'ok'. Require BOTH single-line and short so the
+# status cannot be forged by burying the phrase inside an otherwise
+# legitimate multi-field blob.
+_TIMEOUT_NOTICE_MAX_LEN = 200
+
+
 def _result_status(result):
     """Classify a tool result for the sources footer.
 
     The footer states what was run and what came back -- a fact we hold -- rather
     than a model-authored verdict, which we would have to invent. A timed-out or
     failed lookup must not read as `ok` merely because it returned a non-empty
-    string.
+    string -- but a genuinely successful result must not be misclassified either,
+    just because its real content happens to contain one of these phrases.
     """
-    lowered = (result or '').lower()
-    if 'timed out' in lowered:
-        return 'timed out'
-    if 'failed with an internal error' in lowered:
+    text = (result or '').strip()
+    if _FAILED_SENTINEL_RE.match(text):
         return 'failed'
-    if 'returned no data' in lowered:
+    if _NO_DATA_SENTINEL_RE.match(text):
         return 'no data'
+    if ('\n' not in text and len(text) <= _TIMEOUT_NOTICE_MAX_LEN
+            and 'timed out' in text.lower()):
+        return 'timed out'
     return 'ok'
 
 
@@ -918,6 +964,16 @@ class AIAnalyst(object):
 
     def _prepare_output(self, text, command, query):
         """Redact, then cap. Everything a module returns passes through here."""
+        if not isinstance(text, str):
+            # run_tool is documented to return text; if an injected module
+            # breaks that contract (returns a dict/list/int/bytes),
+            # sanitize_tool_output()'s re.sub raises TypeError on anything
+            # that isn't a str, and an uncaught exception here would escape
+            # handle() entirely -- no reply ever posted. The empty/None case
+            # is already handled by the `if not text:` check in
+            # _run_tool_call before this is ever reached; this only guards
+            # the non-empty, non-str case.
+            text = str(text)
         text = sanitize_tool_output(text)
         if self.max_evidence_chars and len(text) > self.max_evidence_chars:
             text = text[:self.max_evidence_chars] + _TRUNCATION_NOTE.format(
