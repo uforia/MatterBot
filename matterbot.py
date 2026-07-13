@@ -339,7 +339,7 @@ class MattermostManager(object):
         except:
             raise
 
-    async def send_message(self, chanid, text, postid=None, uploads=None):
+    async def send_message(self, chanid, text, postid=None, uploads=None, props=None):
         try:
             channame = self.chanid_to_chaninfo(chanid)['name']
             log.info(f'Channel:{channame} <- Message: ({len(text)} chars)')
@@ -377,6 +377,17 @@ class MattermostManager(object):
                 opts = {"channel_id": chanid, "message": block, "root_id": postid}
                 if idx == len(blocks) - 1 and uploads:
                     opts["file_ids"] = uploads
+                if props:
+                    # Post props carry the AI analyst's metadata (see ai_analyst.py):
+                    # which posts are its narrative, and which are raw evidence that
+                    # must never be replayed into the model's context.
+                    #
+                    # A long narrative is SPLIT across several posts above. Stamp each
+                    # with its index so reconstruction can re-join them: without this,
+                    # one reply comes back as N assistant turns and its tool budget is
+                    # counted N times.
+                    opts["props"] = dict(props)
+                    opts["props"]["ai_part"] = idx
                 self.mmDriver.posts.create_post(options=opts)
         except Exception:
             log.exception("Failed to send message")
@@ -817,19 +828,29 @@ class MattermostManager(object):
             userid, asyncio.Semaphore(self._user_concurrency)
         )
 
+    async def run_module(self, module, command, channame, username, params, files, conn):
+        """Execute a command module and RETURN its result dict, without posting.
+
+        Run the (synchronous) module handler in a thread so it cannot block the
+        asyncio event loop. The caller's asyncio.timeout is what bounds wall-clock
+        duration; this await is the yield point that lets it fire.
+
+        Two callers: call_module(), which posts the result to the channel, and the
+        AI analyst's tool executor, which feeds it back to the model instead. One
+        runner means both share the thread pool, and a module never has to know
+        which one invoked it.
+        """
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(
+            self._command_executor,
+            self.commands[module]['process'],
+            command, channame, username, params, files, conn,
+        )
+
     async def call_module(self, module, command, channame, rootid, username, params, files, conn):
         try:
             chanid = self.channame_to_chanid(channame)
-            # Run the (synchronous) module handler in a thread so it cannot block
-            # the asyncio event loop. The outer asyncio.timeout in handle_post
-            # is what bounds wall-clock duration; this await is the yield point
-            # that lets it fire.
-            loop = asyncio.get_running_loop()
-            result = await loop.run_in_executor(
-                self._command_executor,
-                self.commands[module]['process'],
-                command, channame, username, params, files, conn,
-            )
+            result = await self.run_module(module, command, channame, username, params, files, conn)
             # Command logging: see config.defaults.yaml for clarification
             if result and 'messages' in result:
                 for message in result['messages']:
