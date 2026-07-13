@@ -40,6 +40,24 @@ class ClassifyTests(unittest.TestCase):
         self.assertEqual('sha1', self._type('a' * 40))
         self.assertEqual('sha256', self._type('a' * 64))
 
+    def test_cidr_ranges(self):
+        self.assertEqual('cidr', self._type('10.0.0.0/8'))
+        self.assertEqual('cidr', self._type('2001:db8::/32'))
+        # A prefix written with host bits set is still a range, not an address.
+        self.assertEqual('cidr', self._type('8.8.8.8/24'))
+
+    def test_bare_address_is_not_a_cidr(self):
+        # The distinction the separate type exists for: a single address must
+        # stay ip/ipv6 so it does not route to netblock-only lookups.
+        self.assertEqual('ip', self._type('8.8.8.8'))
+        self.assertEqual('ipv6', self._type('2001:db8::1'))
+
+    def test_number_and_partial_ip_are_not_cidr(self):
+        # ip_network is lenient; make sure it does not swallow non-ranges.
+        self.assertIsNone(self._type('32'))
+        self.assertIsNone(self._type('1.2.3'))
+        self.assertIsNone(self._type('evil.com/24'))
+
     def test_non_indicator_is_none(self):
         self.assertIsNone(self._type('notanindicator'))
         self.assertIsNone(self._type('some free text query'))
@@ -176,7 +194,8 @@ class ShippedAcceptsTests(unittest.TestCase):
         # the module would silently accept more (or fewer) types than intended.
         for module in ['bssc', 'honeydb', 'ipwhois', 'malwarebazaar', 'ripewhois',
                        'sslmate', 'threatbook', 'threatfox', 'threatrip', 'urlhaus',
-                       'wayback', 'crtsh', 'malshare', 'ipinfo']:
+                       'wayback', 'crtsh', 'malshare', 'ipinfo',
+                       'abuseipdb', 'circlpdns']:
             declared = self._accepts(module)
             self.assertIsNotNone(declared, f"{module} lost its ACCEPTS")
             self.assertEqual(declared, cmdutils.normalise_accepts(declared),
@@ -203,6 +222,22 @@ class ShippedAcceptsTests(unittest.TestCase):
         self.assertTrue(self._routes_to('wayback', 'http://evil.com/x'))
         self.assertFalse(self._routes_to('wayback', 'evil.com'))
         self.assertFalse(self._routes_to('wayback', '8.8.8.8'))
+
+    def test_netblock_modules_take_cidr_and_single_addresses(self):
+        for module in ['abuseipdb', 'circlpdns']:
+            self.assertTrue(self._routes_to(module, '10.0.0.0/8'))
+            self.assertTrue(self._routes_to(module, '8.8.8.8'))
+            self.assertTrue(self._routes_to(module, '2001:db8::/32'))
+
+    def test_single_address_modules_do_not_take_cidr(self):
+        # honeydb/ipinfo look up one address; a range must not route to them.
+        for module in ['honeydb', 'ipinfo']:
+            self.assertTrue(self._routes_to(module, '8.8.8.8'))
+            self.assertFalse(self._routes_to(module, '10.0.0.0/8'))
+
+    def test_circlpdns_takes_domains_abuseipdb_does_not(self):
+        self.assertTrue(self._routes_to('circlpdns', 'evil.com'))
+        self.assertFalse(self._routes_to('abuseipdb', 'evil.com'))
 
 
 if __name__ == "__main__":

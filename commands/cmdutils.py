@@ -29,16 +29,21 @@ import re
 # The canonical indicator vocabulary. A module's ACCEPTS lists a subset of these.
 IP = 'ip'
 IPV6 = 'ipv6'
+CIDR = 'cidr'
 DOMAIN = 'domain'
 URL = 'url'
 MD5 = 'md5'
 SHA1 = 'sha1'
 SHA256 = 'sha256'
 
-TYPES = (IP, IPV6, DOMAIN, URL, MD5, SHA1, SHA256)
+# CIDR is deliberately distinct from ip/ipv6: a module that looks up a single
+# address (ipinfo, honeydb) is not the same as one that queries a netblock
+# (abuseipdb check-block, CIRCL passive DNS). Keeping them separate is what lets
+# a bare IP and a network route to different modules.
+TYPES = (IP, IPV6, CIDR, DOMAIN, URL, MD5, SHA1, SHA256)
 
 # A human-readable list for the "that is not something I can look up" reply.
-TYPES_HUMAN = 'an IP, IPv6 address, domain, URL, or file hash (MD5/SHA1/SHA256)'
+TYPES_HUMAN = 'an IP or IPv6 address, a CIDR range, a domain, a URL, or a file hash (MD5/SHA1/SHA256)'
 
 _MD5_RE = re.compile(r'^[A-Fa-f0-9]{32}$')
 _SHA1_RE = re.compile(r'^[A-Fa-f0-9]{40}$')
@@ -92,10 +97,20 @@ def classify(value):
     if norm[:8].lower().startswith(('http://', 'https://')):
         return norm, URL
 
-    # IP (v4 or v6) before hostname -- an IP literal is never a hostname.
+    # IP (v4 or v6) before hostname -- an IP literal is never a hostname. A bare
+    # address is matched here, so anything that only parses as a *network* below
+    # necessarily carries a prefix and is a CIDR range, not a single address.
     try:
         addr = ipaddress.ip_address(norm)
         return norm, IPV6 if isinstance(addr, ipaddress.IPv6Address) else IP
+    except ValueError:
+        pass
+
+    # CIDR range (e.g. 10.0.0.0/8, 2001:db8::/32). strict=False accepts a range
+    # written with host bits set (8.8.8.8/24), matching how modules query it.
+    try:
+        ipaddress.ip_network(norm, strict=False)
+        return norm, CIDR
     except ValueError:
         pass
 
