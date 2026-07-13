@@ -809,5 +809,97 @@ class ReconstructTests(unittest.TestCase):
         self.assertEqual(state.tool_calls_used, 1)
 
 
+class FakeResponse(object):
+    def __init__(self, payload, status_code=200):
+        self._payload = payload
+        self.status_code = status_code
+        self.text = json.dumps(payload)
+
+    def json(self):
+        return self._payload
+
+
+class FakeSession(object):
+    """Stands in for requests.Session so the client is testable with no network."""
+
+    def __init__(self, *responses):
+        self.responses = list(responses)
+        self.calls = []
+
+    def post(self, url, headers=None, json=None, timeout=None):
+        self.calls.append({'url': url, 'headers': headers, 'json': json, 'timeout': timeout})
+        return self.responses.pop(0) if len(self.responses) > 1 else self.responses[0]
+
+
+class LLMClientTests(unittest.TestCase):
+    def _client(self, *responses, **kwargs):
+        session = FakeSession(*responses)
+        client = ai_analyst.LLMClient(
+            base_url='http://localhost:11434/v1', api_key='ollama',
+            model='some-model', timeout=60, session=session, **kwargs)
+        return client, session
+
+    def test_posts_to_chat_completions_with_tools(self):
+        client, session = self._client(
+            FakeResponse({'choices': [{'message': {'role': 'assistant', 'content': 'hi'}}]}))
+        client.chat([{'role': 'user', 'content': 'hi'}], [{'type': 'function'}])
+        call = session.calls[0]
+        self.assertEqual(call['url'], 'http://localhost:11434/v1/chat/completions')
+        self.assertEqual(call['headers']['Authorization'], 'Bearer ollama')
+        self.assertEqual(call['json']['model'], 'some-model')
+        self.assertEqual(call['json']['tools'], [{'type': 'function'}])
+        self.assertEqual(call['json']['temperature'], 0)
+        self.assertEqual(call['timeout'], 60)
+
+    def test_omits_the_tools_key_when_there_are_no_tools(self):
+        # Some endpoints reject an empty tools array outright.
+        client, session = self._client(
+            FakeResponse({'choices': [{'message': {'role': 'assistant', 'content': 'hi'}}]}))
+        client.chat([{'role': 'user', 'content': 'hi'}], [])
+        self.assertNotIn('tools', session.calls[0]['json'])
+
+    def test_normalises_a_text_answer(self):
+        client, _ = self._client(FakeResponse(
+            {'choices': [{'message': {'role': 'assistant', 'content': 'The IP is clean.'}}]}))
+        reply = client.chat([], [])
+        self.assertEqual(reply['content'], 'The IP is clean.')
+        self.assertEqual(reply['tool_calls'], [])
+
+    def test_normalises_tool_calls_and_parses_json_arguments(self):
+        client, _ = self._client(FakeResponse({'choices': [{'message': {
+            'role': 'assistant', 'content': None,
+            'tool_calls': [{'id': 'call_1', 'type': 'function', 'function': {
+                'name': 'crtsh', 'arguments': '{"query": "evil.example.com"}'}}],
+        }}]}))
+        reply = client.chat([], [])
+        self.assertEqual(reply['content'], '')
+        self.assertEqual(reply['tool_calls'], [
+            {'id': 'call_1', 'name': 'crtsh', 'arguments': {'query': 'evil.example.com'}}])
+        # The provider's own message must be echoed back verbatim next request.
+        self.assertEqual(reply['raw_message']['tool_calls'][0]['id'], 'call_1')
+
+    def test_malformed_tool_arguments_do_not_raise(self):
+        client, _ = self._client(FakeResponse({'choices': [{'message': {
+            'role': 'assistant',
+            'tool_calls': [{'id': 'call_1', 'function': {
+                'name': 'crtsh', 'arguments': 'not json at all'}}],
+        }}]}))
+        reply = client.chat([], [])
+        self.assertEqual(reply['tool_calls'][0]['arguments'], {})
+
+    def test_retries_once_on_a_transient_error_then_succeeds(self):
+        ok = {'choices': [{'message': {'role': 'assistant', 'content': 'recovered'}}]}
+        client, session = self._client(FakeResponse({}, 503), FakeResponse(ok))
+        reply = client.chat([], [])
+        self.assertEqual(reply['content'], 'recovered')
+        self.assertEqual(len(session.calls), 2)
+
+    def test_http_error_raises_llmerror_without_leaking_the_key(self):
+        client, _ = self._client(FakeResponse({'error': 'nope'}, 401))
+        with self.assertRaises(ai_analyst.LLMError) as ctx:
+            client.chat([], [])
+        self.assertNotIn('ollama', str(ctx.exception))
+
+
 if __name__ == "__main__":
     unittest.main()
