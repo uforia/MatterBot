@@ -109,6 +109,43 @@ class MalformedErrorTests(unittest.TestCase):
         self.assertEqual([("http://x/feed", "403 blocked")], errors)
 
 
+class ClassifyTests(unittest.TestCase):
+    """Issue #270: a module whose every source failed was counted as a success.
+
+    callModule returned FeedResult([], errors).items -- an empty list -- which is
+    indistinguishable from a quiet feed. Nothing raised, so runModules counted it
+    as successful and printed "N/N modules ran successfully" while the module was
+    completely dark.
+    """
+
+    def test_no_errors_is_ok(self):
+        self.assertEqual(feedutils.OK, feedutils.classify([["news", "a"]], []))
+
+    def test_a_quiet_feed_is_not_a_broken_one(self):
+        # No posts and no errors: the feed simply had nothing new. Not a failure.
+        self.assertEqual(feedutils.OK, feedutils.classify([], []))
+
+    def test_errors_alongside_posts_is_partial(self):
+        verdict = feedutils.classify([["news", "a"]], [("feed-2", "timeout")])
+        self.assertEqual(feedutils.PARTIAL, verdict)
+
+    def test_errors_with_no_posts_is_a_failure(self):
+        # The case the issue is about: every source 403s, nothing collected.
+        verdict = feedutils.classify([], [("feed-1", "403"), ("feed-2", "403")])
+        self.assertEqual(feedutils.FAILED, verdict)
+
+    def test_failed_is_distinguishable_from_ok_on_an_empty_item_list(self):
+        # Both return zero posts; only the errors tell them apart. This is
+        # precisely the distinction the old `if items:` check could not make.
+        self.assertNotEqual(
+            feedutils.classify([], [("feed", "403")]),
+            feedutils.classify([], []),
+        )
+
+    def test_all_sources_failed_is_an_exception_the_caller_can_raise(self):
+        self.assertTrue(issubclass(feedutils.AllSourcesFailed, Exception))
+
+
 class ResultFactoryTests(unittest.TestCase):
     def test_empty_result_is_two_empty_lists(self):
         r = feedutils.result()

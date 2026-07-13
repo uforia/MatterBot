@@ -376,6 +376,10 @@ class MattermostManager(object):
                 self.log.error(f"Error   : {module_name} ...\nTraceback: {traceback.format_exc()}")
             else:
                 self.log.error(f"Error   : {module_name} module failed: {str(e)}")
+            # Re-raise: runModules() counts a module as successful unless its
+            # future raises, so swallowing here reported every failure -- a dead
+            # feed, a crashing module -- as "ran successfully".
+            raise
         finally:
             if history:
                 history.sync()
@@ -415,22 +419,9 @@ class MattermostManager(object):
 
             # Run the module and normalise its return. A module may return the
             # legacy plain list of posts, or a feedutils.FeedResult carrying
-            # both posts and per-source errors. Log any partial errors here,
-            # centrally, so a module never has to swallow them silently, and
-            # hand the posts back to the caller unchanged either way.
+            # both posts and per-source errors.
             import feedutils
             items, errors = feedutils.split_result(func(*args, **kwargs))
-            # Reporting an error must never cost us the posts we already have.
-            # split_result() guarantees well-formed pairs, but this loop runs
-            # after the module's posts were collected, so a raise here would be
-            # caught below and discard all of them -- belt and braces.
-            for error in errors:
-                try:
-                    source, message = error
-                except (TypeError, ValueError):
-                    source, message = feedutils.UNKNOWN_SOURCE, error
-                self.log.info(f"Partial  : {module_name} module: {source}: {message}")
-            return items
         except Exception as e:
             if options.debug:
                 self.log.error(f"Error   :{str(e)}\nTraceback: {traceback.format_exc()}")
@@ -442,6 +433,34 @@ class MattermostManager(object):
                 del sys.modules[spec.name]
                 if options.debug:
                     self.log.info(f"Unloaded : {module_name} ({spec.name}) module ...")
+        # Deliberately outside the handler above: a module whose every source
+        # failed is reported by raising, and that catch-all would swallow the
+        # very signal meant to report it.
+        return self.reportSources(module_name, items, errors)
+
+    def reportSources(self, module_name, items, errors):
+        '''
+        Log a module's per-source errors and decide what its run amounted to.
+        Errors alongside posts is a partial failure; errors with no posts at all
+        means the module is dark, which must not be counted as a successful run.
+        '''
+        import feedutils
+        verdict = feedutils.classify(items, errors)
+        for error in errors:
+            # Reporting an error must never cost us the posts we already have:
+            # split_result() guarantees well-formed pairs, but this runs after
+            # the module's posts were collected, so it stays defensive.
+            try:
+                source, message = error
+            except (TypeError, ValueError):
+                source, message = feedutils.UNKNOWN_SOURCE, error
+            if verdict == feedutils.FAILED:
+                self.log.error(f"Failed   : {module_name} module: {source}: {message}")
+            else:
+                self.log.warning(f"Partial  : {module_name} module: {source}: {message}")
+        if verdict == feedutils.FAILED:
+            raise feedutils.AllSourcesFailed(f"{module_name}: all {len(errors)} source(s) failed, no posts collected")
+        return items
 
 
 def main(log):
