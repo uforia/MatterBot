@@ -98,6 +98,7 @@ class MattermostManager(object):
         self.bindmap = self.load_bindmap()
         self.welcome_channel_members = self.start_welcome_channel()
         # Load any new modules
+        from commands import cmdutils  # commands/ is a namespace package on sys.path by now
         for root, dirs, files in os.walk(modulepath):
             for module in fnmatch.filter(files, "command.py"):
                 module_name = root.split('/')[-1].lower()
@@ -105,21 +106,32 @@ class MattermostManager(object):
                 if module_name not in self.commands:
                     module.settings.BINDS = None
                     module.settings.CHANS = None
+                    module.settings.ACCEPTS = None
                     defaults = importlib.import_module(f"{_pkg_prefix}.{module_name}.defaults")
                     if hasattr(defaults, 'BINDS'):
                         module.settings.BINDS = defaults.BINDS
                     if hasattr(defaults, 'CHANS'):
                         module.settings.CHANS = defaults.CHANS
+                    if hasattr(defaults, 'ACCEPTS'):
+                        module.settings.ACCEPTS = defaults.ACCEPTS
                     if 'settings.py' in files:
                         overridesettings = importlib.import_module(f"{_pkg_prefix}.{module_name}.settings")
                         if hasattr(overridesettings, 'BINDS'):
                             module.settings.BINDS = overridesettings.BINDS
                         if hasattr(overridesettings, 'CHANS'):
                             module.settings.CHANS = overridesettings.CHANS
+                        if hasattr(overridesettings, 'ACCEPTS'):
+                            module.settings.ACCEPTS = overridesettings.ACCEPTS
                     if not isinstance(module.settings.BINDS, list) or not isinstance(module.settings.CHANS, list):
                         log.error(f"Skipping command module {module_name}: BINDS and CHANS must both be lists")
                         continue
-                    self.commands[module_name] = {'binds': module.settings.BINDS, 'chans': module.settings.CHANS}
+                    # ACCEPTS is the (optional) indicator-type filter. An absent or
+                    # unusable value means "accepts anything" -- see cmdutils.accepts.
+                    self.commands[module_name] = {
+                        'binds': module.settings.BINDS,
+                        'chans': module.settings.CHANS,
+                        'accepts': cmdutils.normalise_accepts(module.settings.ACCEPTS),
+                    }
                     self.binds.extend(module.settings.BINDS)
         try:
             with open(options.Matterbot['bindmap'],'w') as f:
@@ -931,12 +943,40 @@ class MattermostManager(object):
                         # Bindings like @ioc subscribe many modules to a single command.
                         # Collect them up front, then fan out concurrently via gather
                         # so the slowest module sets the wall-clock floor, not the sum.
-                        modules_to_run = []
+                        bound = []
                         for module in self.commands:
                             if command in self.commands[module]['binds']:
                                 if self.isallowed_module(userid, module, chaninfo):
-                                    if module not in modules_to_run:
-                                        modules_to_run.append(module)
+                                    if module not in bound:
+                                        bound.append(module)
+                        # Route by indicator type. A shared bind like @ioc reaches
+                        # domain-only, hash-only and IP-only modules alike; calling
+                        # a module with an input it cannot handle makes it answer
+                        # with an error in the channel. Classify the argument once
+                        # and only run modules that declare they accept that type.
+                        # Modules that declare nothing accept anything (free-text
+                        # commands, or not-yet-annotated), so this only ever narrows
+                        # an @ioc-style fanout, never a plain command.
+                        from commands import cmdutils
+                        if params:
+                            _, indicator_type = cmdutils.classify(params[0])
+                            modules_to_run = [m for m in bound
+                                              if cmdutils.accepts(self.commands[m], indicator_type)]
+                            if bound and not modules_to_run:
+                                # Something was bound to this command, but nothing
+                                # accepts what the user typed. Say so once, instead
+                                # of staying silent or letting N modules each error.
+                                if indicator_type is None:
+                                    text = (f"`{params[0]}` doesn't look like {cmdutils.TYPES_HUMAN}, "
+                                            f"so I didn't query anything for `{command}`.")
+                                else:
+                                    text = (f"No `{command}` module is configured to look up "
+                                            f"{indicator_type} indicators.")
+                                await self.send_message(chanid, text, rootid)
+                        else:
+                            # No argument to classify: preserve prior behaviour
+                            # (each module handles its own empty-input case).
+                            modules_to_run = bound
                         if modules_to_run:
                             files = []
                             if 'metadata' in post:
