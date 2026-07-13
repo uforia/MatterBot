@@ -6,6 +6,7 @@ network. ai_analyst.py must therefore never import `requests` at module top --
 the LLM client imports it lazily.
 """
 
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -434,6 +435,204 @@ class ToolDefinitionTests(unittest.TestCase):
         tools = ai_analyst.build_tool_definitions(registry, {'ip'})
         self.assertEqual(len(tools), 1)
         self.assertIn('ip', tools[0]['function']['description'])
+
+
+BOT = 'bot-id'
+HUMAN = 'human-id'
+
+
+def _user(message):
+    return {'user_id': HUMAN, 'message': message, 'props': {}}
+
+
+def _reply(message, tool_calls=0, msg_id='m1', part=0):
+    return {
+        'user_id': BOT,
+        'message': message,
+        'props': {
+            ai_analyst.PROP_KEY: ai_analyst.PROP_REPLY,
+            ai_analyst.PROP_TOOL_CALLS: tool_calls,
+            ai_analyst.PROP_MSG_ID: msg_id,
+            ai_analyst.PROP_PART: part,
+        },
+    }
+
+
+def _evidence(message):
+    return {
+        'user_id': BOT, 'message': message,
+        'props': {ai_analyst.PROP_KEY: ai_analyst.PROP_EVIDENCE},
+    }
+
+
+def _reconstruct(posts, default_mode='compact', max_history_turns=20):
+    return ai_analyst.reconstruct(posts, BOT, default_mode, max_history_turns, '@ai')
+
+
+class NormaliseThreadTests(unittest.TestCase):
+    """The exact shape mmDriver.posts.get_thread() returns."""
+
+    def test_orders_by_create_at_and_drops_the_current_post(self):
+        payload = {
+            'order': ['p2', 'p1'],
+            'posts': {
+                'p2': {'id': 'p2', 'create_at': 200, 'message': 'second'},
+                'p1': {'id': 'p1', 'create_at': 100, 'message': 'first'},
+                'p3': {'id': 'p3', 'create_at': 300, 'message': 'current'},
+            },
+        }
+        posts = ai_analyst.normalise_thread(payload, exclude_post_id='p3')
+        self.assertEqual([p['id'] for p in posts], ['p1', 'p2'])
+
+    def test_empty_or_missing_payload_is_empty(self):
+        self.assertEqual(ai_analyst.normalise_thread(None, None), [])
+        self.assertEqual(ai_analyst.normalise_thread({}, None), [])
+
+
+class AffirmativeTests(unittest.TestCase):
+    def test_affirmatives(self):
+        for text in ('yes', 'Yes please', '@ai yes', 'yep', 'sure', 'go ahead', 'do it', 'ok'):
+            self.assertTrue(ai_analyst.is_affirmative(text, '@ai'), text)
+
+    def test_non_affirmatives(self):
+        for text in ('no', 'nope', 'not that one', 'what about the domain?', ''):
+            self.assertFalse(ai_analyst.is_affirmative(text, '@ai'), text)
+
+    def test_hedged_and_negated_replies_are_not_approvals(self):
+        # These START with an affirmative word but are not approvals. A naive
+        # first-word match would green-light a pivot the analyst did not want.
+        for text in (
+            'ok but why would that domain matter?',
+            'yes, but not the IP',
+            'sure, except the hash',
+            "yeah I don't think so",
+        ):
+            self.assertFalse(ai_analyst.is_affirmative(text, '@ai'), text)
+
+
+class EvidenceModeParseTests(unittest.TestCase):
+    def test_mode_toggle_is_read_after_the_bind(self):
+        self.assertEqual(ai_analyst.evidence_mode('@ai full what about 8.8.8.8', '@ai'), 'full')
+        self.assertEqual(ai_analyst.evidence_mode('@ai brief thoughts?', '@ai'), 'brief')
+
+    def test_no_toggle_returns_none(self):
+        self.assertIsNone(ai_analyst.evidence_mode('@ai what about 8.8.8.8', '@ai'))
+        # "full" only counts immediately after the bind, not anywhere in prose.
+        self.assertIsNone(ai_analyst.evidence_mode('@ai give me the full picture', '@ai'))
+
+
+class ReconstructTests(unittest.TestCase):
+    def test_user_indicators_become_authorized(self):
+        state = _reconstruct([_user('@ai look at 8.8.8.8 and evil.example.com')])
+        self.assertEqual(state.authorized, {'8.8.8.8': 'ip', 'evil.example.com': 'domain'})
+
+    def test_bot_narrative_becomes_an_assistant_turn(self):
+        state = _reconstruct([_user('@ai check 8.8.8.8'), _reply('The IP is clean.')])
+        self.assertEqual(state.history, [
+            {'role': 'user', 'content': '@ai check 8.8.8.8'},
+            {'role': 'assistant', 'content': 'The IP is clean.'},
+        ])
+
+    def test_a_split_reply_is_rejoined_into_one_turn_and_counted_once(self):
+        # send_message splits long replies. Without rejoining, the model sees N
+        # assistant turns and the thread budget is charged N times.
+        state = _reconstruct([
+            _user('@ai check 8.8.8.8'),
+            _reply('The IP is clean.', tool_calls=3, msg_id='m1', part=0),
+            _reply('It resolves to evil.example.com — pull it?', tool_calls=3, msg_id='m1', part=1),
+        ])
+        self.assertEqual(len(state.history), 2)
+        self.assertIn('The IP is clean.', state.history[-1]['content'])
+        self.assertIn('pull it?', state.history[-1]['content'])
+        self.assertEqual(state.tool_calls_used, 3, 'a split reply was double-counted')
+        # And the pivot named in the SECOND part must still be pending.
+        self.assertEqual(state.pending, {'evil.example.com': 'domain'})
+
+    def test_evidence_posts_are_never_replayed_to_the_model(self):
+        state = _reconstruct([
+            _user('@ai full check 8.8.8.8'),
+            _reply('The IP is clean.'),
+            _evidence('| header | table |\n|---|---|\n| a huge | raw dump |'),
+        ])
+        self.assertEqual(len(state.history), 2)
+        self.assertNotIn('raw dump', json.dumps(state.history))
+
+    def test_indicators_the_bot_names_are_pending_not_authorized(self):
+        state = _reconstruct([
+            _user('@ai check 8.8.8.8'),
+            _reply('That IP is clean. It resolves to evil.example.com — want me to pull it?'),
+        ])
+        self.assertIn('8.8.8.8', state.authorized)
+        self.assertNotIn('evil.example.com', state.authorized)
+        self.assertEqual(state.pending, {'evil.example.com': 'domain'})
+
+    def test_affirmative_reply_promotes_pending_to_authorized(self):
+        state = _reconstruct([
+            _user('@ai check 8.8.8.8'),
+            _reply('It resolves to evil.example.com — want me to pull it?'),
+            _user('yes'),
+        ])
+        self.assertIn('evil.example.com', state.authorized)
+        self.assertEqual(state.pending, {})
+
+    def test_hedged_reply_does_not_promote_pending(self):
+        state = _reconstruct([
+            _user('@ai check 8.8.8.8'),
+            _reply('It resolves to evil.example.com — want me to pull it?'),
+            _user('ok but why would that domain matter?'),
+        ])
+        self.assertNotIn('evil.example.com', state.authorized)
+
+    def test_naming_an_indicator_authorizes_only_that_one(self):
+        state = _reconstruct([
+            _user('@ai check 8.8.8.8'),
+            _reply('I see evil.example.com and bad.example.org — pull them?'),
+            _user('@ai just evil.example.com please'),
+        ])
+        self.assertIn('evil.example.com', state.authorized)
+        self.assertNotIn('bad.example.org', state.authorized)
+
+    def test_evidence_mode_is_sticky_and_last_write_wins(self):
+        self.assertEqual(_reconstruct([_user('@ai check 8.8.8.8')]).mode, 'compact')
+        state = _reconstruct([
+            _user('@ai full check 8.8.8.8'), _reply('clean'), _user('@ai and 1.1.1.1?'),
+        ])
+        self.assertEqual(state.mode, 'full')
+        state = _reconstruct([
+            _user('@ai full check 8.8.8.8'), _reply('clean'), _user('@ai brief and 1.1.1.1?'),
+        ])
+        self.assertEqual(state.mode, 'compact')
+
+    def test_thread_tool_budget_is_summed_from_post_props(self):
+        state = _reconstruct([
+            _user('@ai check 8.8.8.8'), _reply('clean', tool_calls=3, msg_id='m1'),
+            _user('@ai and 1.1.1.1?'), _reply('also clean', tool_calls=2, msg_id='m2'),
+        ])
+        self.assertEqual(state.tool_calls_used, 5)
+
+    def test_history_is_capped_to_the_most_recent_turns(self):
+        posts = []
+        for i in range(30):
+            posts.append(_user(f'@ai message {i}'))
+            posts.append(_reply(f'reply {i}', msg_id=f'm{i}'))
+        state = _reconstruct(posts, max_history_turns=4)
+        self.assertEqual(len(state.history), 4)
+        self.assertEqual(state.history[-1]['content'], 'reply 29')
+
+    def test_authorization_survives_the_history_cap(self):
+        # Trimming the model's context must not silently de-authorize an indicator
+        # the analyst named 30 turns ago.
+        posts = [_user('@ai check 8.8.8.8')]
+        for i in range(30):
+            posts.append(_reply(f'reply {i}', msg_id=f'm{i}'))
+            posts.append(_user(f'@ai message {i}'))
+        state = _reconstruct(posts, max_history_turns=4)
+        self.assertIn('8.8.8.8', state.authorized)
+
+    def test_foreign_bot_posts_are_ignored(self):
+        # @ioc output from an ordinary command can live in the same thread.
+        posts = [_user('@ai check 8.8.8.8'), {'user_id': BOT, 'message': '| ioc |', 'props': {}}]
+        self.assertEqual(len(_reconstruct(posts).history), 1)
 
 
 if __name__ == "__main__":
