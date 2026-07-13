@@ -420,7 +420,15 @@ class MattermostManager(object):
             # hand the posts back to the caller unchanged either way.
             import feedutils
             items, errors = feedutils.split_result(func(*args, **kwargs))
-            for source, message in errors:
+            # Reporting an error must never cost us the posts we already have.
+            # split_result() guarantees well-formed pairs, but this loop runs
+            # after the module's posts were collected, so a raise here would be
+            # caught below and discard all of them -- belt and braces.
+            for error in errors:
+                try:
+                    source, message = error
+                except (TypeError, ValueError):
+                    source, message = feedutils.UNKNOWN_SOURCE, error
                 self.log.info(f"Partial  : {module_name} module: {source}: {message}")
             return items
         except Exception as e:

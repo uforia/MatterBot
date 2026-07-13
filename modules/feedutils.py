@@ -22,9 +22,41 @@ _DESCRIPTION_RX = re.compile('[%s]' % _STRIPCHARS)
 FeedResult = namedtuple('FeedResult', ['items', 'errors'])
 
 
+UNKNOWN_SOURCE = '<unknown source>'
+
+
+def normalise_errors(errors):
+    """Coerce a module's `errors` into a list of (source, message) string pairs.
+
+    Every module hand-builds its own error list, so one of them will eventually
+    append a bare string, or a 3-tuple, or None. The main loop unpacks these
+    entries -- and it does so *after* the module's posts have already been
+    collected, so an unpackable entry used to take the whole run down with it
+    and discard every post the module had gathered.
+
+    Reporting an error must never be able to destroy the posts that the same
+    run succeeded in fetching. So a malformed entry is repaired here rather than
+    raised on: whatever it holds is kept as the message, under an unknown source,
+    where an operator will still see it.
+    """
+    if not errors:
+        return []
+    normalised = []
+    for entry in errors:
+        if isinstance(entry, (tuple, list)) and len(entry) == 2:
+            source, message = entry
+        elif isinstance(entry, (tuple, list)):
+            # Wrong arity: keep everything, rather than silently dropping a field.
+            source, message = UNKNOWN_SOURCE, ', '.join(str(part) for part in entry)
+        else:
+            source, message = UNKNOWN_SOURCE, entry
+        normalised.append((str(source), str(message)))
+    return normalised
+
+
 def result(items=None, errors=None):
     """Build a FeedResult from collected posts and (source, message) errors."""
-    return FeedResult(list(items) if items else [], list(errors) if errors else [])
+    return FeedResult(list(items) if items else [], normalise_errors(errors))
 
 
 def split_result(value):
@@ -33,9 +65,14 @@ def split_result(value):
     Accepts the legacy contract (a plain list, or None) -- for which errors is
     always empty -- as well as a FeedResult. This is what the main loop calls
     so that both old and migrated modules go through one code path.
+
+    Errors are normalised here too, not only in result(): a module can build a
+    FeedResult directly, and the caller unpacks these pairs, so the guarantee
+    has to hold at the boundary the caller actually reads from.
     """
     if isinstance(value, FeedResult):
-        return list(value.items) if value.items else [], list(value.errors) if value.errors else []
+        items = list(value.items) if value.items else []
+        return items, normalise_errors(value.errors)
     if value is None:
         return [], []
     return list(value), []
