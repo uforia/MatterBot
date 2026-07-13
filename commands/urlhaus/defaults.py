@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 BINDS = ['@urlhaus', '@ioc', '@uh']
+# Indicator types this module accepts under a shared bind like @ioc (see cmdutils.accepts).
+ACCEPTS = ['md5', 'sha1', 'sha256', 'url']
 CHANS = ['debug']
 APIURL = {
     'urlhaus':  {

@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
 BINDS = ['@abuseipdb', '@ioc']
+# Indicator types this module accepts under a shared bind like @ioc (see cmdutils.accepts).
+# A netblock (a.b.c.d/n) is queried via the check-block endpoint, a single address via check.
+ACCEPTS = ['ip', 'ipv6', 'cidr']
 CHANS = ['debug']
 APIURL = {
     'abuseipdb':   {

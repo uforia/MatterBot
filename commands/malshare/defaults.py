@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
 BINDS = ['@malshare', '@ms', '@ioc']
+# Indicator types this module can look up: file hashes only. Under a shared bind
+# like @ioc, an IP or domain no longer reaches this hash-only malware lookup.
+ACCEPTS = ['md5', 'sha1', 'sha256']
 CHANS = ['debug']
 APIURL = {
     'malshare': {

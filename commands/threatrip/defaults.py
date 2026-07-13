@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 BINDS = ['@threatrip', '@tr', '@ioc']
+# Indicator types this module accepts under a shared bind like @ioc (see cmdutils.accepts).
+ACCEPTS = ['ip', 'ipv6', 'domain', 'url', 'md5', 'sha1', 'sha256']
 CHANS = ['debug']
 APIURL = {
     'threatrip': {
