@@ -70,24 +70,108 @@ _LABEL = re.compile(
     re.IGNORECASE,
 )
 _SCHEMES = ('http://', 'https://', 'hxxp://', 'hxxps://')
+# What glues two indicators into one whitespace-free run: "8.8.8.8/1.1.1.1",
+# "8.8.8.8->1.1.1.1", "evil[.]example[.]com/path". A bare '/' is also how a URL
+# separates host from path, so this only ever gets applied to a token that has
+# ALREADY failed to classify as a whole (see _candidates).
+_JOIN_SPLIT = re.compile(r'/|->|→')
+
+# Analysts defang (8[.]8[.]8[.]8, hxxps://) and label (IOC:, domain=) things they
+# are actually flagging as indicators. Either signal means "trust me, this is
+# real" and must bypass the domain-plausibility gate below -- a malicious domain
+# in an oddball TLD is exactly the shape a real IOC takes, and dropping it because
+# it does not match a known TLD table would be a silent, unexplained refusal.
+_DEFANG_HINT = re.compile(r'\[\.\]|\(\.\)|\{\.\}|hxxp', re.IGNORECASE)
+
+# Common gTLDs, including ones heavily abused by malware campaigns precisely
+# because they are cheap ("xyz", "top", "click", "icu", ...). Real 2-letter
+# ccTLDs (ml, cc, io, ...) do not need to be listed here -- they are covered by
+# the generic ccTLD rule in _is_plausible_tld(), unless they collide with a file
+# extension below.
+_COMMON_TLDS = frozenset({
+    'com', 'net', 'org', 'edu', 'gov', 'mil', 'int', 'info', 'biz', 'name', 'pro',
+    'mobi', 'asia', 'coop', 'aero', 'museum', 'jobs', 'travel', 'xyz', 'top',
+    'club', 'online', 'site', 'store', 'tech', 'app', 'dev', 'page', 'shop',
+    'live', 'click', 'link', 'icu', 'cyou', 'buzz', 'fun', 'win', 'bid', 'loan',
+    'men', 'work', 'rest', 'vip', 'host', 'press', 'cloud', 'digital', 'systems',
+    'solutions', 'email', 'network', 'company', 'group', 'world', 'today', 'life',
+})
+# File extensions that would otherwise be misread as a domain -- either because
+# they collide with a real 2-letter ccTLD (a run-of-the-mill "config.py" would
+# otherwise pass as a Paraguayan domain), or because they are just common enough
+# in SOC chat ("error.log", "malware.exe") to fire constantly. Checked BEFORE the
+# generic ccTLD rule, so the collision always resolves to "not a domain".
+_FILE_EXT_BLOCKLIST = frozenset({
+    'py', 'sh', 'js', 'md', 'db', 'so', 'rb', 'pl', 'go', 'rs', 'ts', 'cs', 'ps', 'vb',
+    'exe', 'dll', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'pdf', 'zip', 'rar',
+    'tar', 'gz', 'log', 'txt', 'csv', 'json', 'yml', 'yaml', 'xml', 'html', 'htm',
+    'ini', 'cfg', 'conf', 'bak', 'tmp', 'dat', 'bin', 'sys', 'reg', 'bat', 'cmd',
+    'ps1', 'vbs', 'jar', 'apk', 'iso', 'dmg', 'msi', 'scr', 'lnk', 'hta', 'pem',
+    'crt', 'key', 'sql', 'lock', 'toml', 'class', 'jsp', 'asp', 'aspx', 'php',
+})
+
+
+def _is_plausible_tld(tld):
+    """Is `tld` a TLD an analyst would plausibly mean, vs. a file extension?
+
+    cmdutils._HOSTNAME_RE only requires the final label to be alphabetic, so
+    "malware.exe" and "it.then" (a run-together sentence) classify as domains
+    just as readily as "evil.com" does. This is the gate that tells them apart:
+    accept known gTLDs and any 2-letter alphabetic ccTLD (there are ~250 real
+    ones, not worth enumerating), but reject the blocklisted extensions first so
+    the ccTLD/file-extension collisions (.py/.sh/.md/...) resolve correctly.
+    Bias toward accepting when unsure -- see _signals_intent().
+    """
+    tld = tld.lower()
+    if tld in _FILE_EXT_BLOCKLIST:
+        return False
+    if tld in _COMMON_TLDS:
+        return True
+    return len(tld) == 2 and tld.isalpha()
+
+
+def _signals_intent(original_token, candidate):
+    """Did the analyst mark `candidate` as an indicator, defanged or labelled?
+
+    A defanged token (brackets, hxxp) or a labelled one (IOC:, domain=) is the
+    analyst stating "this is an indicator" in their own words. That statement
+    outranks the TLD-plausibility gate: a real malicious domain in an unusual
+    TLD must never be silently dropped because it is not in our TLD tables.
+    """
+    if _DEFANG_HINT.search(candidate):
+        return True
+    return bool(_LABEL.match(original_token.strip(_STRIP)))
 
 
 def _candidates(token):
-    """Every string worth handing to cmdutils.classify() for one prose token."""
+    """Every string worth handing to cmdutils.classify() for one prose token.
+
+    If the token ALREADY classifies as an indicator whole, that is authoritative
+    and it is returned alone: a CIDR's network address ("10.0.0.0/8") must not
+    also be offered as a second, independent IP, and a defanged URL with a path
+    must not also be offered as its bare host. Only a token that does NOT
+    classify whole gets split further -- a scheme-less run of two indicators
+    glued by '/', '->' or an arrow ("8.8.8.8/1.1.1.1", "8.8.8.8->1.1.1.1", a bare
+    host with a URL path) is not itself one indicator, so every resulting
+    segment is offered as a candidate and cmdutils.classify() decides, per
+    segment, which (if any) are real. A scheme-bearing token that still fails to
+    classify is left alone -- a URL's own path is full of '/' and must not be
+    torn apart.
+    """
     token = token.strip(_STRIP)
     if not token:
         return []
     token = _LABEL.sub('', token).strip(_STRIP)
     if not token:
         return []
-    out = [token]
-    # A bare host with a path ("evil[.]example[.]com/path") is not a URL -- it has
-    # no scheme -- and would classify as nothing. The host still is an indicator.
-    if '/' in token and not token.lower().startswith(_SCHEMES):
-        head = token.split('/', 1)[0].strip(_STRIP)
-        if head:
-            out.append(head)
-    return out
+    _, indicator_type = cmdutils.classify(token)
+    if indicator_type:
+        return [token]
+    if token.lower().startswith(_SCHEMES):
+        return [token]
+    segments = [seg.strip(_STRIP) for seg in _JOIN_SPLIT.split(token)]
+    segments = [seg for seg in segments if seg]
+    return segments or [token]
 
 
 def extract_indicators(text):
@@ -97,6 +181,14 @@ def extract_indicators(text):
     This is the bridge, and it is load-bearing twice over: it builds the
     `authorized` set (what the model is allowed to look up at all) and it decides
     which modules are exposed this turn.
+
+    A domain result additionally passes a plausibility gate (_is_plausible_tld):
+    cmdutils._HOSTNAME_RE only requires an alphabetic final label, so ordinary
+    prose ("checked it.Then rebooted") and filenames ("malware.exe") classify as
+    domains just as readily as real ones do, and SOC chat is full of both. The
+    gate is skipped -- accept unconditionally -- when the analyst defanged or
+    labelled the token (_signals_intent): that is the analyst stating this is an
+    indicator, and a missed real IOC is worse than an admitted filename.
     """
     found = {}
     if not text:
@@ -106,8 +198,12 @@ def extract_indicators(text):
     for token in _CANDIDATE_SPLIT.split(working):
         for candidate in _candidates(token):
             value, indicator_type = cmdutils.classify(candidate)
-            if indicator_type:
-                found[value] = indicator_type
+            if not indicator_type:
+                continue
+            if indicator_type == cmdutils.DOMAIN and not _signals_intent(token, candidate):
+                if not _is_plausible_tld(value.rsplit('.', 1)[-1]):
+                    continue
+            found[value] = indicator_type
     return found
 
 
