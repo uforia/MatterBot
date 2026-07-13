@@ -350,8 +350,12 @@ def process(command, channel, username, params, files, conn):
                     messages.append({'text': message})
                 if len(downloads):
                     messages.append({'text': "**MWDB**: *Sample download(s)*", 'uploads': downloads})
-        except Exception as e:
+        except Exception:
+            # Never interpolate str(e) into a channel message: for this module the
+            # API key is in the request URL, and an HTTP error's string carries that
+            # URL, so str(e) leaks the key into the channel. The traceback is logged
+            # server-side above; the channel gets a flat, credential-free line.
             log.exception("mwdb module error")
-            messages.append({'text': 'A Python error occurred searching the MWDB API: `%s`' % (str(e))})
+            messages.append({'text': 'The MWDB lookup failed; see the bot log for details.'})
         finally:
             return {'messages': messages}
