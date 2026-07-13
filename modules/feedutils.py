@@ -24,6 +24,34 @@ FeedResult = namedtuple('FeedResult', ['items', 'errors'])
 
 UNKNOWN_SOURCE = '<unknown source>'
 
+# How a module's run turned out, given what it returned.
+OK = 'ok'            # nothing went wrong
+PARTIAL = 'partial'  # some sources failed, but posts were still collected
+FAILED = 'failed'    # every source failed and nothing was collected
+
+
+class AllSourcesFailed(Exception):
+    """Raised when a module reported errors and collected nothing at all.
+
+    A module that returns FeedResult([], errors) has not "run successfully with
+    no news" -- it is dark. Without this, the empty list is indistinguishable
+    from a quiet feed, the run is counted as a success, and a module whose every
+    source is 403ing reports "16/16 modules ran successfully" indefinitely.
+    """
+
+
+def classify(items, errors):
+    """Decide whether a module's run was OK, PARTIAL, or FAILED.
+
+    The distinction that matters: errors *with* posts is a partial failure worth
+    a warning, errors *without* any posts is a dead module worth an error and a
+    failed count. No errors at all is fine, however few posts came back -- a
+    quiet feed is not a broken one.
+    """
+    if not errors:
+        return OK
+    return PARTIAL if items else FAILED
+
 
 def normalise_errors(errors):
     """Coerce a module's `errors` into a list of (source, message) string pairs.
