@@ -77,6 +77,7 @@ def query(settings=None):
             try:
                 title = feed.entries[count].title
                 link = feed.entries[count].link
+                content = None
                 if settings.FILTER:
                     THRESHOLD = importScore()
                     matches = checkPage(link)
@@ -101,6 +102,9 @@ def query(settings=None):
                         content += '](' + link + ')'
                 else:
                     content = settings.NAME + ': [' + title + '](' + link + ')'
+                if content is None: # Entry did not pass the filter: skip it. Never fall through -- content
+                    count+=1        # still holds the *previous* entry, which would be posted a second time.
+                    continue
                 if len(feed.entries[count].description):
                     description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
                     if len(description)>400:
