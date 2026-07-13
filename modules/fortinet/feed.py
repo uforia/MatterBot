@@ -53,6 +53,25 @@ def checkPage(link):
     except NameError:
         return matches
 
+def pageScore(matches):
+    # checkPage() has three possible return shapes: False (the page did not load),
+    # a (selection, tableScore) tuple, or a bare list of score elements. Collapse
+    # them into "the highest CVSS score found on the page, or None if there is
+    # none" so the caller has a single thing to compare against the threshold.
+    if not matches:
+        return None
+    if isinstance(matches, tuple):
+        candidates = [matches[1]]
+    else:
+        candidates = [score.text for score in matches]
+    scores = []
+    for candidate in candidates:
+        try:
+            scores.append(float(str(candidate).strip()))
+        except (TypeError, ValueError): # Not a score: e.g. a table header cell
+            continue
+    return max(scores) if scores else None
+
 def query(settings=None):
     if settings:
         try:
@@ -80,25 +99,14 @@ def query(settings=None):
                 content = None
                 if settings.FILTER:
                     THRESHOLD = importScore()
-                    matches = checkPage(link)
-                    filtered = False
-                    if not matches:
-                        cvss = False
-                        filtered = True
-                    else:
-                        if isinstance(matches, tuple): # Filter for return values from checkPage()
-                            cvss = matches[1]
-                            if float(cvss) >= THRESHOLD:
-                                filtered = True
-                        else:
-                            for score in matches:
-                                if float(score.text.strip()) >= THRESHOLD: # Check if CVSS score meets threshold
-                                    cvss = float(score.text.strip())
-                                    filtered = True
-                    if filtered:
+                    # FILTER means "only post advisories that meet the threshold", so an
+                    # advisory whose severity we cannot establish -- no CVSS on the page,
+                    # or the page did not load -- is skipped. It is not evidence of a
+                    # severe advisory, and posting it defeats the setting.
+                    cvss = pageScore(checkPage(link))
+                    if cvss is not None and cvss >= THRESHOLD:
                         content = settings.NAME + ': [' + title
-                        if cvss:
-                            content += f' - CVSS: `{cvss}`'
+                        content += f' - CVSS: `{cvss}`'
                         content += '](' + link + ')'
                 else:
                     content = settings.NAME + ': [' + title + '](' + link + ')'
