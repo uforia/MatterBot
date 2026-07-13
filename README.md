@@ -188,6 +188,9 @@ not already allowed to do:
 - **It can only look up indicators you named.** If it discovers a new indicator worth
   pivoting to, it *proposes* it and waits — say "yes" and it proceeds. It cannot query
   an unapproved indicator no matter what any prompt, or any tool result, tells it.
+  Note that a bare "yes" approves *every* indicator the AI proposed that turn, so read
+  what it proposed before you approve — a pivot is still only ever a read-only,
+  ACL-checked, rate-capped lookup, but approve the ones you meant to.
 - **It cannot bypass your ACLs.** A module you may not use, the AI may not use on your
   behalf (`isallowed_module`).
 - **It cannot hand a module the wrong kind of indicator** — the module's `ACCEPTS`
