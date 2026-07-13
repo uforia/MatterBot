@@ -148,5 +148,62 @@ class RoutingBehaviourTests(unittest.TestCase):
         self.assertNotIn('crtsh', self._route('8.8.8.8'))
 
 
+class ShippedAcceptsTests(unittest.TestCase):
+    """Assert routing invariants against the ACCEPTS actually declared in the
+    command defaults, so a bad edit to a real module is caught -- not a copy of
+    the values kept in this test.
+    """
+
+    COMMANDS_DIR = Path(__file__).resolve().parent.parent / "commands"
+
+    def _accepts(self, module):
+        import ast
+        src = (self.COMMANDS_DIR / module / "defaults.py").read_text(encoding="utf-8")
+        for node in ast.parse(src).body:
+            if isinstance(node, ast.Assign) and any(
+                isinstance(t, ast.Name) and t.id == "ACCEPTS" for t in node.targets
+            ):
+                return ast.literal_eval(node.value)
+        return None
+
+    def _routes_to(self, module, value):
+        entry = {'accepts': cmdutils.normalise_accepts(self._accepts(module))}
+        _, itype = cmdutils.classify(value)
+        return cmdutils.accepts(entry, itype)
+
+    def test_every_declared_accepts_is_valid(self):
+        # A typo would be normalised away; declared and normalised must agree, or
+        # the module would silently accept more (or fewer) types than intended.
+        for module in ['bssc', 'honeydb', 'ipwhois', 'malwarebazaar', 'ripewhois',
+                       'sslmate', 'threatbook', 'threatfox', 'threatrip', 'urlhaus',
+                       'wayback', 'crtsh', 'malshare', 'ipinfo']:
+            declared = self._accepts(module)
+            self.assertIsNotNone(declared, f"{module} lost its ACCEPTS")
+            self.assertEqual(declared, cmdutils.normalise_accepts(declared),
+                             f"{module} ACCEPTS has an unknown/typo'd type")
+
+    def test_hash_only_modules_reject_ip_and_domain(self):
+        for module in ['malwarebazaar', 'malshare']:
+            self.assertFalse(self._routes_to(module, '8.8.8.8'))
+            self.assertFalse(self._routes_to(module, 'evil.com'))
+            self.assertTrue(self._routes_to(module, 'a' * 64))
+
+    def test_ipv4_only_modules_are_not_called_for_ipv6(self):
+        # ipwhois/ripewhois/threatfox validate with a v4 regex; a v6 indicator
+        # must not route to them (they would reject it).
+        for module in ['ipwhois', 'ripewhois', 'threatfox']:
+            self.assertTrue(self._routes_to(module, '8.8.8.8'))
+            self.assertFalse(self._routes_to(module, '2001:db8::1'))
+
+    def test_honeydb_handles_ipv6(self):
+        # honeydb validates with ipaddress, so it does take v6 -- and must route.
+        self.assertTrue(self._routes_to('honeydb', '2001:db8::1'))
+
+    def test_wayback_is_url_only(self):
+        self.assertTrue(self._routes_to('wayback', 'http://evil.com/x'))
+        self.assertFalse(self._routes_to('wayback', 'evil.com'))
+        self.assertFalse(self._routes_to('wayback', '8.8.8.8'))
+
+
 if __name__ == "__main__":
     unittest.main()

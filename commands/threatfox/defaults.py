@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
 BINDS = ['@threatfox', '@ioc', '@tf']
+# Indicator types this module accepts under a shared bind like @ioc (see cmdutils.accepts).
+# IPv4 only -- the module validates with a v4 regex and does not handle IPv6.
+ACCEPTS = ['ip', 'md5', 'sha1', 'sha256']
 CHANS = ['debug']
 APIURL = {
     'threatfox':   {
