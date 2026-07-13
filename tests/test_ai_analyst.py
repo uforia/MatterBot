@@ -900,6 +900,108 @@ class LLMClientTests(unittest.TestCase):
             client.chat([], [])
         self.assertNotIn('ollama', str(ctx.exception))
 
+    def test_no_choices_still_raises_a_clean_llmerror(self):
+        client, _ = self._client(FakeResponse({}))
+        with self.assertRaises(ai_analyst.LLMError):
+            client.chat([], [])
+
+    def test_empty_choices_list_still_raises_a_clean_llmerror(self):
+        client, _ = self._client(FakeResponse({'choices': []}))
+        with self.assertRaises(ai_analyst.LLMError):
+            client.chat([], [])
+
+    def test_null_content_with_no_tool_calls_normalises_to_empty(self):
+        client, _ = self._client(FakeResponse(
+            {'choices': [{'message': {'role': 'assistant', 'content': None}}]}))
+        reply = client.chat([], [])
+        self.assertEqual(reply['content'], '')
+        self.assertEqual(reply['tool_calls'], [])
+
+    def test_arguments_as_dict_pass_through(self):
+        client, _ = self._client(FakeResponse({'choices': [{'message': {
+            'role': 'assistant',
+            'tool_calls': [{'id': 'call_1', 'function': {
+                'name': 'crtsh', 'arguments': {'query': 'evil.example.com'}}}],
+        }}]}))
+        reply = client.chat([], [])
+        self.assertEqual(reply['tool_calls'][0]['arguments'], {'query': 'evil.example.com'})
+
+    def test_empty_string_arguments_normalise_to_empty_dict(self):
+        client, _ = self._client(FakeResponse({'choices': [{'message': {
+            'role': 'assistant',
+            'tool_calls': [{'id': 'call_1', 'function': {'name': 'crtsh', 'arguments': ''}}],
+        }}]}))
+        reply = client.chat([], [])
+        self.assertEqual(reply['tool_calls'][0]['arguments'], {})
+
+    def test_none_arguments_normalise_to_empty_dict(self):
+        client, _ = self._client(FakeResponse({'choices': [{'message': {
+            'role': 'assistant',
+            'tool_calls': [{'id': 'call_1', 'function': {'name': 'crtsh', 'arguments': None}}],
+        }}]}))
+        reply = client.chat([], [])
+        self.assertEqual(reply['tool_calls'][0]['arguments'], {})
+
+    def test_tool_call_missing_id_and_name_still_normalises(self):
+        client, _ = self._client(FakeResponse({'choices': [{'message': {
+            'role': 'assistant',
+            'tool_calls': [{'function': {'arguments': '{}'}}],
+        }}]}))
+        reply = client.chat([], [])
+        self.assertEqual(reply['tool_calls'], [{'id': None, 'name': None, 'arguments': {}}])
+
+    def test_message_not_a_dict_raises_llmerror_not_attributeerror(self):
+        # Local model servers (Ollama/vLLM) can emit a degenerate structure where
+        # `message` itself is a bare string instead of an object.
+        client, _ = self._client(FakeResponse({'choices': [{'message': 'oops-not-a-dict'}]}))
+        with self.assertRaises(ai_analyst.LLMError):
+            client.chat([], [])
+
+    def test_tool_calls_not_a_list_is_treated_as_no_tool_calls(self):
+        # Quantized local models sometimes emit `tool_calls` as an object instead
+        # of an array when JSON generation degrades.
+        client, _ = self._client(FakeResponse({'choices': [{'message': {
+            'role': 'assistant', 'content': 'hi',
+            'tool_calls': {'weird': 'dict'},
+        }}]}))
+        reply = client.chat([], [])
+        self.assertEqual(reply['tool_calls'], [])
+        self.assertEqual(reply['content'], 'hi')
+
+    def test_tool_calls_list_of_non_dicts_is_skipped(self):
+        client, _ = self._client(FakeResponse({'choices': [{'message': {
+            'role': 'assistant', 'content': None,
+            'tool_calls': ['not-a-dict'],
+        }}]}))
+        reply = client.chat([], [])
+        self.assertEqual(reply['tool_calls'], [])
+
+    def test_tool_call_function_not_a_dict_is_skipped(self):
+        client, _ = self._client(FakeResponse({'choices': [{'message': {
+            'role': 'assistant', 'content': None,
+            'tool_calls': [{'id': 'call_1', 'function': 'oops'}],
+        }}]}))
+        reply = client.chat([], [])
+        self.assertEqual(reply['tool_calls'], [])
+
+    def test_mixed_list_keeps_the_valid_call_and_skips_the_malformed_one(self):
+        client, _ = self._client(FakeResponse({'choices': [{'message': {
+            'role': 'assistant', 'content': None,
+            'tool_calls': [
+                {'id': 'call_1', 'function': {'name': 'crtsh', 'arguments': '{}'}},
+                'not-a-dict',
+            ],
+        }}]}))
+        reply = client.chat([], [])
+        self.assertEqual(reply['tool_calls'], [
+            {'id': 'call_1', 'name': 'crtsh', 'arguments': {}}])
+
+    def test_raw_message_is_echoed_back_verbatim_even_when_malformed(self):
+        raw = {'role': 'assistant', 'content': None, 'tool_calls': ['not-a-dict']}
+        client, _ = self._client(FakeResponse({'choices': [{'message': raw}]}))
+        reply = client.chat([], [])
+        self.assertIs(reply['raw_message'], raw)
+
 
 if __name__ == "__main__":
     unittest.main()

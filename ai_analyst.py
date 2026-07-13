@@ -758,6 +758,12 @@ class LLMClient(object):
             message = response.json()['choices'][0]['message']
         except Exception as exc:
             raise LLMError('LLM returned a malformed response') from exc
+        if not isinstance(message, dict):
+            # Local model servers (quantized Ollama/vLLM) can emit a degenerate
+            # response where `message` itself isn't an object. Fail cleanly
+            # instead of raising an AttributeError deep in a blind .get() chain.
+            raise LLMError(
+                f'LLM returned a malformed message: {type(message).__name__}')
         return {
             'content': message.get('content') or '',
             'tool_calls': self._normalise_tool_calls(message.get('tool_calls')),
@@ -769,8 +775,25 @@ class LLMClient(object):
     @staticmethod
     def _normalise_tool_calls(tool_calls):
         normalised = []
-        for call in tool_calls or []:
-            function = call.get('function') or {}
+        # Quantized local models (Ollama/vLLM) are known to emit malformed
+        # structured tool-call JSON when generation degrades: `tool_calls` can
+        # arrive as a non-list, individual entries can be non-dicts, and a
+        # `function` field can be a bare string. None of that may crash the
+        # turn -- skip the bad entries and keep whatever is still usable.
+        if not isinstance(tool_calls, (list, tuple)):
+            if tool_calls:
+                log.warning('ai: tool_calls was not a list, ignoring')
+            return normalised
+        for call in tool_calls:
+            if not isinstance(call, dict):
+                log.warning('ai: skipping malformed tool_call entry (not a dict)')
+                continue
+            function = call.get('function')
+            if function is None:
+                function = {}
+            elif not isinstance(function, dict):
+                log.warning('ai: skipping tool_call with malformed function field')
+                continue
             raw_args = function.get('arguments')
             arguments = {}
             if isinstance(raw_args, dict):
