@@ -5,6 +5,10 @@ BINDS = ['@crtsh', '@cs', '@ioc']
 # dispatcher only runs the module when the argument matches -- so a hash or IP
 # no longer reaches this domain-only Certificate Transparency lookup.
 ACCEPTS = ['domain']
+# Offer this module to the AI analyst as a tool (see the AI: block in the config).
+# Read-only and opt-in; withdraw it with AITOOL = False in settings.py, or centrally
+# via AI.blocked_modules.
+AITOOL = True
 CHANS = ['debug']
 APIURL = {
     'crtsh':   {'url': 'https://crt.sh/json?q='}

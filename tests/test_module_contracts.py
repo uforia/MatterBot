@@ -98,5 +98,53 @@ class FeedModuleContractTests(unittest.TestCase):
         self.assertEqual([], missing)
 
 
+class AIToolContractTests(unittest.TestCase):
+    """A module exposed to the AI must declare the indicator types it accepts."""
+
+    @staticmethod
+    def _module_assignments(path):
+        tree = ast.parse(path.read_text())
+        out = {}
+        for node in tree.body:
+            if isinstance(node, ast.Assign):
+                for target in node.targets:
+                    if isinstance(target, ast.Name):
+                        try:
+                            out[target.id] = ast.literal_eval(node.value)
+                        except ValueError:
+                            out[target.id] = None
+        return out
+
+    def test_aitool_modules_declare_accepts(self):
+        offenders = []
+        root = Path(__file__).resolve().parent.parent
+        for defaults in sorted(root.glob("commands/*/defaults.py")):
+            values = self._module_assignments(defaults)
+            if values.get("AITOOL") and not values.get("ACCEPTS"):
+                offenders.append(defaults.parent.name)
+        self.assertEqual(
+            offenders, [],
+            "these modules opt into the AI toolbox but declare no ACCEPTS, so the model "
+            f"would be told they take any indicator type: {offenders}",
+        )
+
+    def test_the_starter_set_is_opted_in_and_covers_every_type(self):
+        expected = {"abuseipdb", "circlpdns", "crtsh", "ipinfo",
+                    "malwarebazaar", "threatfox", "urlhaus"}
+        root = Path(__file__).resolve().parent.parent
+        opted_in, covered = set(), set()
+        for defaults in sorted(root.glob("commands/*/defaults.py")):
+            values = self._module_assignments(defaults)
+            if values.get("AITOOL") is True:
+                opted_in.add(defaults.parent.name)
+                covered |= set(values.get("ACCEPTS") or [])
+        self.assertTrue(expected.issubset(opted_in),
+                        f"starter AI modules not opted in: {sorted(expected - opted_in)}")
+        every_type = {"ip", "ipv6", "cidr", "domain", "url", "md5", "sha1", "sha256"}
+        self.assertEqual(every_type - covered, set(),
+                         "the AI toolbox cannot look up every indicator type the "
+                         "classifier can produce")
+
+
 if __name__ == "__main__":
     unittest.main()
