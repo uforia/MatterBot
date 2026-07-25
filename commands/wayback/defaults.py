@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
 BINDS = ['@wayback', '@waybackmachine', '@wb', '@wm', '@ioc']
+# Indicator types this module accepts under a shared bind like @ioc (see cmdutils.accepts).
+# The module requires a scheme (it gates on '://'), so only URLs, not bare domains.
+ACCEPTS = ['url']
 CHANS = ['debug']
 APIURL = {
     'wayback':

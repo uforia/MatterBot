@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
 BINDS = ['@ipinfo', '@ip', '@ioc']
+# Indicator types this module can look up: IP addresses only. Under a shared bind
+# like @ioc, a domain or hash no longer reaches this IP-geolocation lookup.
+ACCEPTS = ['ip', 'ipv6']
 CHANS = ['debug']
 APIURL = {
     'ipinfo':   {'url': 'https://ipinfo.io/',

@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 BINDS = ['@sslmate', '@ioc']
+# Indicator types this module accepts under a shared bind like @ioc (see cmdutils.accepts).
+ACCEPTS = ['domain', 'url']
 CHANS = ['debug']
 APIURL = {
     'sslmate':  {'url': 'https://api.certspotter.com/v1/issuances?domain=',

@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 BINDS = ['@honeydb', '@hdb', '@ioc']
+# Indicator types this module accepts under a shared bind like @ioc (see cmdutils.accepts).
+ACCEPTS = ['ip', 'ipv6']
 CHANS = ['debug']
 APIURL = {
     'honeydb': {
