@@ -20,7 +20,7 @@ import feedparser
 try:
     from feedutils import clean_description, load_settings
 except ImportError:
-    sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+    sys.path.append(os.path.dirname(os.path.dirname(__file__)))
     from feedutils import clean_description, load_settings
 
 

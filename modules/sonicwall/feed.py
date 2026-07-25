@@ -24,7 +24,7 @@ def importScore():
     running = os.path.abspath(__file__)
     cwd = os.path.abspath(os.path.join(os.path.dirname(running), '..'))
     if cwd not in sys.path:
-        sys.path.insert(0, cwd)
+        sys.path.append(cwd)
     from opencve.defaults import ADVISORYTHRESHOLD # Import threshold score from opencve module
     return ADVISORYTHRESHOLD
 
