@@ -71,6 +71,27 @@ def query(settings=None):
     items = []
     errors = []
     for URL in settings.URLS:
+        feed = feedparser.parse(str(URL), agent='MatterBot RSS Automation 1.0')
+        count = 0
+        stripchars = '`\\[\\]\'\"'
+        regex = re.compile('[%s]' % stripchars)
+        while count < settings.ENTRIES:
+            try:
+                title = feed.entries[count].title
+                link = feed.entries[count].link
+                content = None
+                if settings.FILTER:
+                    THRESHOLD = importScore()
+                    matches = checkPage(link)
+                    filtered = False
+                    if not matches:
+                        cvss = False
+                        filtered = True
+                    else:
+                        if isinstance(matches, tuple): # Filter for return values from checkPage()
+                            cvss = matches[1]
+                            if float(cvss) >= THRESHOLD:
+                                filtered = True
         try:
             feed = feedparser.parse(str(URL), agent='MatterBot RSS Automation 1.0')
             count = 0
@@ -92,6 +113,27 @@ def query(settings=None):
                                 cvss = matches[1]
                                 if float(cvss) >= THRESHOLD:
                                     filtered = True
+                    if filtered:
+                        content = settings.NAME + ': [' + title
+                        if cvss:
+                            content += f' - CVSS: `{cvss}`'
+                        content += '](' + link + ')'
+                else:
+                    content = settings.NAME + ': [' + title + '](' + link + ')'
+                if content is None: # Entry did not pass the filter: skip it. Never fall through -- content
+                    count+=1        # still holds the *previous* entry, which would be posted a second time.
+                    continue
+                if len(feed.entries[count].description):
+                    description = regex.sub('',bs4.BeautifulSoup(feed.entries[count].description,'lxml').get_text("\n")).strip().replace('\n','. ')
+                    if len(description)>400:
+                        description = description[:396]+' ...'
+                    content += '\n>'+description+'\n'
+                for channel in settings.CHANNELS:
+                    items.append([channel, content])
+                count+=1
+            except IndexError:
+                return items # No more items
+    return items
                             else:
                                 for score in matches:
                                     if float(score.text.strip()) >= THRESHOLD: # Check if CVSS score meets threshold
