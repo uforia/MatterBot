@@ -41,6 +41,13 @@ def _load_fortinet():
         Session=lambda *a, **kw: None,
         exceptions=types.SimpleNamespace(RequestException=Exception),
     )
+    # feed.py imports its sibling `feedutils` (a real module, not stubbed), so
+    # modules/ must be importable. Add it here rather than relying on an earlier
+    # test in the discovery order having put it on the path -- this test must run
+    # in isolation too.
+    modules_dir = str(FEED_PY.parent.parent)
+    if modules_dir not in sys.path:
+        sys.path.insert(0, modules_dir)
     spec = importlib.util.spec_from_file_location("fortinet_feed_under_test", FEED_PY)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -79,10 +86,18 @@ class FortinetFilterTests(unittest.TestCase):
         }
 
     def _run(self, entries, scores):
-        """Run query() over `entries`, with checkPage() returning scores[link]."""
+        """Run query() over `entries`, with checkPage() returning scores[link].
+
+        fortinet is a multi-source module, so query() returns a FeedResult
+        (posts + per-source errors), not a bare list. Unwrap to the posts the
+        assertions below read -- via the same split_result() the main loop uses.
+        """
         self.fortinet.feedparser.parse = lambda *a, **kw: _Feed(entries)
         self.fortinet.checkPage = lambda link: scores[link]
-        return self.fortinet.query(dict(self.settings))
+        items, _errors = self.fortinet.feedutils.split_result(
+            self.fortinet.query(dict(self.settings))
+        )
+        return items
 
     def test_below_threshold_entry_is_not_posted(self):
         entries = [_Entry("Low severity", "https://example.invalid/low")]
