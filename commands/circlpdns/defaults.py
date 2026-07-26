@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
 BINDS = ['@circlpdns', '@cpdns', '@ioc']
-# Indicator types this module accepts under a shared bind like @ioc (see cmdutils.accepts).
-ACCEPTS = ['ip', 'ipv6', 'cidr', 'domain']
 CHANS = ['debug']
 APIURL = {
     'circlpdns': {

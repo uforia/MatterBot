@@ -8,6 +8,7 @@ from importlib import import_module
 from types import SimpleNamespace
 from pathlib import Path
 import logging
+from commands import cmdutils
 
 log = logging.getLogger('MatterBot')
 _pkg = __package__ or Path(__file__).parent.name
@@ -46,6 +47,7 @@ def getToken():
     except:
         return None
 
+@cmdutils.handles(cmdutils.IP, cmdutils.DOMAIN, cmdutils.URL, cmdutils.SHA256)
 def process(command, channel, username, params, files, conn):
     if len(params)>0:
         messages = []

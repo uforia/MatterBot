@@ -7,6 +7,7 @@ import requests
 from importlib import import_module
 from types import SimpleNamespace
 from pathlib import Path
+from commands import cmdutils
 _pkg = __package__ or Path(__file__).parent.name
 def _load(module_name):
     try:
@@ -28,6 +29,8 @@ _settings_dict = {
 settings = SimpleNamespace(**_settings_dict)
 ### Loader end, actual module functionality starts here
 
+# IPv4 only: the module validates with a v4 regex and does not handle IPv6.
+@cmdutils.handles(cmdutils.IP)
 def process(command, channel, username, params, files, conn):
     if len(params)>0:
         params = params[0].replace('[.]','.')
