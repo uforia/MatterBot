@@ -166,22 +166,65 @@ class RoutingBehaviourTests(unittest.TestCase):
         self.assertNotIn('crtsh', self._route('8.8.8.8'))
 
 
+class HandlesDecoratorTests(unittest.TestCase):
+    """The decorator is the source of truth for a command's accepted types; the
+    loader reads the attribute it attaches and feeds it through normalise_accepts."""
+
+    def test_attaches_declared_types(self):
+        @cmdutils.handles(cmdutils.IP, cmdutils.DOMAIN)
+        def process():
+            pass
+        self.assertEqual((cmdutils.IP, cmdutils.DOMAIN), process.accepts)
+
+    def test_loader_path_normalises_to_known_types(self):
+        @cmdutils.handles(cmdutils.MD5, cmdutils.SHA1)
+        def process():
+            pass
+        self.assertEqual(['md5', 'sha1'], cmdutils.normalise_accepts(process.accepts))
+
+    def test_undecorated_process_accepts_anything(self):
+        # No decorator -> no attribute -> normalise_accepts(None) -> accept-anything.
+        def process():
+            pass
+        self.assertIsNone(cmdutils.normalise_accepts(getattr(process, 'accepts', None)))
+        self.assertTrue(cmdutils.accepts({'accepts': None}, 'ip'))
+
+
 class ShippedAcceptsTests(unittest.TestCase):
-    """Assert routing invariants against the ACCEPTS actually declared in the
-    command defaults, so a bad edit to a real module is caught -- not a copy of
-    the values kept in this test.
+    """Assert routing invariants against the types actually declared by the
+    @cmdutils.handles(...) decorator on each real module's process(), so a bad
+    edit to a real module is caught -- not a copy of the values kept in this
+    test. Read via AST (not import) to stay dependency-free: command.py pulls in
+    requests and friends the stdlib test runner does not have.
     """
 
     COMMANDS_DIR = Path(__file__).resolve().parent.parent / "commands"
 
+    @staticmethod
+    def _resolve(arg):
+        # Decorator args are the cmdutils.<NAME> constants (e.g. cmdutils.IP);
+        # resolve to their canonical string value. Bare names and plain string
+        # literals are handled too, so the test does not care which form is used.
+        import ast
+        if isinstance(arg, ast.Attribute):
+            return getattr(cmdutils, arg.attr)
+        if isinstance(arg, ast.Name):
+            return getattr(cmdutils, arg.id)
+        if isinstance(arg, ast.Constant):
+            return arg.value
+        raise AssertionError(f"unexpected @handles argument: {ast.dump(arg)}")
+
     def _accepts(self, module):
         import ast
-        src = (self.COMMANDS_DIR / module / "defaults.py").read_text(encoding="utf-8")
-        for node in ast.parse(src).body:
-            if isinstance(node, ast.Assign) and any(
-                isinstance(t, ast.Name) and t.id == "ACCEPTS" for t in node.targets
-            ):
-                return ast.literal_eval(node.value)
+        src = (self.COMMANDS_DIR / module / "command.py").read_text(encoding="utf-8")
+        for node in ast.walk(ast.parse(src)):
+            if not (isinstance(node, ast.FunctionDef) and node.name == "process"):
+                continue
+            for dec in node.decorator_list:
+                func = dec.func if isinstance(dec, ast.Call) else None
+                name = getattr(func, "attr", getattr(func, "id", None))
+                if name == "handles":
+                    return [self._resolve(a) for a in dec.args]
         return None
 
     def _routes_to(self, module, value):
@@ -197,9 +240,9 @@ class ShippedAcceptsTests(unittest.TestCase):
                        'wayback', 'crtsh', 'malshare', 'ipinfo',
                        'abuseipdb', 'circlpdns']:
             declared = self._accepts(module)
-            self.assertIsNotNone(declared, f"{module} lost its ACCEPTS")
+            self.assertIsNotNone(declared, f"{module} lost its @cmdutils.handles(...)")
             self.assertEqual(declared, cmdutils.normalise_accepts(declared),
-                             f"{module} ACCEPTS has an unknown/typo'd type")
+                             f"{module} @handles has an unknown/typo'd type")
 
     def test_hash_only_modules_reject_ip_and_domain(self):
         for module in ['malwarebazaar', 'malshare']:

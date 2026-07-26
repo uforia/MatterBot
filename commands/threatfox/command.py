@@ -8,6 +8,7 @@ from importlib import import_module
 from types import SimpleNamespace
 from pathlib import Path
 import logging
+from commands import cmdutils
 
 log = logging.getLogger('MatterBot')
 _pkg = __package__ or Path(__file__).parent.name
@@ -31,6 +32,8 @@ _settings_dict = {
 settings = SimpleNamespace(**_settings_dict)
 ### Loader end, actual module functionality starts here
 
+# IP addresses are IPv4 only: the module validates them with a v4 regex, not IPv6.
+@cmdutils.handles(cmdutils.IP, cmdutils.MD5, cmdutils.SHA1, cmdutils.SHA256)
 def process(command, channel, username, params, files, conn):
     if len(params)>0:
         messages = []

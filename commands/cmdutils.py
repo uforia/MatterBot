@@ -13,11 +13,15 @@ API names or routes that type; that mapping is genuinely per-module and stays in
 the module. A module keeps its own tiny `type -> endpoint` table and calls this
 for the detection half.
 
-`accepts()` is the dispatch-side gate: a command that declares `ACCEPTS` in its
-defaults is only run when the indicator matches. A command that declares nothing
-accepts anything, so this is backwards-compatible and adopted per module. That
-is what stops `@ioc 8.8.8.8` fanning an IP out to domain-only and hash-only
+`accepts()` is the dispatch-side gate: a command that declares which types it
+`handles()` is only run when the indicator matches. A command that declares
+nothing accepts anything, so this is backwards-compatible and adopted per module.
+That is what stops `@ioc 8.8.8.8` fanning an IP out to domain-only and hash-only
 modules, each of which would otherwise answer with an error in the channel.
+
+The accepted-types contract is declared with the `@handles(...)` decorator on a
+module's `process()` -- on the handler itself, not in a separate `ACCEPTS` list
+in defaults.py that can silently drift from what the code actually looks up.
 
 Kept import-light (stdlib only) so it runs under the dependency-free test
 runner, like feedutils on the feeds side.
@@ -151,3 +155,22 @@ def normalise_accepts(value):
         return None
     known = [t for t in value if t in TYPES]
     return known or None
+
+
+def handles(*types):
+    """Declare the indicator types a command's `process()` accepts.
+
+    The contract lives on the handler function, so it cannot drift from what the
+    code actually looks up the way a separate ACCEPTS list in defaults.py could.
+    The loader reads the attribute this attaches and feeds it through
+    `normalise_accepts` -> the command entry's 'accepts', which `accepts()` gates
+    dispatch on. Declaring nothing (no decorator) still means accept-anything.
+
+        @handles(IP, IPV6, CIDR)
+        def process(command, channel, username, params, files, conn):
+            ...
+    """
+    def decorate(func):
+        func.accepts = tuple(types)
+        return func
+    return decorate

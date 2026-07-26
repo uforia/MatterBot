@@ -106,31 +106,29 @@ class MattermostManager(object):
                 if module_name not in self.commands:
                     module.settings.BINDS = None
                     module.settings.CHANS = None
-                    module.settings.ACCEPTS = None
                     defaults = importlib.import_module(f"{_pkg_prefix}.{module_name}.defaults")
                     if hasattr(defaults, 'BINDS'):
                         module.settings.BINDS = defaults.BINDS
                     if hasattr(defaults, 'CHANS'):
                         module.settings.CHANS = defaults.CHANS
-                    if hasattr(defaults, 'ACCEPTS'):
-                        module.settings.ACCEPTS = defaults.ACCEPTS
                     if 'settings.py' in files:
                         overridesettings = importlib.import_module(f"{_pkg_prefix}.{module_name}.settings")
                         if hasattr(overridesettings, 'BINDS'):
                             module.settings.BINDS = overridesettings.BINDS
                         if hasattr(overridesettings, 'CHANS'):
                             module.settings.CHANS = overridesettings.CHANS
-                        if hasattr(overridesettings, 'ACCEPTS'):
-                            module.settings.ACCEPTS = overridesettings.ACCEPTS
                     if not isinstance(module.settings.BINDS, list) or not isinstance(module.settings.CHANS, list):
                         log.error(f"Skipping command module {module_name}: BINDS and CHANS must both be lists")
                         continue
-                    # ACCEPTS is the (optional) indicator-type filter. An absent or
-                    # unusable value means "accepts anything" -- see cmdutils.accepts.
+                    # The (optional) indicator-type filter is declared on the
+                    # command's process() via @cmdutils.handles(...) -- on the
+                    # handler, so it can't drift from what the code looks up.
+                    # Absent or unusable -> "accepts anything" (cmdutils.accepts).
+                    declared = getattr(getattr(module, 'process', None), 'accepts', None)
                     self.commands[module_name] = {
                         'binds': module.settings.BINDS,
                         'chans': module.settings.CHANS,
-                        'accepts': cmdutils.normalise_accepts(module.settings.ACCEPTS),
+                        'accepts': cmdutils.normalise_accepts(declared),
                     }
                     self.binds.extend(module.settings.BINDS)
         try:

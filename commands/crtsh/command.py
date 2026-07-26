@@ -8,6 +8,7 @@ from importlib import import_module
 from types import SimpleNamespace
 from pathlib import Path
 import logging
+from commands import cmdutils
 
 log = logging.getLogger('MatterBot')
 _pkg = __package__ or Path(__file__).parent.name
@@ -38,6 +39,7 @@ def is_valid_domain(domain):
     return bool(re.match(domain_regex, domain))
 
 
+@cmdutils.handles(cmdutils.DOMAIN)
 def process(command, channel, username, params, files, conn):
     messages = []
     param = params[0] if params else None

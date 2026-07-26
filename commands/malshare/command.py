@@ -9,6 +9,7 @@ from importlib import import_module
 from types import SimpleNamespace
 from pathlib import Path
 import logging
+from commands import cmdutils
 
 log = logging.getLogger('MatterBot')
 _pkg = __package__ or Path(__file__).parent.name
@@ -133,6 +134,7 @@ def _format(query_hash, query_kind, payload, max_sources):
     return '\n'.join(lines)
 
 
+@cmdutils.handles(cmdutils.MD5, cmdutils.SHA1, cmdutils.SHA256)
 def process(command, channel, username, params, files, conn):
     messages = []
     if not params:

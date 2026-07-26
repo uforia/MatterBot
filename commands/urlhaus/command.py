@@ -8,6 +8,7 @@ from importlib import import_module
 from types import SimpleNamespace
 from pathlib import Path
 import logging
+from commands import cmdutils
 
 log = logging.getLogger('MatterBot')
 _pkg = __package__ or Path(__file__).parent.name
@@ -31,6 +32,7 @@ _settings_dict = {
 settings = SimpleNamespace(**_settings_dict)
 ### Loader end, actual module functionality starts here
 
+@cmdutils.handles(cmdutils.MD5, cmdutils.SHA1, cmdutils.SHA256, cmdutils.URL)
 def process(command, channel, username, params, files, conn):
     if len(params)>0:
         params = params[0].replace('[', '').replace(']', '').replace('hxxp','http')

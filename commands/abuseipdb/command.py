@@ -9,6 +9,7 @@ from importlib import import_module
 from types import SimpleNamespace
 from pathlib import Path
 import logging
+from commands import cmdutils
 
 log = logging.getLogger('MatterBot')
 _pkg = __package__ or Path(__file__).parent.name
@@ -32,6 +33,8 @@ _settings_dict = {
 settings = SimpleNamespace(**_settings_dict)
 ### Loader end, actual module functionality starts here
 
+# CIDR: netblocks are looked up via the check-block endpoint, single addresses via check.
+@cmdutils.handles(cmdutils.IP, cmdutils.IPV6, cmdutils.CIDR)
 def process(command, channel, username, params, files, conn):
     if len(params)>0:
         query = params[0].replace('[', '').replace(']', '')
