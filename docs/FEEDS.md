@@ -142,6 +142,7 @@ The currently supported sources are listed below:
 | Palo Alto/Unit 42 Advisories                                                                     | RSS            | No               | No                |
 | Patchstack Wordpress Security                                                                    | RSS            | No               | No                |
 | Persistent Security News                                                                         | RSS            | No               | No                |
+| PhishingCatcher (suspicious-domains log watcher, scores hits against your configured domains)    | Log file       | No               | No                |
 | Portswigger Threat Research                                                                      | RSS            | No               | No                |
 | Prodaft Threat Intelligence                                                                      | RSS            | No               | No                |
 | Pulsedive Threat Intelligence                                                                    | RSS            | No               | No                |
@@ -149,6 +150,7 @@ The currently supported sources are listed below:
 | Quesma LLM Blog                                                                                  | RSS            | No               | No                |
 | R136a1 Malware Analysis                                                                          | RSS            | No               | No                |
 | RansomLook (with support for detection of keywords/regex)                                        | JSON           | No               | No                |
+| Ransomware Data Leak (self-hosted JSON source, e.g. ransomleak output)                           | JSON           | No               | No                |
 | Ransomwatch                                                                                      | JSON           | No               | No                |
 | Recorded Future Threat Research                                                                  | RSS            | No               | No                |
 | Red Asgard Threat Intelligence                                                                   | RSS            | No               | No                |
@@ -202,6 +204,7 @@ The currently supported sources are listed below:
 | Tweakers.net Nieuws                                                                              | RSS            | No               | No                |
 | US-CERT National Cyber Awareness System (Advisories, Alerts, Analysis Reports, Current Activity) | RSS            | No               | No                |
 | Validin Threat Intelligence                                                                      | RSS            | No               | No                |
+| VARIoT IoT Vulnerabilities                                                                       | JSON           | Yes              | No                |
 | Varonis Threat Research                                                                          | RSS            | No               | No                |
 | Veeam Advisories                                                                                 | RSS            | No               | No                |
 | Velociraptor News/Updates                                                                        | RSS            | No               | No                |
