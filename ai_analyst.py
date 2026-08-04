@@ -939,9 +939,11 @@ class AIAnalyst(object):
         self.max_history_turns = int(self.config.get('max_history_turns', 20))
         self.max_evidence_chars = int(self.config.get('max_evidence_chars', 4000))
         self.system_prompt = self.config.get('system_prompt') or DEFAULT_SYSTEM_PROMPT
-        # Operator-level control, on top of the developer-level AITOOL flag. AITOOL
-        # says "this module is SAFE to expose"; these say "this deployment WANTS it
-        # exposed". An empty allow-list means every AITOOL module.
+        # Operator-level control, on top of the developer-level @cmdutils.aitool
+        # decorator. The decorator says "this module is SAFE to expose"; these say
+        # "this deployment WANTS it exposed", and are the only runtime lever --
+        # they can subtract from the decorated set, never add to it. An empty
+        # allow-list means every decorated module.
         self.allowed_modules = set(self.config.get('modules') or [])
         self.blocked_modules = set(self.config.get('blocked_modules') or [])
 

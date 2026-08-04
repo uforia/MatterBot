@@ -156,7 +156,7 @@ of the channel.
   support.** This is a hard requirement: a model that cannot emit tool calls will
   not work, and there is no text-protocol fallback. Ollama (with a tool-capable
   model), vLLM, LiteLLM and the cloud APIs all work.
-- At least one command module with `AITOOL = True`.
+- At least one command module decorated with `@cmdutils.aitool`.
 - No new Python dependency — the client is a thin `requests` wrapper.
 
 ### Enabling it
@@ -193,8 +193,8 @@ not already allowed to do:
   ACL-checked, rate-capped lookup, but approve the ones you meant to.
 - **It cannot bypass your ACLs.** A module you may not use, the AI may not use on your
   behalf (`isallowed_module`).
-- **It cannot hand a module the wrong kind of indicator** — the module's `ACCEPTS`
-  declaration is checked first.
+- **It cannot hand a module the wrong kind of indicator** — the types the module
+  declares with `@cmdutils.handles(...)` are checked first.
 - **It has no write or destructive tools.** v1 is read-only lookups only.
 - **It is rate-capped** per turn and per case, bounding runaway loops and paid-API spend.
 - **It never sees your API keys.** Module output is redacted (`sanitize_tool_output`)
@@ -209,23 +209,32 @@ Every tool call the AI makes is logged server-side, and so is every call it was
 
 Two independent switches, and a module needs **both**:
 
-1. **Developer opt-in**, in a module's `defaults.py` (or your `settings.py` override):
+1. **Developer opt-in**, on the module's `process()` in `command.py`:
 
    ```python
-   ACCEPTS = ['ip', 'ipv6']   # required: the indicator types this module handles
-   AITOOL = True              # this module is safe to expose to an AI
+   @cmdutils.handles(cmdutils.IP, cmdutils.IPV6)  # required: the types it handles
+   @cmdutils.aitool                               # safe to expose to an AI
+   def process(command, channel, username, params, files, conn):
    ```
+
+   Both declarations sit on the handler, next to the code they describe, so they
+   cannot drift from what it actually does. Deliberately **not** readable from
+   `defaults.py`/`settings.py`: a config file that could set it would be able to
+   widen exposure past what a developer marked safe.
 
 2. **Operator opt-in**, in the `AI:` config block:
 
    ```yaml
    AI:
-     modules: ["abuseipdb", "circlpdns", "crtsh"]  # empty = every AITOOL module
+     modules: ["abuseipdb", "circlpdns", "crtsh"]  # empty = every @aitool module
      blocked_modules: ["threatbook"]               # withhold a paid-quota module
    ```
 
-These lists can only ever **restrict**: they cannot expose a module that has not set
-`AITOOL`, and they cannot override a user's channel ACLs.
+   This is the operator's lever, and the one to reach for to withdraw a module at
+   runtime without touching its code.
+
+These lists can only ever **restrict**: they cannot expose a module that is not
+decorated with `@cmdutils.aitool`, and they cannot override a user's channel ACLs.
 
 MatterBot ships with a curated starter set opted in — `abuseipdb`, `circlpdns`,
 `crtsh`, `ipinfo`, `malwarebazaar`, `threatfox` and `urlhaus` — which between them

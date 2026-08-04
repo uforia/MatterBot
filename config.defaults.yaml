@@ -76,11 +76,13 @@ AI:
   evidence: "compact"  # "compact": narrative + a one-line sources footer.
                        # "full": narrative, then the raw module tables as follow-up posts.
                        # An analyst overrides this per-thread with `@ai full` / `@ai brief`.
-  # Which modules the AI may use. A module must BOTH declare AITOOL = True (the
-  # developer saying "this is safe to expose") AND pass these lists (the operator
-  # saying "this deployment wants it exposed"). Empty `modules` = every AITOOL
-  # module. These lists can only ever RESTRICT; they cannot expose a non-AITOOL
-  # module, and they cannot override a user's channel ACLs.
+  # Which modules the AI may use. A module must BOTH be decorated with
+  # @cmdutils.aitool on its process() (the developer saying "this is safe to
+  # expose") AND pass these lists (the operator saying "this deployment wants it
+  # exposed"). Empty `modules` = every decorated module. These lists are the
+  # operator's lever -- the way to withdraw a module at runtime without touching
+  # its code -- and they can only ever RESTRICT: they cannot expose an
+  # undecorated module, and they cannot override a user's channel ACLs.
   modules: []          # e.g. ["abuseipdb", "circlpdns", "crtsh"]
   blocked_modules: []  # e.g. ["threatbook"] to withhold a paid-quota module
   max_tool_calls_per_turn: 8    # Bounds a single runaway turn.
