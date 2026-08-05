@@ -35,6 +35,7 @@ settings = SimpleNamespace(**_settings_dict)
 
 # CIDR: netblocks are looked up via the check-block endpoint, single addresses via check.
 @cmdutils.handles(cmdutils.IP, cmdutils.IPV6, cmdutils.CIDR)
+@cmdutils.aitool
 def process(command, channel, username, params, files, conn):
     if len(params)>0:
         query = params[0].replace('[', '').replace(']', '')
