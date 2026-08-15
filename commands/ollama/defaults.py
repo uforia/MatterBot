@@ -3,6 +3,7 @@
 BINDS = ['@ol', '@ollama']
 CHANS = ['debug']
 APIENDPOINT = '<your-ollama-instance>'
+APIKEY = None
 CONTENTTYPE = 'application/json'
 MODEL = '<choose-your-model>'
 TEMPERATURE = 0.9

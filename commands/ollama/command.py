@@ -41,6 +41,8 @@ def process(command, channel, username, params, files, conn):
             headers = {
                 "Content-Type": settings.CONTENTTYPE,
             }
+            if settings.APIKEY:
+                headers['Authorization', f"Bearer: {settings.APIKEY}"]
             data = {
                 "model": settings.MODEL,
                 "stream": False,
