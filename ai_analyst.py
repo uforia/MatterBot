@@ -1136,7 +1136,6 @@ class AIAnalyst(object):
         calls_this_turn = 0
         sources = []      # [(module, indicator, status)] -> the compact footer
         evidence = []     # [(module, indicator, text)]   -> the `full` follow-ups
-        announced = False
 
         for _ in range(self.max_iterations):
             try:
@@ -1154,9 +1153,17 @@ class AIAnalyst(object):
                 await self._post_answer(ctx, text, sources, evidence, state, calls_this_turn)
                 return
 
-            # A slow multi-tool turn should not look like a hung bot.
-            if not announced and len(tool_calls) > 1:
-                announced = True
+            # A tool round can take minutes on a reasoning model, and until it ends
+            # the thread is silent -- which reads as a hung bot. Relay what the model
+            # said it was about to do; when it said nothing, name the lookups instead.
+            # Every round announces, not just the first: the point is to show the case
+            # being worked, and reconstruct() skips PROP_PROGRESS posts, so none of
+            # this becomes the model's memory, charges the tool budget, or can be
+            # mistaken for a pivot proposal that a later bare "yes" would approve.
+            interim = (reply.get('content') or '').strip()
+            if interim:
+                await self._post_progress_text(ctx, interim)
+            else:
                 await self._post_progress(ctx, tool_calls)
 
             messages.append(reply['raw_message'])
@@ -1195,6 +1202,10 @@ class AIAnalyst(object):
             ctx, 'I could not finish this line of enquiry within my step budget. '
                  'Here is what I queried — ask me again to continue.',
             sources, evidence, state, calls_this_turn)
+
+    async def _post_progress_text(self, ctx, text):
+        """Relay the model's own narration of what it is doing, mid-turn."""
+        await self.post(ctx['chanid'], text, ctx['rootid'], {PROP_KEY: PROP_PROGRESS})
 
     async def _post_progress(self, ctx, tool_calls):
         names = []
