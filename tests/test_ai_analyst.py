@@ -1248,6 +1248,22 @@ class AgentLoopTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn('assistant', roles)
         self.assertEqual(llm.requests[0]['messages'][-1]['content'], '@ai anything new?')
 
+    async def test_exactly_one_system_message_leads_the_request(self):
+        # Strict chat templates (Qwen3's among them) raise "System message must be
+        # at the beginning" for ANY system message past index 0, so the
+        # authorization context cannot travel as a second system turn: it has to
+        # be folded into the leading one. Observed against a live Qwen3 GGUF,
+        # which 500s on every query that authorizes an indicator.
+        thread = [
+            {'id': 'p1', **_user('@ai check evil.example.com')},
+            {'id': 'p2', **_reply('It resolves to 9.9.9.9 — want me to pull it?')},
+        ]
+        llm = FakeLLM([_answer('Waiting on you.')])
+        await _handle(_analyst(llm, thread=thread), '@ai hold on', post_id='p3')
+        roles = [m['role'] for m in llm.requests[0]['messages']]
+        self.assertEqual(roles.count('system'), 1, f'roles were {roles}')
+        self.assertEqual(roles[0], 'system')
+
     async def test_the_model_is_told_what_is_approved_and_what_is_pending(self):
         # Exposure is type-narrowed and the executor is the real gate, but telling
         # the model the authorization state stops it wasting calls on blocked pivots.

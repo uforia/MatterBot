@@ -1120,10 +1120,16 @@ class AIAnalyst(object):
         # the model simply talks. It cannot query what nobody has mentioned.
         tools = build_tool_definitions(self._registry(), set(state.authorized.values()))
 
-        messages = [{'role': 'system', 'content': self.system_prompt}]
+        # The authorization context is folded into the leading system turn rather
+        # than sent as a second one: strict chat templates reject any system
+        # message past index 0 ("System message must be at the beginning" -- Qwen3
+        # raises exactly this, 500ing every query that authorizes an indicator).
+        # One leading system message is what every template accepts.
+        system_prompt = self.system_prompt
         context = self._authorization_context(state, pending_before)
         if context:
-            messages.append({'role': 'system', 'content': context})
+            system_prompt = f'{system_prompt}\n\n{context}'
+        messages = [{'role': 'system', 'content': system_prompt}]
         messages.extend(state.history)
         messages.append({'role': 'user', 'content': message})
 
