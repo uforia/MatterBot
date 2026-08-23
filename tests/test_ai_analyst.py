@@ -1026,6 +1026,24 @@ class StubPoster(object):
         self.posts.append({'chanid': chanid, 'text': text, 'rootid': rootid, 'props': props})
 
 
+def _posts(poster, kind):
+    """The posts of one AI kind (reply / evidence / progress), in order.
+
+    Prefer this over indexing poster.posts directly: progress relays are
+    interleaved with the reply, so a positional index silently drifts whenever
+    relay volume changes.
+    """
+    return [p for p in poster.posts
+            if (p['props'] or {}).get(ai_analyst.PROP_KEY) == kind]
+
+
+def _reply_post(poster):
+    """The single narrative reply. Asserts there is exactly one."""
+    replies = _posts(poster, ai_analyst.PROP_REPLY)
+    assert len(replies) == 1, [p['text'] for p in poster.posts]
+    return replies[0]
+
+
 class FakeLLM(object):
     """Replays a scripted list of replies, in order, and records what it was sent."""
 
@@ -1264,6 +1282,54 @@ class AgentLoopTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(roles.count('system'), 1, f'roles were {roles}')
         self.assertEqual(roles[0], 'system')
 
+    async def test_the_models_narration_is_relayed_while_the_tools_run(self):
+        # A tool round can take minutes on a reasoning model. If the model says
+        # what it is about to do, that belongs in the thread -- otherwise the
+        # channel sees silence between the question and the answer.
+        narrating = {
+            'content': 'Let me pull the certificates first.',
+            'tool_calls': [{'id': 'c1', 'name': 'crtsh',
+                            'arguments': {'query': 'evil.example.com'}}],
+            'raw_message': {'role': 'assistant', 'tool_calls': [{'id': 'c1'}]},
+        }
+        poster = StubPoster()
+        llm = FakeLLM([narrating, _answer('Nothing notable.')])
+        await _handle(_analyst(llm, poster=poster), '@ai check evil.example.com')
+        relayed = [p for p in poster.posts
+                   if p['text'] == 'Let me pull the certificates first.']
+        self.assertEqual(len(relayed), 1, [p['text'] for p in poster.posts])
+        # Tagged as progress, so reconstruct() skips it: narration is not the
+        # analyst's narrative, must not charge the budget, and must never be
+        # mistaken for a pivot proposal that a later "yes" could approve.
+        self.assertEqual(relayed[0]['props'][ai_analyst.PROP_KEY],
+                         ai_analyst.PROP_PROGRESS)
+
+    async def test_a_single_tool_round_announces_what_it_is_checking(self):
+        # Previously only a multi-call round announced, so the common
+        # one-lookup-per-round case posted nothing at all.
+        poster = StubPoster()
+        llm = FakeLLM([_tool_call('crtsh', 'evil.example.com'),
+                       _answer('Nothing notable.')])
+        await _handle(_analyst(llm, poster=poster), '@ai check evil.example.com')
+        self.assertTrue(
+            any('evil.example.com' in p['text'] and p['props'].get(ai_analyst.PROP_KEY)
+                == ai_analyst.PROP_PROGRESS for p in poster.posts),
+            [p['text'] for p in poster.posts])
+
+    async def test_relayed_narration_does_not_become_a_pending_proposal(self):
+        # The narration names an indicator the analyst never approved. Because it
+        # is posted as progress, a later bare "yes" must not authorize it.
+        thread = [
+            {'id': 'p1', **_user('@ai check evil.example.com')},
+            {'id': 'p2', 'user_id': BOT, 'message': 'Next I should look at 9.9.9.9.',
+             'props': {ai_analyst.PROP_KEY: ai_analyst.PROP_PROGRESS}},
+        ]
+        llm = FakeLLM([_answer('Done.')])
+        await _handle(_analyst(llm, thread=thread), '@ai yes', post_id='p3')
+        sent = '\n'.join(m['content'] for m in llm.requests[0]['messages']
+                         if m['role'] == 'system')
+        self.assertNotIn('9.9.9.9', sent)
+
     async def test_the_model_is_told_what_is_approved_and_what_is_pending(self):
         # Exposure is type-narrowed and the executor is the real gate, but telling
         # the model the authorization state stops it wasting calls on blocked pivots.
@@ -1348,7 +1414,7 @@ class AgentLoopTests(unittest.IsolatedAsyncioTestCase):
         await _handle(_analyst(llm, poster=poster,
                                executor=StubExecutor(output='The crtsh lookup timed out.')),
                       '@ai check evil.example.com')
-        self.assertIn('crtsh(evil.example.com) → timed out', poster.posts[0]['text'])
+        self.assertIn('crtsh(evil.example.com) → timed out', _reply_post(poster)['text'])
 
 
 class EvidenceModeLoopTests(unittest.IsolatedAsyncioTestCase):
@@ -1358,8 +1424,8 @@ class EvidenceModeLoopTests(unittest.IsolatedAsyncioTestCase):
         await _handle(_analyst(llm, poster=poster,
                                executor=StubExecutor(output='| RAW TABLE |')),
                       '@ai check evil.example.com')
-        self.assertEqual(len(poster.posts), 1)
-        text = poster.posts[0]['text']
+        self.assertEqual(len(_posts(poster, ai_analyst.PROP_EVIDENCE)), 0)
+        text = _reply_post(poster)['text']
         self.assertIn('Two certs.', text)
         self.assertIn('crtsh(evil.example.com)', text)
         self.assertNotIn('RAW TABLE', text)
@@ -1371,11 +1437,11 @@ class EvidenceModeLoopTests(unittest.IsolatedAsyncioTestCase):
                                executor=StubExecutor(output='| RAW TABLE |'),
                                config={'evidence': 'full'}),
                       '@ai check evil.example.com')
-        self.assertEqual(len(poster.posts), 2)
-        self.assertIn('Two certs.', poster.posts[0]['text'])
-        self.assertEqual(poster.posts[0]['props'][ai_analyst.PROP_KEY], ai_analyst.PROP_REPLY)
-        self.assertIn('RAW TABLE', poster.posts[1]['text'])
-        self.assertEqual(poster.posts[1]['props'][ai_analyst.PROP_KEY], ai_analyst.PROP_EVIDENCE)
+        self.assertEqual(len(_posts(poster, ai_analyst.PROP_EVIDENCE)), 1)
+        self.assertIn('Two certs.', _reply_post(poster)['text'])
+        self.assertEqual(_reply_post(poster)['props'][ai_analyst.PROP_KEY], ai_analyst.PROP_REPLY)
+        self.assertIn('RAW TABLE', _posts(poster, ai_analyst.PROP_EVIDENCE)[0]['text'])
+        self.assertTrue(_posts(poster, ai_analyst.PROP_EVIDENCE))
 
     async def test_full_is_sticky_for_the_thread(self):
         poster = StubPoster()
@@ -1387,7 +1453,7 @@ class EvidenceModeLoopTests(unittest.IsolatedAsyncioTestCase):
         await _handle(_analyst(llm, thread=thread, poster=poster,
                                executor=StubExecutor(output='| RAW TABLE |')),
                       '@ai anything new?', post_id='p3')
-        self.assertEqual(poster.posts[1]['props'][ai_analyst.PROP_KEY], ai_analyst.PROP_EVIDENCE)
+        self.assertTrue(_posts(poster, ai_analyst.PROP_EVIDENCE))
 
 
 class LLMFailureTests(unittest.IsolatedAsyncioTestCase):
@@ -1606,8 +1672,8 @@ class AdversarialExecutorTests(unittest.IsolatedAsyncioTestCase):
         llm = FakeLLM([_tool_call('crtsh', 'evil.example.com'), _answer('Handled.')])
         await _handle(_analyst(llm, executor=executor, poster=poster),
                       '@ai check evil.example.com')
-        self.assertEqual(len(poster.posts), 1)
-        self.assertIn('Handled.', poster.posts[0]['text'])
+        self.assertEqual(len(_posts(poster, ai_analyst.PROP_EVIDENCE)), 0)
+        self.assertIn('Handled.', _reply_post(poster)['text'])
 
     async def test_module_output_cannot_forge_the_untrusted_result_delimiter(self):
         # `result` is interpolated raw into the <untrusted_tool_result> wrapper
@@ -1640,9 +1706,10 @@ class AdversarialExecutorTests(unittest.IsolatedAsyncioTestCase):
                                executor=StubExecutor(output=whois_like),
                                config={'evidence': 'full'}),
                       '@ai check evil.example.com')
-        self.assertEqual(len(poster.posts), 2, 'ok evidence must not be dropped')
-        self.assertIn('Remarks', poster.posts[1]['text'])
-        self.assertIn('crtsh(evil.example.com) → ok', poster.posts[0]['text'])
+        self.assertEqual(len(_posts(poster, ai_analyst.PROP_EVIDENCE)), 1,
+                         'ok evidence must not be dropped')
+        self.assertIn('Remarks', _posts(poster, ai_analyst.PROP_EVIDENCE)[0]['text'])
+        self.assertIn('crtsh(evil.example.com) → ok', _reply_post(poster)['text'])
 
     async def test_ok_output_echoing_the_no_data_sentinel_text_stays_ok(self):
         # Same spoofing shape for the OTHER two statuses: an attacker-controlled
@@ -1655,7 +1722,7 @@ class AdversarialExecutorTests(unittest.IsolatedAsyncioTestCase):
         llm = FakeLLM([_tool_call('crtsh', 'evil.example.com'), _answer('Looks fine.')])
         await _handle(_analyst(llm, poster=poster, executor=StubExecutor(output=payload)),
                       '@ai check evil.example.com')
-        self.assertIn('crtsh(evil.example.com) → ok', poster.posts[0]['text'])
+        self.assertIn('crtsh(evil.example.com) → ok', _reply_post(poster)['text'])
 
     async def test_malformed_tool_call_entry_in_the_loop_does_not_crash_handle(self):
         # A degenerate LLM response can put a non-dict entry in tool_calls (the
