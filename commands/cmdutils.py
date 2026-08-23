@@ -174,3 +174,26 @@ def handles(*types):
         func.accepts = tuple(types)
         return func
     return decorate
+
+
+def aitool(func):
+    """Offer a command's `process()` to the AI analyst as a callable tool.
+
+    Opt-in and read-only. Declared on the handler for the same reason `handles`
+    is: "this lookup is safe to hand to a model" is a claim about what the code
+    does -- it has no side effects, it costs nothing surprising to call, and its
+    output is fit to leave the host -- so it belongs against the code rather than
+    in a config file that can drift from it. Undecorated means not a tool, which
+    is why a newly added module is never silently reachable by a model.
+
+    This is the developer's half of the gate. The operator's half is
+    `AI.modules` / `AI.blocked_modules` in the config, which can only narrow this
+    set further, never widen it.
+
+        @cmdutils.handles(cmdutils.DOMAIN)
+        @cmdutils.aitool
+        def process(command, channel, username, params, files, conn):
+            ...
+    """
+    func.aitool = True
+    return func

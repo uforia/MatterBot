@@ -34,6 +34,7 @@ settings = SimpleNamespace(**_settings_dict)
 
 # IP addresses are IPv4 only: the module validates them with a v4 regex, not IPv6.
 @cmdutils.handles(cmdutils.IP, cmdutils.MD5, cmdutils.SHA1, cmdutils.SHA256)
+@cmdutils.aitool
 def process(command, channel, username, params, files, conn):
     if len(params)>0:
         messages = []

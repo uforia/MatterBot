@@ -32,6 +32,7 @@ settings = SimpleNamespace(**_settings_dict)
 ### Loader end, actual module functionality starts here
 
 @cmdutils.handles(cmdutils.IP, cmdutils.IPV6)
+@cmdutils.aitool
 def process(command, channel, username, params, files, conn):
 
     if not params:

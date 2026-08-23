@@ -40,6 +40,7 @@ def is_valid_domain(domain):
 
 
 @cmdutils.handles(cmdutils.DOMAIN)
+@cmdutils.aitool
 def process(command, channel, username, params, files, conn):
     messages = []
     param = params[0] if params else None

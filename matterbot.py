@@ -125,10 +125,19 @@ class MattermostManager(object):
                     # handler, so it can't drift from what the code looks up.
                     # Absent or unusable -> "accepts anything" (cmdutils.accepts).
                     declared = getattr(getattr(module, 'process', None), 'accepts', None)
+                    # The AI opt-in is declared the same way, with @cmdutils.aitool
+                    # on process(), and for the same reason: "this lookup is safe to
+                    # hand to a model" is a claim about what the code does, so it
+                    # belongs against the code and not in a config file. Default off
+                    # -- a new, paid or free-text module is never silently reachable
+                    # by a model. An operator narrows further, but only downwards,
+                    # via AI.modules / AI.blocked_modules.
+                    aitool = getattr(getattr(module, 'process', None), 'aitool', False)
                     self.commands[module_name] = {
                         'binds': module.settings.BINDS,
                         'chans': module.settings.CHANS,
                         'accepts': cmdutils.normalise_accepts(declared),
+                        'aitool': bool(aitool),
                     }
                     self.binds.extend(module.settings.BINDS)
         try:
@@ -159,6 +168,41 @@ class MattermostManager(object):
                 self.commands[module_name]['process'] = process
                 self.commands[module_name]['help'] = HELP
         self.binds = sorted(list(set(self.binds)))
+
+        # Optional AI analyst. Absent or disabled config => self.ai stays None, the
+        # @ai bind is never registered, and every path above is untouched.
+        self.ai = None
+        ai_config = getattr(options, 'AI', None) or {}
+        if ai_config.get('enabled'):
+            # Module-level global, not a local name: `import ai_analyst` here without
+            # `global` would only bind inside __init__'s frame, and _ai_get_thread()
+            # (a different method, called later) would NameError on
+            # `ai_analyst.normalise_thread`. The import only executes on this path,
+            # so a broken/absent ai_analyst.py still cannot stop a disabled bot.
+            global ai_analyst
+            import ai_analyst
+            llm = ai_analyst.LLMClient(
+                base_url=ai_config.get('base_url'),
+                api_key=ai_config.get('api_key'),
+                model=ai_config.get('model'),
+                timeout=ai_config.get('timeout', 60),
+                temperature=ai_config.get('temperature', 0),
+                max_tokens=ai_config.get('max_tokens') or None,
+            )
+            self.ai = ai_analyst.AIAnalyst(
+                config=ai_config,
+                get_registry=self._ai_registry,
+                run_tool=self._ai_run_tool,
+                get_thread=self._ai_get_thread,
+                post=self._ai_post,
+                is_allowed=self.isallowed_module,
+                llm=llm,
+                bot_id=self.my_id,
+            )
+            # Register the bind so handle_post's word scan matches it. Deliberately
+            # NOT written to the bindmap: it belongs to no module.
+            self.binds = sorted(set(self.binds + [self.ai.bind]))
+            log.info(f"AI analyst enabled on bind {self.ai.bind} (model {ai_config.get('model')})")
 
     def _recycle_command_executor(self):
         old_executor = self._command_executor
@@ -337,7 +381,7 @@ class MattermostManager(object):
         except:
             raise
 
-    async def send_message(self, chanid, text, postid=None, uploads=None):
+    async def send_message(self, chanid, text, postid=None, uploads=None, props=None):
         try:
             channame = self.chanid_to_chaninfo(chanid)['name']
             log.info(f'Channel:{channame} <- Message: ({len(text)} chars)')
@@ -375,6 +419,17 @@ class MattermostManager(object):
                 opts = {"channel_id": chanid, "message": block, "root_id": postid}
                 if idx == len(blocks) - 1 and uploads:
                     opts["file_ids"] = uploads
+                if props:
+                    # Post props carry the AI analyst's metadata (see ai_analyst.py):
+                    # which posts are its narrative, and which are raw evidence that
+                    # must never be replayed into the model's context.
+                    #
+                    # A long narrative is SPLIT across several posts above. Stamp each
+                    # with its index so reconstruction can re-join them: without this,
+                    # one reply comes back as N assistant turns and its tool budget is
+                    # counted N times.
+                    opts["props"] = dict(props)
+                    opts["props"]["ai_part"] = idx
                 self.mmDriver.posts.create_post(options=opts)
         except Exception:
             log.exception("Failed to send message")
@@ -815,19 +870,81 @@ class MattermostManager(object):
             userid, asyncio.Semaphore(self._user_concurrency)
         )
 
+    async def run_module(self, module, command, channame, username, params, files, conn):
+        """Execute a command module and RETURN its result dict, without posting.
+
+        Run the (synchronous) module handler in a thread so it cannot block the
+        asyncio event loop. The caller's asyncio.timeout is what bounds wall-clock
+        duration; this await is the yield point that lets it fire.
+
+        Two callers: call_module(), which posts the result to the channel, and the
+        AI analyst's tool executor, which feeds it back to the model instead. One
+        runner means both share the thread pool, and a module never has to know
+        which one invoked it.
+        """
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(
+            self._command_executor,
+            self.commands[module]['process'],
+            command, channame, username, params, files, conn,
+        )
+
+    # --- AI analyst plumbing -------------------------------------------------
+    # ai_analyst.py owns the agent loop; this is the only glue. Each callback is a
+    # seam the unit tests replace with a stub -- which is why none of the code below
+    # does anything but adapt shapes. Keep it that way: matterbot.py cannot be
+    # imported under the dependency-free CI runner, so logic that lands here is
+    # logic that does not get tested.
+
+    def _ai_registry(self):
+        """The command registry, in the shape ai_analyst.build_tool_definitions wants."""
+        return {
+            name: {
+                'binds': entry.get('binds'),
+                'accepts': entry.get('accepts'),
+                'help': entry.get('help'),
+                'aitool': entry.get('aitool'),
+            }
+            for name, entry in self.commands.items()
+        }
+
+    async def _ai_run_tool(self, module, command, channame, username, params):
+        """Run one module for the AI and return its text. Never raises, never leaks.
+
+        The result is fed into the model's context and, in `full` mode, posted. An
+        exception string can carry a key-bearing URL (#285), so it goes to the log
+        and nowhere else. ai_analyst.sanitize_tool_output() redacts what we DO
+        return -- including on the success path, which #286 does not cover.
+        """
+        try:
+            async with asyncio.timeout(self._command_timeout):
+                result = await self.run_module(
+                    module, command, channame, username, params, [], self.mmDriver)
+        except asyncio.TimeoutError:
+            self._recycle_command_executor()
+            log.warning(f"ai: module {module} timed out for user={username}")
+            return f"The {module} lookup timed out."
+        except Exception:
+            log.exception(f"ai: module {module} raised")
+            return f"The {module} lookup failed with an internal error."
+        texts = [m['text'] for m in (result or {}).get('messages', []) if m.get('text')]
+        return '\n\n'.join(texts)
+
+    async def _ai_get_thread(self, rootid, exclude_post_id=None):
+        """The thread, oldest-first, minus the post being answered."""
+        loop = asyncio.get_running_loop()
+        thread = await loop.run_in_executor(
+            self._command_executor, self.mmDriver.posts.get_thread, rootid)
+        # Ordering/filtering lives in ai_analyst so it is testable.
+        return ai_analyst.normalise_thread(thread, exclude_post_id)
+
+    async def _ai_post(self, chanid, text, rootid, props=None):
+        await self.send_message(chanid, text, rootid, None, props)
+
     async def call_module(self, module, command, channame, rootid, username, params, files, conn):
         try:
             chanid = self.channame_to_chanid(channame)
-            # Run the (synchronous) module handler in a thread so it cannot block
-            # the asyncio event loop. The outer asyncio.timeout in handle_post
-            # is what bounds wall-clock duration; this await is the yield point
-            # that lets it fire.
-            loop = asyncio.get_running_loop()
-            result = await loop.run_in_executor(
-                self._command_executor,
-                self.commands[module]['process'],
-                command, channame, username, params, files, conn,
-            )
+            result = await self.run_module(module, command, channame, username, params, files, conn)
             # Command logging: see config.defaults.yaml for clarification
             if result and 'messages' in result:
                 for message in result['messages']:
@@ -935,6 +1052,17 @@ class MattermostManager(object):
                 elif command in options.Matterbot['feedcmds']:
                     await self.log_message(userid, command, params, chaninfo, rootid)
                     await self.feed_message(userid, post, params, chaninfo, rootid)
+                elif self.ai and command == self.ai.bind:
+                    await self.log_message(userid, command, params, chaninfo, rootid)
+                    # The AI reads the thread itself; params are not enough (it needs
+                    # the analyst's prose, not a word list). Bounded by the per-user
+                    # semaphore like any other command.
+                    async with self._semaphore_for(userid):
+                        await self.ai.handle(
+                            userid=userid, username=username, chanid=chanid,
+                            channame=channame, chaninfo=chaninfo, rootid=rootid,
+                            post_id=post['id'], message=post['message'],
+                        )
                 else:
                     await self.log_message(userid, command, params, chaninfo, rootid)
                     if not any(_ in post['message'] for _ in ('| **YES** |', '| **NO** |', 'I know about `!help')):
@@ -1012,10 +1140,14 @@ if __name__ == '__main__' :
         default_config_files=['config.yaml'])
     parser.add('--Matterbot', type=str, help='MatterBot configuration, as a dictionary (see YAML config)')
     parser.add('--Modules', type=str, help='Modules configuration, as a dictionary (see YAML config)')
+    parser.add('--AI', type=str, default=None, help='Optional AI analyst configuration, as a dictionary (see YAML config)')
     parser.add('--debug', default=False, action='store_true', help='Enable debug mode and log to foreground')
     options, unknown = parser.parse_known_args()
     options.Matterbot = ast.literal_eval(options.Matterbot)
     options.Modules = ast.literal_eval(options.Modules)
+    # An existing config.yaml with no AI: block must keep working, so a missing
+    # section means "AI off", not a crash.
+    options.AI = ast.literal_eval(options.AI) if options.AI else {}
     if not options.debug:
         logging.basicConfig(level=logging.INFO, filename=options.Matterbot['logfile'], format='%(levelname)s - %(name)s - %(asctime)s - %(message)s')
     else:
