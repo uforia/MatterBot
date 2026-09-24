@@ -882,11 +882,11 @@ _TRUNCATION_NOTE = (
 # module's genuine, successful output that happens to mention either phrase
 # as part of real data (an attacker-controlled field, e.g.) is no longer
 # relabelled and dropped from evidence.
-# A model whose backend was not given the right --jinja/--tool-call-parser for
-# its chat template does not fail to tool-call -- it emits the call in its
-# TRAINED text dialect instead, and the server hands that back as ordinary
-# `content`/`reasoning` because it never recognised a tool call was attempted
-# (see toolcall_gate.py, which exists to catch exactly this before deployment).
+# The server parses tool calls in the dialect the model's chat template defines
+# (llama.cpp: --jinja plus the GGUF's embedded template). A model that writes
+# its call in any other dialect does not fail to tool-call -- the server hands
+# the text back as ordinary `content`/`reasoning` because it never recognised
+# a tool call was attempted (toolcall_gate.py probes an endpoint for this).
 # tool_calls then comes back empty and this text is indistinguishable, by shape,
 # from a genuine final answer -- so without this check it gets relayed to the
 # analyst as if it were one: raw <tool_call>/<function_calls> markup instead of
