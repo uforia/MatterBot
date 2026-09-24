@@ -1387,12 +1387,11 @@ class AgentLoopTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn('no answer', _reply_post(poster)['text'])
 
     async def test_a_leaked_hermes_style_tool_call_is_not_posted_as_the_answer(self):
-        # The reported bug: without the server's --tool-call-parser configured for
-        # the model in use, Qwen3/Hermes-family models emit their attempted call as
-        # plain text in `content` instead of the structured `tool_calls` field (see
-        # toolcall_gate.py's own "SERVER-SIDE PARSER issue, not the model" note).
-        # tool_calls comes back empty, so the old fallback posted that raw text
-        # verbatim as if it were the analyst's answer.
+        # The reported bug: a model that writes its call in a dialect the server
+        # does not parse gets it handed back as plain text in `content` instead
+        # of the structured `tool_calls` field. tool_calls comes back empty, so
+        # the old fallback posted that raw text verbatim as if it were the
+        # analyst's answer.
         poster = StubPoster()
         leaked = ('<tool_call>\n{"name": "circlpdns", "arguments": '
                   '{"query": "8.8.8.8"}}\n</tool_call>')
@@ -1421,6 +1420,21 @@ class AgentLoopTests(unittest.IsolatedAsyncioTestCase):
         text = _reply_post(poster)['text']
         self.assertNotIn('tool_call', text)
         self.assertNotIn('circlpdns', text)
+
+    async def test_a_leaked_tool_call_is_logged_with_its_text_and_round(self):
+        # The leak's cause is only visible in what the model actually wrote and
+        # in which round: round 1 is the bare request, later rounds carry tool
+        # results. Without both in the operator log there is nothing to diagnose.
+        leaked = '<tool_call>\n<function=crtsh>\n<parameter=query>\nevil.example.com'
+        llm = FakeLLM([_tool_call('crtsh', 'evil.example.com'), _reasoning_only(leaked)])
+        with self.assertLogs('MatterBot', level='WARNING') as logs:
+            await _handle(_analyst(llm, poster=StubPoster()), '@ai check evil.example.com')
+        line = next(m for m in logs.output if 'unparsed tool call' in m)
+        self.assertIn('round 2', line)
+        self.assertIn('reasoning=', line)
+        # repr()-escaped: model text cannot start a forged log line of its own.
+        self.assertIn(r'<tool_call>\n<function=crtsh>', line)
+        self.assertNotIn('\n', line)
 
     async def test_reasoning_is_not_relayed_as_tool_round_progress(self):
         # Deliberate: the progress relay stays content-only. Reasoning over an

@@ -896,6 +896,10 @@ _LEAKED_TOOL_CALL_RE = re.compile(
     r'(?i)<\s*(?:tool_call|function_calls?|invoke)\b|<\|channel\|>')
 
 
+# Enough of a leaked call to see its dialect and arguments in the operator log.
+_LEAK_LOG_CHARS = 500
+
+
 def _looks_like_leaked_tool_call(text):
     return bool(text) and bool(_LEAKED_TOOL_CALL_RE.search(text))
 
@@ -1171,7 +1175,7 @@ class AIAnalyst(object):
         sources = []      # [(module, indicator, status)] -> the compact footer
         evidence = []     # [(module, indicator, text)]   -> the `full` follow-ups
 
-        for _ in range(self.max_iterations):
+        for round_no in range(1, self.max_iterations + 1):
             try:
                 reply = await self._chat(messages, tools)
             except Exception:
@@ -1197,10 +1201,20 @@ class AIAnalyst(object):
                     # call the backend never executed, so nothing has actually been
                     # looked up yet. Posting either field verbatim would show the
                     # analyst raw tool-call markup instead of an answer.
+                    # What the model actually wrote, and in which round, is the
+                    # only evidence of why the backend did not parse it: round 1
+                    # is the bare request, later rounds carry tool results. repr()
+                    # escapes newlines/control characters, so model text cannot
+                    # forge log lines of its own.
+                    leaked = ' '.join(
+                        f'{name}={value[:_LEAK_LOG_CHARS]!r}'
+                        for name, value in (('content', content), ('reasoning', reasoning))
+                        if _looks_like_leaked_tool_call(value))
                     log.warning(
-                        'ai: model emitted an unparsed tool call as text in thread %s -- '
-                        'backend/model is not tool-calling natively (see toolcall_gate.py)',
-                        rootid)
+                        'ai: model emitted an unparsed tool call as text in thread %s, '
+                        'round %d -- backend/model is not tool-calling natively '
+                        '(see toolcall_gate.py): %s',
+                        rootid, round_no, leaked)
                     text = ('I have no answer for this one (the AI backend did not '
                              'execute a tool call it attempted -- this is a backend/model '
                              'configuration issue, not a lookup result).')
