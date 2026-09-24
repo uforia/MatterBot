@@ -1358,10 +1358,11 @@ class AgentLoopTests(unittest.IsolatedAsyncioTestCase):
         llm = FakeLLM([_tool_call('crtsh', 'evil.example.com'),
                        _answer('Nothing notable.')])
         await _handle(_analyst(llm, poster=poster), '@ai check evil.example.com')
-        self.assertTrue(
-            any('evil.example.com' in p['text'] and p['props'].get(ai_analyst.PROP_KEY)
-                == ai_analyst.PROP_PROGRESS for p in poster.posts),
-            [p['text'] for p in poster.posts])
+        # Assert the exact text rather than a substring: a bare-domain `in`
+        # check reads to CodeQL as URL-substring sanitization, and pinning the
+        # whole string is the stronger assertion anyway.
+        self.assertEqual([p['text'] for p in _posts(poster, ai_analyst.PROP_PROGRESS)],
+                         ['Checking `evil.example.com`…'])
 
     async def test_an_answer_carried_only_in_reasoning_is_posted(self):
         # The shipped bug: a reasoning model answers in `reasoning_content` with
