@@ -1386,6 +1386,42 @@ class AgentLoopTests(unittest.IsolatedAsyncioTestCase):
                       '@ai check 8.8.8.8')
         self.assertIn('no answer', _reply_post(poster)['text'])
 
+    async def test_a_leaked_hermes_style_tool_call_is_not_posted_as_the_answer(self):
+        # The reported bug: without the server's --tool-call-parser configured for
+        # the model in use, Qwen3/Hermes-family models emit their attempted call as
+        # plain text in `content` instead of the structured `tool_calls` field (see
+        # toolcall_gate.py's own "SERVER-SIDE PARSER issue, not the model" note).
+        # tool_calls comes back empty, so the old fallback posted that raw text
+        # verbatim as if it were the analyst's answer.
+        poster = StubPoster()
+        leaked = ('<tool_call>\n{"name": "circlpdns", "arguments": '
+                  '{"query": "8.8.8.8"}}\n</tool_call>')
+        await _handle(_analyst(FakeLLM([_answer(leaked)]), poster=poster), '@ai check 8.8.8.8')
+        text = _reply_post(poster)['text']
+        self.assertNotIn('tool_call', text)
+        self.assertNotIn('circlpdns', text)
+
+    async def test_a_leaked_anthropic_style_tool_call_is_not_posted_as_the_answer(self):
+        # Same failure, different dialect: a model trained on Claude-style textual
+        # tool use leaks <function_calls><invoke ...> instead of calling natively.
+        poster = StubPoster()
+        leaked = ('<function_calls>\n<invoke name="threat_intel_lookup">\n'
+                  '<parameter name="indicator">8.8.8.8</parameter>\n'
+                  '<parameter name="type">ip</parameter>\n</invoke>\n</function_calls>')
+        await _handle(_analyst(FakeLLM([_answer(leaked)]), poster=poster), '@ai check 8.8.8.8')
+        text = _reply_post(poster)['text']
+        self.assertNotIn('invoke', text)
+        self.assertNotIn('threat_intel_lookup', text)
+
+    async def test_a_leaked_tool_call_carried_only_in_reasoning_is_also_caught(self):
+        poster = StubPoster()
+        leaked = '<tool_call>{"name": "circlpdns", "arguments": {"query": "8.8.8.8"}}</tool_call>'
+        await _handle(_analyst(FakeLLM([_reasoning_only(leaked)]), poster=poster),
+                      '@ai check 8.8.8.8')
+        text = _reply_post(poster)['text']
+        self.assertNotIn('tool_call', text)
+        self.assertNotIn('circlpdns', text)
+
     async def test_reasoning_is_not_relayed_as_tool_round_progress(self):
         # Deliberate: the progress relay stays content-only. Reasoning over an
         # <untrusted_tool_result> quotes it verbatim, and the progress line is

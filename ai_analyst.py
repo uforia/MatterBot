@@ -882,6 +882,24 @@ _TRUNCATION_NOTE = (
 # module's genuine, successful output that happens to mention either phrase
 # as part of real data (an attacker-controlled field, e.g.) is no longer
 # relabelled and dropped from evidence.
+# A model whose backend was not given the right --jinja/--tool-call-parser for
+# its chat template does not fail to tool-call -- it emits the call in its
+# TRAINED text dialect instead, and the server hands that back as ordinary
+# `content`/`reasoning` because it never recognised a tool call was attempted
+# (see toolcall_gate.py, which exists to catch exactly this before deployment).
+# tool_calls then comes back empty and this text is indistinguishable, by shape,
+# from a genuine final answer -- so without this check it gets relayed to the
+# analyst as if it were one: raw <tool_call>/<function_calls> markup instead of
+# the answer the analyst actually asked for. Two dialects are enough to cover
+# what has actually been observed in production; extend if a new one shows up.
+_LEAKED_TOOL_CALL_RE = re.compile(
+    r'(?i)<\s*(?:tool_call|function_calls?|invoke)\b|<\|channel\|>')
+
+
+def _looks_like_leaked_tool_call(text):
+    return bool(text) and bool(_LEAKED_TOOL_CALL_RE.search(text))
+
+
 _FAILED_SENTINEL_RE = re.compile(r'\AThe `[^`]*` lookup failed with an internal error\.\Z')
 _NO_DATA_SENTINEL_RE = re.compile(r'\AThe `[^`]*` module returned no data for `[^`]*`\.\Z')
 # A real "this call timed out" notice (crtsh/ghunt/holehe/httpx/... each emit
@@ -1172,9 +1190,22 @@ class AIAnalyst(object):
                 # an <untrusted_tool_result> quotes it verbatim and the render
                 # sanitizer for that (docs/plans/2026-07-07-command-render-
                 # sanitization-adw.md) does not exist yet.
-                text = ((reply.get('content') or '').strip()
-                        or (reply.get('reasoning') or '').strip()
-                        or 'I have no answer for this one.')
+                content = (reply.get('content') or '').strip()
+                reasoning = (reply.get('reasoning') or '').strip()
+                if _looks_like_leaked_tool_call(content) or _looks_like_leaked_tool_call(reasoning):
+                    # Neither field is a real answer -- the model attempted a tool
+                    # call the backend never executed, so nothing has actually been
+                    # looked up yet. Posting either field verbatim would show the
+                    # analyst raw tool-call markup instead of an answer.
+                    log.warning(
+                        'ai: model emitted an unparsed tool call as text in thread %s -- '
+                        'backend/model is not tool-calling natively (see toolcall_gate.py)',
+                        rootid)
+                    text = ('I have no answer for this one (the AI backend did not '
+                             'execute a tool call it attempted -- this is a backend/model '
+                             'configuration issue, not a lookup result).')
+                else:
+                    text = content or reasoning or 'I have no answer for this one.'
                 await self._post_answer(ctx, text, sources, evidence, state, calls_this_turn)
                 return
 
