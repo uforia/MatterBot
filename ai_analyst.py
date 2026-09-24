@@ -787,8 +787,24 @@ class LLMClient(object):
             # instead of raising an AttributeError deep in a blind .get() chain.
             raise LLMError(
                 f'LLM returned a malformed message: {type(message).__name__}')
+        # A reasoning model puts its substance here and leaves `content` empty:
+        # `reasoning_content` on DeepSeek/vLLM/llama.cpp, `reasoning` on OpenAI.
+        # Not reading it made the bot answer 'I have no answer for this one.' to
+        # every query the model had in fact answered.
+        reasoning = ''
+        for key in ('reasoning_content', 'reasoning'):
+            value = message.get(key)
+            if isinstance(value, str):
+                if value.strip():
+                    reasoning = value
+                    break
+            elif value:
+                # Some local servers emit reasoning as a list of content blocks.
+                # There is no text to post, but the operator should see why.
+                log.warning('ai: ignoring non-string %s field', key)
         return {
             'content': message.get('content') or '',
+            'reasoning': reasoning,
             'tool_calls': self._normalise_tool_calls(message.get('tool_calls')),
             # The provider's own assistant message, echoed back verbatim on the next
             # request -- the tool-calling protocol requires the exact object.
@@ -1149,7 +1165,16 @@ class AIAnalyst(object):
 
             tool_calls = reply.get('tool_calls') or []
             if not tool_calls:
-                text = (reply.get('content') or '').strip() or 'I have no answer for this one.'
+                # Fall back to the reasoning before claiming defeat: when the
+                # model answered in `reasoning` only, saying we have no answer is
+                # simply false. Deliberately the answer path only -- the per-round
+                # progress relay above stays content-only, because reasoning over
+                # an <untrusted_tool_result> quotes it verbatim and the render
+                # sanitizer for that (docs/plans/2026-07-07-command-render-
+                # sanitization-adw.md) does not exist yet.
+                text = ((reply.get('content') or '').strip()
+                        or (reply.get('reasoning') or '').strip()
+                        or 'I have no answer for this one.')
                 await self._post_answer(ctx, text, sources, evidence, state, calls_this_turn)
                 return
 
