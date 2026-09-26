@@ -22,7 +22,7 @@ import sys
 # when the gate lives outside the repo but is run from the repo root.
 sys.path.insert(0, os.getcwd())
 
-from ai_analyst import LLMClient, build_tool_definitions  # noqa: E402
+from ai_analyst import LLMClient, build_tool_definitions, extract_indicators  # noqa: E402
 
 ATTEMPTS = int(os.environ.get('AI_GATE_ATTEMPTS', '5'))
 
@@ -75,7 +75,122 @@ def probe(client, tools):
     return True, f'query={query!r}'
 
 
+def real_registry():
+    """The AI-decorated command modules, loaded the way matterbot.py loads them."""
+    import glob
+    import importlib
+    from commands import cmdutils
+    registry = {}
+    for path in sorted(glob.glob('commands/*/command.py')):
+        name = path.split('/')[1]
+        with open(path) as f:
+            if '@cmdutils.aitool' not in f.read():
+                continue
+        defaults = importlib.import_module(f'commands.{name}.defaults')
+        process = getattr(importlib.import_module(f'commands.{name}.command'), 'process', None)
+        registry[name] = {
+            'binds': defaults.BINDS,
+            'accepts': cmdutils.normalise_accepts(getattr(process, 'accepts', None)),
+            'help': getattr(defaults, 'HELP', None),
+            'aitool': bool(getattr(process, 'aitool', False)),
+        }
+    return registry
+
+
+# Each variant removes one thing the bare probe lacks, so a variant that stops
+# leaking names the trigger. `system_prompt` None = the bot's real one.
+REPLAY_VARIANTS = (
+    ('bot as deployed', {}),
+    ('one tool only', {'single_tool': True}),
+    ('minimal system prompt', {'system_prompt': 'You are a helpful assistant.'}),
+)
+
+
+def replay(client, registry, message, variant):
+    """Run the bot's real handle() loop once; return one line per LLM round.
+
+    Mattermost and the lookups are stubbed -- nothing is posted, no module
+    runs -- but the request the model sees each round is the bot's own.
+    """
+    import asyncio
+    from ai_analyst import AIAnalyst, _looks_like_leaked_tool_call
+
+    rounds = []
+
+    class Recorder(object):
+        def chat(self, messages, tools):
+            reply = client.chat(messages, tools)
+            if reply['tool_calls']:
+                calls = ', '.join(f'{c["name"]}({c["arguments"].get("query")!r})'
+                                  for c in reply['tool_calls'])
+                rounds.append(f'CALL   {calls}')
+            else:
+                leaked = [f'{field}={reply[field][:300]!r}' for field in ('content', 'reasoning')
+                          if _looks_like_leaked_tool_call(reply[field])]
+                rounds.append('LEAK   ' + ' '.join(leaked) if leaked
+                              else f'ANSWER {reply["content"][:80]!r}')
+            return reply
+
+    reg = registry
+    if variant.get('single_tool'):
+        # Keep only the first module that would be offered for this message.
+        types = set(extract_indicators(message).values())
+        reg = next(({name: registry[name]} for name in sorted(registry)
+                    if build_tool_definitions({name: registry[name]}, types)), registry)
+    config = {}
+    if variant.get('system_prompt'):
+        config['system_prompt'] = variant['system_prompt']
+
+    async def noop_post(*args, **kwargs):
+        return None
+
+    async def empty_thread(rootid, exclude_post_id=None):
+        return []
+
+    async def canned_lookup(name, command, channame, username, params):
+        return f'{name}: no records for {params[0]}.'
+
+    analyst = AIAnalyst(config=config, get_registry=lambda: reg, run_tool=canned_lookup,
+                        get_thread=empty_thread, post=noop_post,
+                        is_allowed=lambda userid, module, chaninfo: True,
+                        llm=Recorder(), bot_id='gate-bot')
+    asyncio.run(analyst.handle(userid='gate-user', username='gate', chanid='gate-chan',
+                               channame='gate', chaninfo={'name': 'gate'}, rootid='gate-root',
+                               post_id='gate-post', message=message))
+    return rounds
+
+
+def replay_main(message, models):
+    """--replay: the bot's own request, varied one factor at a time."""
+    base_url = os.environ.get('AI_BASE_URL')
+    api_key = os.environ.get('AI_API_KEY')
+    if not base_url or not api_key or not models:
+        sys.exit('need AI_BASE_URL, AI_API_KEY and at least one model argument')
+    registry = real_registry()
+    print(f'AI-decorated modules: {", ".join(sorted(registry))}\n')
+    for model in models:
+        # A thinking model's first round can outlast the probe's 60s default.
+        client = LLMClient(base_url=base_url, api_key=api_key, model=model,
+                           timeout=int(os.environ.get('AI_TIMEOUT', '300')))
+        print(f'--- {model} ---')
+        for label, variant in REPLAY_VARIANTS:
+            leaks = 0
+            print(f'  [{label}]')
+            for i in range(1, ATTEMPTS + 1):
+                try:
+                    rounds = replay(client, registry, message, variant)
+                except Exception as exc:
+                    rounds = [f'ERROR  {type(exc).__name__}: {exc}']
+                leaks += any(r.startswith('LEAK') for r in rounds)
+                for n, r in enumerate(rounds, 1):
+                    print(f'    attempt {i} round {n}: {r}')
+            print(f'  => leaked in {leaks}/{ATTEMPTS} attempts\n')
+
+
 def main():
+    if len(sys.argv) > 2 and sys.argv[1] == '--replay':
+        replay_main(sys.argv[2], sys.argv[3:])
+        return
     base_url = os.environ.get('AI_BASE_URL')
     api_key = os.environ.get('AI_API_KEY')
     models = sys.argv[1:]
