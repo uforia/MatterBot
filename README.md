@@ -91,6 +91,20 @@ Usage is simple:
 2) For every module you want to use, check the respective configuration in `commands/.../`. **You must make create your own `settings.py` for every module in the `commands/.../` directory you want to use!** This is necessary so the bot can override the default configuration from `defaults.py`.. If you do not want to use a module, the easiest way to disable it is to move the directory somewhere else (or delete it), so it will not be detected on startup.
 3) Start up the `matterbot.py`.
 
+### Running in a container (optional)
+
+A `Dockerfile` and `docker-compose.yml` are included. Instead of editing `config.yaml`, you pass the deployment-specific values as environment variables; `docker-entrypoint.sh` renders them into the config at start-up (into tmpfs, so credentials never end up in an image layer).
+
+1) `cp .env.example .env` and fill it in. The Mattermost host, team, bot username and token are required; everything else is optional.
+2) `docker compose up -d --build`.
+
+Notes:
+- Values go through a YAML config that is parsed as Python literals, so keep quote characters and backslashes out of them.
+- State (`bindmap.json`, `feedmap.json`, the log) lives in the `matterbot-data` volume.
+- Per-module credentials (`commands/<module>/settings.py`) are deliberately not baked into the image. Bind-mount the ones you need (see the comment in `docker-compose.yml`).
+- If your Mattermost or AI endpoint uses a certificate signed by a private CA, put the public root `*.crt` file in `ca/` before building. Files there are git-ignored.
+- The optional AI analyst is configured with the `AI_*` variables (see below).
+
 ## Configuring Matterbot behavior
 
 When doing threat intelligence investigations, it is crucial to observe Operational Security (OPSEC) best practices. Therefore, by default:
