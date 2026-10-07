@@ -11,12 +11,13 @@ import logging
 import multiprocessing
 import pebble
 import os
-import shelve
 import sys
 import time
 import traceback
 import uuid
 from mattermostdriver import Driver
+
+import feedhistory
 
 
 class TokenAuth():
@@ -321,14 +322,16 @@ class MattermostManager(object):
             time.sleep(options.Modules['timer'])
 
     def runModule(self, module_name):
+        # Every post is written through to the history the moment it is sent
+        # (feedhistory.PostHistory). This worker runs under a pebble timeout,
+        # and a timed-out worker is killed outright -- a history that was only
+        # persisted at the end of the run would lose every post sent before the
+        # kill and re-send them all on the next cycle, forever.
+        history = None
         try:
-            history = shelve.open(self.modules[module_name]['cache'], writeback=True)
-            if module_name not in history:
-                history[module_name] = []
-                first_run = True
-            else:
-                first_run = False
-            if history:
+            history = feedhistory.PostHistory(self.modules[module_name]['cache'], module_name)
+            first_run = history.first_run
+            if not first_run:
                 self.log.info(f"Found    : {module_name} post history cache: {self.modules[module_name]['cache']} ...")
             items = self.callModule(module_name, self.feedmap['MODULES'][module_name]['SETTINGS'])
             if items:
@@ -350,8 +353,9 @@ class MattermostManager(object):
                     # Make sure we're not triggering self-calls
                     if not content.startswith('@') and not content.startswith('!'):
                         logcontent = content.replace('\n', '. ')[:40]
+                        seen = history.seen(post)
                         if not first_run:
-                            if post not in history[module_name]:
+                            if not seen:
                                 try:
                                     if not options.debug:
                                         self.log.info(f"Posting  : {module_name} => {channel} => {logcontent} ...")
@@ -364,9 +368,9 @@ class MattermostManager(object):
                             else:
                                 if options.debug:
                                     self.log.info(f"DbgMsg   : Already in post history for {module_name}: {channel} => {logcontent} ...")
-                        if post not in history[module_name]:
+                        if not seen:
                             if not options.debug:
-                                history[module_name].append(post)
+                                history.record(post)
                             else:
                                 self.log.info(f"DbgCache : {module_name} => {channel} => {logcontent} ...")
             if options.debug:
@@ -377,8 +381,7 @@ class MattermostManager(object):
             else:
                 self.log.error(f"Error   : {module_name} module failed: {str(e)}")
         finally:
-            if history:
-                history.sync()
+            if history is not None:
                 history.close()
 
     def callModule(self, module_name, *args, **kwargs):
