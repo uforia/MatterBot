@@ -11,12 +11,13 @@ import logging
 import multiprocessing
 import pebble
 import os
-import shelve
 import sys
 import time
 import traceback
 import uuid
 from mattermostdriver import Driver
+
+import feedhistory
 
 
 class TokenAuth():
@@ -321,15 +322,26 @@ class MattermostManager(object):
             time.sleep(options.Modules['timer'])
 
     def runModule(self, module_name):
+        # Posts are recorded as they are sent; see feedhistory for why.
+        history = None
+        cache = self.modules[module_name]['cache']
         try:
-            history = shelve.open(self.modules[module_name]['cache'], writeback=True)
-            if module_name not in history:
-                history[module_name] = []
-                first_run = True
+            history = feedhistory.PostHistory(cache, module_name)
+            first_run = history.first_run
+            if history.recovered_from:
+                self.log.error(f"Error    : {module_name} post history {cache} was unreadable, moved to {history.recovered_from}; re-seeding ...")
+            if history.legacy_discarded:
+                self.log.info(f"Upgraded : {module_name} old-format post history {cache} discarded; re-seeding ...")
+            if first_run:
+                self.log.info(f"Seeding  : {module_name} first run, recording the current feed without posting ...")
             else:
-                first_run = False
-            if history:
-                self.log.info(f"Found    : {module_name} post history cache: {self.modules[module_name]['cache']} ...")
+                self.log.info(f"Found    : {module_name} post history cache: {cache} ...")
+            if history.pruned:
+                self.log.info(f"Pruned   : {module_name} forgot {history.pruned} post(s) not seen for {feedhistory.RETENTION_DAYS} days ...")
+            if history.prune_error:
+                self.log.error(f"Error    : {module_name} retention sweep of {cache} failed, will retry: {history.prune_error}")
+            seeded = 0
+            aborted = False
             items = self.callModule(module_name, self.feedmap['MODULES'][module_name]['SETTINGS'])
             if items:
                 posts = []
@@ -350,8 +362,21 @@ class MattermostManager(object):
                     # Make sure we're not triggering self-calls
                     if not content.startswith('@') and not content.startswith('!'):
                         logcontent = content.replace('\n', '. ')[:40]
+                        try:
+                            seen = history.seen(post, refresh=not options.debug)
+                        except feedhistory.BadPost as e:
+                            # A module bug (non-JSON value in the post), not a
+                            # store problem: skip this post, keep the rest.
+                            self.log.error(f"Error    : {module_name} post skipped, cannot identify it: {e}: {channel} => {logcontent} ...")
+                            continue
+                        except Exception as e:
+                            # Posting without being able to record is the loop
+                            # this history exists to prevent: stop the run.
+                            self.log.error(f"Error    : {module_name} post history {cache} unreadable: {type(e).__name__}: {e}; stopping this run, nothing further posted ...")
+                            aborted = True
+                            break
                         if not first_run:
-                            if post not in history[module_name]:
+                            if not seen:
                                 try:
                                     if not options.debug:
                                         self.log.info(f"Posting  : {module_name} => {channel} => {logcontent} ...")
@@ -364,11 +389,30 @@ class MattermostManager(object):
                             else:
                                 if options.debug:
                                     self.log.info(f"DbgMsg   : Already in post history for {module_name}: {channel} => {logcontent} ...")
-                        if post not in history[module_name]:
+                        if not seen:
                             if not options.debug:
-                                history[module_name].append(post)
+                                try:
+                                    history.record(post)
+                                    seeded += 1
+                                except Exception as e:
+                                    sent = "nothing was posted" if first_run else "it was already posted and will be posted again each cycle until the store is writable"
+                                    self.log.error(f"Error    : {module_name} could not record a post in {cache}: {type(e).__name__}: {e}; {sent}; stopping this run ...")
+                                    aborted = True
+                                    break
                             else:
                                 self.log.info(f"DbgCache : {module_name} => {channel} => {logcontent} ...")
+            # A first run only counts once the feed was actually recorded. A
+            # fetch that failed or returned nothing (callModule folds both into
+            # an empty list -- feedparser never raises) or an aborted seed
+            # leaves the next cycle a first run too, so a feed that was down
+            # during its first run is not marked seeded-empty and then posted
+            # whole as "new" once it is back. The cost is that a feed is only
+            # seeded on the first cycle it serves something, which is also the
+            # first cycle it could have posted. Debug mode records nothing, so
+            # it never completes one either.
+            if first_run and items and not aborted and not options.debug:
+                history.complete_first_run()
+                self.log.info(f"Seeded   : {module_name} first run complete, {seeded} item(s) recorded, nothing posted ...")
             if options.debug:
                 self.log.info(f"Complete : {module_name} module ...")
         except Exception as e:
@@ -377,8 +421,7 @@ class MattermostManager(object):
             else:
                 self.log.error(f"Error   : {module_name} module failed: {str(e)}")
         finally:
-            if history:
-                history.sync()
+            if history is not None:
                 history.close()
 
     def callModule(self, module_name, *args, **kwargs):
