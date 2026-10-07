@@ -1,47 +1,56 @@
 #!/usr/bin/env python3
 """Per-module "already posted" store for matterfeed.
 
-matterfeed runs every feed module in a pebble worker with a hard timeout, and
-pebble terminates a timed-out worker outright: nothing after the kill runs, not
-even `finally`. The history therefore cannot be "collect in memory, persist at
-the end": a worker killed after its first post but before that final write
-re-sends the same items on every cycle until someone deletes the cache.
+Feed modules run in pebble workers under a hard timeout, and a timed-out
+worker is killed outright -- no `finally`, no last write. So the history is
+never "collect in memory, persist at the end": every post is written through
+the moment it is recorded, and nothing after a kill is needed for it to count.
 
-So a post is written through to disk the moment it is recorded, one key per
-post, independent of close(). Keys are a digest of the post (channel, text,
-uploads), so the store holds a few dozen bytes per post rather than the post
-itself -- attachment bytes included -- and neither the lookup nor the write
-grows with the size of the history. Each key holds the time it was recorded,
-and keys older than RETENTION_DAYS are dropped on open, so the store is
-bounded by the feeds' rate, not by the bot's uptime.
+Layout (one shelve file per module, the same file the old list-based history
+used):
 
-Storage is the same `shelve` file the original list-based history used, so an
-existing cache is picked up in place. The legacy shape (one pickled list under
-the module name) is migrated on first open: every post in it becomes a key, so
-an upgrade never re-posts the backlog. The module-name key is kept, holding
-`True`, as the "this module has run before" marker that drives first_run.
+  post:<sha256>   -> float   time the post was recorded; refreshed when the
+                             post is seen again, dropped after RETENTION_DAYS
+  <module_name>   -> True    "this module's first run has completed"
+  pruned_at       -> float   last retention sweep
 
-Only the bot's own process ever writes this file, so unpickling it is
-unpickling our own data; shelve is kept for in-place compatibility with the
-caches already on operators' disks.
+A key is a digest of the whole post (channel, text, uploads), attachment bytes
+replaced by their own digest, so the store holds ~100 bytes per post rather
+than the post itself. The old format kept one pickled list of full posts
+(image bytes included) under the module name; that list is not migrated, it
+is discarded without being unpickled and the module re-seeds as a first run.
+A first run records what the feed currently serves and posts nothing, so the
+upgrade re-posts nothing either.
+
+Only the bot's own process writes this file, so unpickling it is unpickling
+our own data; shelve stays so existing caches are reused in place.
 
 Stdlib-only, like feedutils, so it is testable under the dependency-free CI
 runner.
 """
 
+import dbm
 import hashlib
 import json
+import os
 import shelve
 import time
 
-# How long a post stays "seen". Dedup only has to remember an item for as long
-# as it can still appear in its feed; after that the key is dead weight. Every
-# feed here serves at most its latest ENTRIES items, so 90 days is generous.
-# The cost of being wrong is one re-post of an item a feed re-bumps after that
-# long, not a loop.
+# How long a post stays "seen" after it was last observed in its feed. Expiry
+# therefore means "absent from the feed for this long", not "first posted this
+# long ago": a feed that keeps serving an item keeps it seen indefinitely.
 RETENTION_DAYS = 90
 
 _KEY_PREFIX = 'post:'
+_PRUNED_AT = 'pruned_at'
+_PRUNE_INTERVAL = 86400
+_REFRESH_INTERVAL = 86400
+# A pickled True/False/float is a handful of bytes; anything bigger under the
+# module-name key is the legacy post list, which we never want to load.
+_MARKER_MAX_BYTES = 64
+# Files a dbm backend may create for one path (sqlite/gdbm: the path itself;
+# ndbm: .db; dumb: .dat/.dir/.bak).
+_DBM_SUFFIXES = ('', '.db', '.dat', '.dir', '.bak')
 
 
 def _canonical(value):
@@ -54,88 +63,134 @@ def _canonical(value):
 def post_key(post):
     """Stable identity for a post: equal posts map to the same key in any process.
 
-    The whole post counts -- channel, content and uploads -- which is the same
-    identity the original `post not in history[module]` list compare used, so
-    migrating from that history changes nothing about what is considered seen.
+    The whole post counts -- channel, content and uploads -- the same identity
+    the original `post not in history[module]` list compare used.
     """
     canonical = json.dumps(post, sort_keys=True, separators=(',', ':'),
                            ensure_ascii=False, default=_canonical)
-    return _KEY_PREFIX + hashlib.sha256(canonical.encode('utf-8')).hexdigest()
+    # surrogatepass: feed JSON can carry a lone surrogate (a truncated emoji);
+    # the key must still be derivable, or that one item stops the whole run.
+    return _KEY_PREFIX + hashlib.sha256(canonical.encode('utf-8', 'surrogatepass')).hexdigest()
+
+
+def _dbm_files(path):
+    return [path + suffix for suffix in _DBM_SUFFIXES if os.path.exists(path + suffix)]
 
 
 class PostHistory:
+    """Open with `first_run`; call `seen`/`record` per post; `complete_first_run`
+    once a first-run seed finished; `close` in a finally.
+
+    Attributes for the caller's log line: `first_run`, `legacy_discarded`,
+    `recovered_from` (path the unreadable store was moved to, or None),
+    `pruned` (keys expired at this open).
+    """
+
     def __init__(self, path, module_name, retention_days=RETENTION_DAYS):
         self._path = path
         self._module_name = module_name
         self._retention = retention_days * 86400
-        self._db = self._open()
-        marker = self._db.get(module_name)
-        self.first_run = marker is None
-        if isinstance(marker, list):
-            self._migrate(marker)
-        elif self.first_run:
-            self._db[module_name] = True
-            self._flush()
-        else:
-            self._prune()
+        self.legacy_discarded = False
+        self.recovered_from = None
+        self.pruned = 0
+        self._db = self._open_or_recover()
+        try:
+            self.first_run = not self._first_run_completed()
+            if not self.first_run:
+                self._prune()
+        except Exception:
+            self._db.close()
+            raise
 
-    def _prune(self):
-        # Runs once per open (once per module per cycle). The store is a few
-        # hundred bytes per post, so even a year's worth is a quick scan.
-        cutoff = time.time() - self._retention
-        # Materialise the key list first: _recorded_at may write to the store.
-        expired = [key for key in list(self._db.keys())
-                   if key.startswith(_KEY_PREFIX) and self._recorded_at(key) < cutoff]
-        if expired:
-            for key in expired:
-                del self._db[key]
-            self._flush()
-
-    def _recorded_at(self, key):
-        value = self._db.get(key)
-        # Any value that is not a timestamp is from a store written before
-        # retention existed; count it as recorded now so it ages out from here.
-        if isinstance(value, (int, float)) and not isinstance(value, bool):
-            return value
-        self._db[key] = time.time()
-        return self._db[key]
+    # -- opening ---------------------------------------------------------------
 
     def _open(self):
-        # No writeback: with it, shelve buffers every mutation in memory and
-        # only writes on sync()/close() -- exactly the all-or-nothing final
-        # write that a timeout kill turns into a repost loop.
+        # Never writeback: it buffers every mutation in memory until close(),
+        # which is exactly the all-or-nothing write a kill turns into a loop.
         return shelve.open(self._path, flag='c', writeback=False)
 
-    def _flush(self):
-        # Which dbm backs the file depends on the interpreter (sqlite3 on
-        # 3.13+, gdbm/ndbm/dumb before), and only some of them push a write to
-        # disk on sync(): ndbm buffers in the process and has no sync at all,
-        # so a killed worker loses everything since open(). Closing is the one
-        # operation every backend flushes on, and we write at most a handful
-        # of posts per run, so close-and-reopen is cheap and backend-proof.
-        self._db.close()
-        self._db = self._open()
+    def _open_or_recover(self):
+        try:
+            return self._open()
+        except dbm.error:
+            # A kill mid-write can leave a gdbm/ndbm file unreadable. Failing
+            # here every cycle would need an operator to delete the file by
+            # hand -- the exact manual fix this module exists to retire. Move
+            # it aside (kept for forensics) and start fresh: a first run.
+            aside = f'{self._path}.unreadable-{int(time.time())}'
+            for file in _dbm_files(self._path):
+                os.replace(file, aside + file[len(self._path):])
+            self.recovered_from = aside
+            return self._open()
 
-    def _migrate(self, legacy_posts):
-        # Legacy entries carry no date; they start their retention clock now.
-        now = time.time()
-        for post in legacy_posts:
-            try:
-                self._db[post_key(post)] = now
-            except TypeError:
-                # A legacy entry we cannot derive a key for would, at worst, be
-                # posted once more; it must not block the migration.
-                continue
-        self._db[self._module_name] = True
-        self._flush()
+    def _first_run_completed(self):
+        raw = self._db.dict.get(self._module_name.encode('utf-8'))
+        if raw is None:
+            return False
+        if len(raw) <= _MARKER_MAX_BYTES and self._db.get(self._module_name) is True:
+            return True
+        # Legacy post list (or an empty one, or anything else): the file can
+        # be hundreds of MB and the list is never needed -- see module doc.
+        # Recreate the file rather than delete the key so the space is freed.
+        self._db.close()
+        for file in _dbm_files(self._path):
+            os.remove(file)
+        self._db = self._open()
+        self.legacy_discarded = True
+        return False
+
+    # -- per-post --------------------------------------------------------------
 
     def seen(self, post):
-        return post_key(post) in self._db
+        key = post_key(post)
+        recorded = self._db.get(key)
+        if recorded is None:
+            return False
+        # Keep an item alive while its feed keeps serving it. No flush: losing
+        # a refresh to a kill costs nothing, close() persists it otherwise.
+        now = time.time()
+        if now - recorded > _REFRESH_INTERVAL:
+            self._db[key] = now
+        return True
 
     def record(self, post):
         """Mark a post as sent. Durable on return, whether or not close() follows."""
         self._db[post_key(post)] = time.time()
         self._flush()
+
+    def complete_first_run(self):
+        """Call once a first-run seed has recorded everything. Until then the
+        next open is still a first run, so a kill mid-seed cannot turn the
+        unseeded remainder into a flood of 'new' posts."""
+        self._db[self._module_name] = True
+        self._flush()
+
+    def _flush(self):
+        # Which dbm backs the file depends on the interpreter (sqlite3 on
+        # 3.13+, gdbm/ndbm/dumb before) and only some flush on sync(): ndbm
+        # buffers in-process and has none. Close is the one flush every
+        # backend honours, and a run writes a handful of posts.
+        self._db.close()
+        self._db = self._open()
+
+    # -- retention -------------------------------------------------------------
+
+    def _prune(self):
+        now = time.time()
+        last = self._db.get(_PRUNED_AT)
+        if isinstance(last, (int, float)) and now - last < _PRUNE_INTERVAL:
+            return
+        cutoff = now - self._retention
+        expired = [key for key, recorded in self._db.items()
+                   if key.startswith(_KEY_PREFIX)
+                   and isinstance(recorded, (int, float)) and recorded < cutoff]
+        for key in expired:
+            del self._db[key]
+        self._db[_PRUNED_AT] = now
+        self.pruned = len(expired)
+        self._flush()
+
+    # -- lifecycle -------------------------------------------------------------
 
     def close(self):
         self._db.close()
@@ -145,4 +200,3 @@ class PostHistory:
 
     def __exit__(self, exc_type, exc, tb):
         self.close()
-        return False

@@ -322,17 +322,24 @@ class MattermostManager(object):
             time.sleep(options.Modules['timer'])
 
     def runModule(self, module_name):
-        # Every post is written through to the history the moment it is sent
-        # (feedhistory.PostHistory). This worker runs under a pebble timeout,
-        # and a timed-out worker is killed outright -- a history that was only
-        # persisted at the end of the run would lose every post sent before the
-        # kill and re-send them all on the next cycle, forever.
+        # Posts are recorded as they are sent; see feedhistory for why.
         history = None
+        cache = self.modules[module_name]['cache']
         try:
-            history = feedhistory.PostHistory(self.modules[module_name]['cache'], module_name)
+            history = feedhistory.PostHistory(cache, module_name)
             first_run = history.first_run
-            if not first_run:
-                self.log.info(f"Found    : {module_name} post history cache: {self.modules[module_name]['cache']} ...")
+            if history.recovered_from:
+                self.log.error(f"Error    : {module_name} post history {cache} was unreadable, moved to {history.recovered_from}; re-seeding ...")
+            if history.legacy_discarded:
+                self.log.info(f"Upgraded : {module_name} old-format post history {cache} discarded; re-seeding ...")
+            if first_run:
+                self.log.info(f"Seeding  : {module_name} first run, recording the current feed without posting ...")
+            else:
+                self.log.info(f"Found    : {module_name} post history cache: {cache} ...")
+            if history.pruned:
+                self.log.info(f"Pruned   : {module_name} forgot {history.pruned} post(s) not seen for {feedhistory.RETENTION_DAYS} days ...")
+            seeded = 0
+            aborted = False
             items = self.callModule(module_name, self.feedmap['MODULES'][module_name]['SETTINGS'])
             if items:
                 posts = []
@@ -353,7 +360,15 @@ class MattermostManager(object):
                     # Make sure we're not triggering self-calls
                     if not content.startswith('@') and not content.startswith('!'):
                         logcontent = content.replace('\n', '. ')[:40]
-                        seen = history.seen(post)
+                        try:
+                            seen = history.seen(post)
+                        except Exception as e:
+                            # Store failure, not a bad post (post_key is total).
+                            # Posting without being able to record is the loop
+                            # this history exists to prevent: stop the run.
+                            self.log.error(f"Error    : {module_name} post history {cache} unreadable: {type(e).__name__}: {e}; stopping this run, nothing further posted ...")
+                            aborted = True
+                            break
                         if not first_run:
                             if not seen:
                                 try:
@@ -370,9 +385,23 @@ class MattermostManager(object):
                                     self.log.info(f"DbgMsg   : Already in post history for {module_name}: {channel} => {logcontent} ...")
                         if not seen:
                             if not options.debug:
-                                history.record(post)
+                                try:
+                                    history.record(post)
+                                    seeded += 1
+                                except Exception as e:
+                                    sent = "nothing was posted" if first_run else "it was already posted and will repeat once next cycle"
+                                    self.log.error(f"Error    : {module_name} could not record a post in {cache}: {type(e).__name__}: {e}; {sent}; stopping this run ...")
+                                    aborted = True
+                                    break
                             else:
                                 self.log.info(f"DbgCache : {module_name} => {channel} => {logcontent} ...")
+            # A first run only counts once the whole feed was recorded. A
+            # failed fetch (items is None) or an aborted seed leaves the next
+            # cycle a first run too, so nothing half-seeded is posted as new.
+            # Debug mode records nothing, so it never completes one either.
+            if first_run and items is not None and not aborted and not options.debug:
+                history.complete_first_run()
+                self.log.info(f"Seeded   : {module_name} first run complete, {seeded} item(s) recorded, nothing posted ...")
             if options.debug:
                 self.log.info(f"Complete : {module_name} module ...")
         except Exception as e:
