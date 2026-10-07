@@ -9,16 +9,16 @@ the moment it is recorded, and nothing after a kill is needed for it to count.
 Layout (one shelve file per module, the same file the old list-based history
 used):
 
-  post:<sha256>   -> float   time the post was recorded; refreshed when the
-                             post is seen again, dropped after RETENTION_DAYS
-  <module_name>   -> True    "this module's first run has completed"
-  pruned_at       -> float   last retention sweep
+  post:<sha256>    -> float  time the post was last seen in its feed; dropped
+                             after RETENTION_DAYS without being seen
+  meta:seeded      -> True   "this module's first run has completed"
+  meta:pruned_at   -> float  last retention sweep
 
 A key is a digest of the whole post (channel, text, uploads), attachment bytes
 replaced by their own digest, so the store holds ~100 bytes per post rather
 than the post itself. The old format kept one pickled list of full posts
-(image bytes included) under the module name; that list is not migrated, it
-is discarded without being unpickled and the module re-seeds as a first run.
+(image bytes included) under the module name; that list is not migrated or
+even read -- the file is recreated and the module re-seeds as a first run.
 A first run records what the feed currently serves and posts nothing, so the
 upgrade re-posts nothing either.
 
@@ -42,22 +42,25 @@ import time
 RETENTION_DAYS = 90
 
 _KEY_PREFIX = 'post:'
-_PRUNED_AT = 'pruned_at'
+_SEEDED = 'meta:seeded'
+_PRUNED_AT = 'meta:pruned_at'
 _PRUNE_INTERVAL = 86400
 _REFRESH_INTERVAL = 86400
-# A pickled True/False/float is a handful of bytes; anything bigger under the
-# module-name key is the legacy post list, which we never want to load.
-_MARKER_MAX_BYTES = 64
-# Files a dbm backend may create for one path (sqlite/gdbm: the path itself;
-# ndbm: .db; dumb: .dat/.dir/.bak).
-_DBM_SUFFIXES = ('', '.db', '.dat', '.dir', '.bak')
+# Files a dbm backend may keep for one path: sqlite3 (the path, plus -wal/-shm
+# after a kill), gdbm (the path), ndbm (.db, or .pag/.dir), dumb (.dat/.dir/.bak).
+_DBM_SUFFIXES = ('', '-wal', '-shm', '.db', '.pag', '.dat', '.dir', '.bak')
+
+
+class BadPost(TypeError):
+    """A post whose shape cannot be given an identity (non-JSON value inside).
+    A module bug, not a store failure: skip the post, keep the run going."""
 
 
 def _canonical(value):
     """json.dumps `default` hook: bytes become their digest, never the payload."""
     if isinstance(value, (bytes, bytearray, memoryview)):
         return {'__bytes_sha256__': hashlib.sha256(bytes(value)).hexdigest()}
-    raise TypeError(f'post contains an unhashable value of type {type(value).__name__}')
+    raise TypeError(f'post contains a value of type {type(value).__name__}')
 
 
 def post_key(post):
@@ -66,8 +69,11 @@ def post_key(post):
     The whole post counts -- channel, content and uploads -- the same identity
     the original `post not in history[module]` list compare used.
     """
-    canonical = json.dumps(post, sort_keys=True, separators=(',', ':'),
-                           ensure_ascii=False, default=_canonical)
+    try:
+        canonical = json.dumps(post, sort_keys=True, separators=(',', ':'),
+                               ensure_ascii=False, default=_canonical)
+    except (TypeError, ValueError) as e:
+        raise BadPost(str(e)) from e
     # surrogatepass: feed JSON can carry a lone surrogate (a truncated emoji);
     # the key must still be derivable, or that one item stops the whole run.
     return _KEY_PREFIX + hashlib.sha256(canonical.encode('utf-8', 'surrogatepass')).hexdigest()
@@ -83,7 +89,7 @@ class PostHistory:
 
     Attributes for the caller's log line: `first_run`, `legacy_discarded`,
     `recovered_from` (path the unreadable store was moved to, or None),
-    `pruned` (keys expired at this open).
+    `pruned` (keys expired at this open), `prune_error` (sweep failed, str).
     """
 
     def __init__(self, path, module_name, retention_days=RETENTION_DAYS):
@@ -93,6 +99,7 @@ class PostHistory:
         self.legacy_discarded = False
         self.recovered_from = None
         self.pruned = 0
+        self.prune_error = None
         self._db = self._open_or_recover()
         try:
             self.first_run = not self._first_run_completed()
@@ -107,16 +114,23 @@ class PostHistory:
     def _open(self):
         # Never writeback: it buffers every mutation in memory until close(),
         # which is exactly the all-or-nothing write a kill turns into a loop.
-        return shelve.open(self._path, flag='c', writeback=False)
+        db = shelve.open(self._path, flag='c', writeback=False)
+        self._backend = dbm.whichdb(self._path)
+        return db
 
     def _open_or_recover(self):
         try:
             return self._open()
         except dbm.error:
-            # A kill mid-write can leave a gdbm/ndbm file unreadable. Failing
-            # here every cycle would need an operator to delete the file by
-            # hand -- the exact manual fix this module exists to retire. Move
-            # it aside (kept for forensics) and start fresh: a first run.
+            # dbm.error includes OSError, so a lock, a permission problem or
+            # a full disk lands here too -- those must propagate, not have a
+            # healthy history moved out from under them. Recover only when
+            # the file's format is not recognised at all: that is what a kill
+            # mid-write under gdbm/ndbm leaves behind, and failing on it every
+            # cycle would need an operator to delete the file by hand -- the
+            # exact manual fix this module exists to retire.
+            if dbm.whichdb(self._path) != '':
+                raise
             aside = f'{self._path}.unreadable-{int(time.time())}'
             for file in _dbm_files(self._path):
                 os.replace(file, aside + file[len(self._path):])
@@ -124,33 +138,33 @@ class PostHistory:
             return self._open()
 
     def _first_run_completed(self):
-        raw = self._db.dict.get(self._module_name.encode('utf-8'))
-        if raw is None:
-            return False
-        if len(raw) <= _MARKER_MAX_BYTES and self._db.get(self._module_name) is True:
+        if self._db.get(_SEEDED) is True:
             return True
-        # Legacy post list (or an empty one, or anything else): the file can
-        # be hundreds of MB and the list is never needed -- see module doc.
-        # Recreate the file rather than delete the key so the space is freed.
-        self._db.close()
-        for file in _dbm_files(self._path):
-            os.remove(file)
-        self._db = self._open()
-        self.legacy_discarded = True
+        # Anything under the module name is the legacy post list. Membership
+        # via keys() so the value -- the file can be hundreds of MB -- is
+        # never read. Recreate the file rather than delete the key so the
+        # space is freed.
+        if self._module_name.encode('utf-8') in self._db.dict.keys():
+            self._db.close()
+            for file in _dbm_files(self._path):
+                os.remove(file)
+            self._db = self._open()
+            self.legacy_discarded = True
         return False
 
     # -- per-post --------------------------------------------------------------
 
-    def seen(self, post):
+    def seen(self, post, refresh=True):
+        """Was this post recorded? With `refresh`, also keep it alive: an item
+        its feed keeps serving must never expire and be re-announced."""
         key = post_key(post)
         recorded = self._db.get(key)
         if recorded is None:
             return False
-        # Keep an item alive while its feed keeps serving it. No flush: losing
-        # a refresh to a kill costs nothing, close() persists it otherwise.
         now = time.time()
-        if now - recorded > _REFRESH_INTERVAL:
+        if refresh and (now - recorded > _REFRESH_INTERVAL or recorded > now):
             self._db[key] = now
+            self._flush()
         return True
 
     def record(self, post):
@@ -162,33 +176,42 @@ class PostHistory:
         """Call once a first-run seed has recorded everything. Until then the
         next open is still a first run, so a kill mid-seed cannot turn the
         unseeded remainder into a flood of 'new' posts."""
-        self._db[self._module_name] = True
+        self._db[_SEEDED] = True
         self._flush()
 
     def _flush(self):
-        # Which dbm backs the file depends on the interpreter (sqlite3 on
-        # 3.13+, gdbm/ndbm/dumb before) and only some flush on sync(): ndbm
-        # buffers in-process and has none. Close is the one flush every
-        # backend honours, and a run writes a handful of posts.
-        self._db.close()
-        self._db = self._open()
+        # sqlite3 autocommits and gdbm/dumb flush on sync(); ndbm buffers in
+        # the process and has no sync, so there close is the only flush.
+        # whichdb can also come back empty right after a store was created
+        # (ndbm writes its file lazily): unknown means take the safe path.
+        if self._backend in ('dbm.sqlite3', 'dbm.gnu', 'dbm.dumb'):
+            self._db.sync()
+        else:
+            self._db.close()
+            self._db = self._open()
 
     # -- retention -------------------------------------------------------------
 
     def _prune(self):
         now = time.time()
         last = self._db.get(_PRUNED_AT)
-        if isinstance(last, (int, float)) and now - last < _PRUNE_INTERVAL:
+        # A last sweep in the future means the clock stepped back: sweep now.
+        if isinstance(last, (int, float)) and 0 <= now - last < _PRUNE_INTERVAL:
             return
-        cutoff = now - self._retention
-        expired = [key for key, recorded in self._db.items()
-                   if key.startswith(_KEY_PREFIX)
-                   and isinstance(recorded, (int, float)) and recorded < cutoff]
-        for key in expired:
-            del self._db[key]
-        self._db[_PRUNED_AT] = now
-        self.pruned = len(expired)
-        self._flush()
+        try:
+            cutoff = now - self._retention
+            expired = [key for key, recorded in self._db.items()
+                       if key.startswith(_KEY_PREFIX)
+                       and isinstance(recorded, (int, float)) and recorded < cutoff]
+            for key in expired:
+                del self._db[key]
+            self._db[_PRUNED_AT] = now
+            self.pruned = len(expired)
+            self._flush()
+        except Exception as e:
+            # Best effort: a sweep that fails must not stop the module from
+            # posting. The caller logs it; it is retried next open.
+            self.prune_error = f'{type(e).__name__}: {e}'
 
     # -- lifecycle -------------------------------------------------------------
 

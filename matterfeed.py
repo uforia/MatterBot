@@ -338,6 +338,8 @@ class MattermostManager(object):
                 self.log.info(f"Found    : {module_name} post history cache: {cache} ...")
             if history.pruned:
                 self.log.info(f"Pruned   : {module_name} forgot {history.pruned} post(s) not seen for {feedhistory.RETENTION_DAYS} days ...")
+            if history.prune_error:
+                self.log.error(f"Error    : {module_name} retention sweep of {cache} failed, will retry: {history.prune_error}")
             seeded = 0
             aborted = False
             items = self.callModule(module_name, self.feedmap['MODULES'][module_name]['SETTINGS'])
@@ -361,9 +363,13 @@ class MattermostManager(object):
                     if not content.startswith('@') and not content.startswith('!'):
                         logcontent = content.replace('\n', '. ')[:40]
                         try:
-                            seen = history.seen(post)
+                            seen = history.seen(post, refresh=not options.debug)
+                        except feedhistory.BadPost as e:
+                            # A module bug (non-JSON value in the post), not a
+                            # store problem: skip this post, keep the rest.
+                            self.log.error(f"Error    : {module_name} post skipped, cannot identify it: {e}: {channel} => {logcontent} ...")
+                            continue
                         except Exception as e:
-                            # Store failure, not a bad post (post_key is total).
                             # Posting without being able to record is the loop
                             # this history exists to prevent: stop the run.
                             self.log.error(f"Error    : {module_name} post history {cache} unreadable: {type(e).__name__}: {e}; stopping this run, nothing further posted ...")
@@ -389,17 +395,22 @@ class MattermostManager(object):
                                     history.record(post)
                                     seeded += 1
                                 except Exception as e:
-                                    sent = "nothing was posted" if first_run else "it was already posted and will repeat once next cycle"
+                                    sent = "nothing was posted" if first_run else "it was already posted and will be posted again each cycle until the store is writable"
                                     self.log.error(f"Error    : {module_name} could not record a post in {cache}: {type(e).__name__}: {e}; {sent}; stopping this run ...")
                                     aborted = True
                                     break
                             else:
                                 self.log.info(f"DbgCache : {module_name} => {channel} => {logcontent} ...")
-            # A first run only counts once the whole feed was recorded. A
-            # failed fetch (items is None) or an aborted seed leaves the next
-            # cycle a first run too, so nothing half-seeded is posted as new.
-            # Debug mode records nothing, so it never completes one either.
-            if first_run and items is not None and not aborted and not options.debug:
+            # A first run only counts once the feed was actually recorded. A
+            # fetch that failed or returned nothing (callModule folds both into
+            # an empty list -- feedparser never raises) or an aborted seed
+            # leaves the next cycle a first run too, so a feed that was down
+            # during its first run is not marked seeded-empty and then posted
+            # whole as "new" once it is back. The cost is that a feed is only
+            # seeded on the first cycle it serves something, which is also the
+            # first cycle it could have posted. Debug mode records nothing, so
+            # it never completes one either.
+            if first_run and items and not aborted and not options.debug:
                 history.complete_first_run()
                 self.log.info(f"Seeded   : {module_name} first run complete, {seeded} item(s) recorded, nothing posted ...")
             if options.debug:

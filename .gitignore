@@ -16,6 +16,13 @@ commands/*/settings.py
 commands/csirt*/*
 modules/*/*.cache
 modules/*/*.cache.db
+modules/*/*.cache-wal
+modules/*/*.cache-shm
+modules/*/*.cache.pag
+modules/*/*.cache.dir
+modules/*/*.cache.dat
+modules/*/*.cache.bak
+modules/*/*.cache.unreadable-*
 modules/*/*.json
 modules/*/settings.py
 modules/csirt*/*

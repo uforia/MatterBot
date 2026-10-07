@@ -121,6 +121,32 @@ class PostHistoryTests(unittest.TestCase):
             history.record(lone_surrogate)
             self.assertTrue(history.seen(lone_surrogate))
 
+    def test_unidentifiable_post_raises_bad_post_not_store_error(self):
+        # A module bug (a datetime inside the post) must be distinguishable
+        # from a store failure, so the caller can skip that one post instead
+        # of stopping the run.
+        import datetime
+        bad = ["news", "Vendor: x", {"uploads": [], "fetched": datetime.datetime(2026, 1, 1)}]
+        with self.open() as history:
+            with self.assertRaises(feedhistory.BadPost):
+                history.seen(bad)
+            with self.assertRaises(feedhistory.BadPost):
+                history.record(bad)
+            history.record(POST_A)  # the store is still usable afterwards
+            self.assertTrue(history.seen(POST_A))
+
+    def test_seen_without_refresh_does_not_write(self):
+        with self.open() as history:
+            history.record(POST_A)
+            history.complete_first_run()
+        old = time.time() - 30 * DAY
+        with shelve.open(self.path) as db:
+            db[feedhistory.post_key(POST_A)] = old
+        with self.open() as history:
+            self.assertTrue(history.seen(POST_A, refresh=False))
+        with shelve.open(self.path) as db:
+            self.assertEqual(old, db[feedhistory.post_key(POST_A)])
+
     def test_key_does_not_depend_on_interpreter_hash_seed(self):
         worker = textwrap.dedent(f"""
             import sys
@@ -228,6 +254,28 @@ class PostHistoryTests(unittest.TestCase):
             self.assertFalse(history.first_run)
             self.assertIsNone(history.recovered_from)
 
+    @unittest.skipIf(os.geteuid() == 0, "root ignores file modes")
+    def test_permission_error_is_not_treated_as_corruption(self):
+        # dbm.error includes OSError. A healthy history that is merely
+        # unreadable right now (permissions, lock, full disk) must propagate,
+        # not be moved aside and replaced by an empty store.
+        with self.open() as history:
+            history.record(POST_A)
+            history.complete_first_run()
+        files = self.cache_files()
+        for name in files:
+            os.chmod(Path(self._tmp.name) / name, 0)
+        try:
+            with self.assertRaises(OSError):
+                self.open()
+        finally:
+            for name in files:
+                os.chmod(Path(self._tmp.name) / name, 0o600)
+        self.assertEqual(files, self.cache_files(), "nothing moved aside")
+        with self.open() as history:
+            self.assertFalse(history.first_run)
+            self.assertTrue(history.seen(POST_A))
+
 
 class MatterfeedWiringTests(unittest.TestCase):
     """matterfeed.py cannot be imported under the stdlib runner (pebble,
@@ -269,6 +317,22 @@ class MatterfeedWiringTests(unittest.TestCase):
                    for loop in ast.walk(self.run_module) if isinstance(loop, ast.For)
                    for c in ast.walk(loop) if isinstance(c, ast.Call)]
         self.assertIn("history.record", in_loop)
+
+    def test_run_module_completes_first_run_only_when_the_feed_returned_items(self):
+        # callModule folds a failed fetch into an empty list (feedparser never
+        # raises), so the gate must be on `items` being non-empty, not on it
+        # being non-None: a feed that is down during its first run must not be
+        # marked seeded-empty and then posted whole as "new" when it is back.
+        for node in ast.walk(self.run_module):
+            if isinstance(node, ast.If):
+                calls = {self._dotted(c.func) for c in ast.walk(node) if isinstance(c, ast.Call)}
+                if "history.complete_first_run" in calls:
+                    test = ast.dump(node.test)
+                    self.assertIn("Name(id='items'", test)
+                    self.assertNotIn("Constant(value=None)", test,
+                                     "gate on truthiness of items, not `is not None`")
+                    return
+        self.fail("no `if` guards complete_first_run")
 
     def test_run_module_completes_first_run_outside_the_loop(self):
         in_loop = {self._dotted(c.func)
