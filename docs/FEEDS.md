@@ -97,6 +97,7 @@ The currently supported sources are listed below:
 | Hudson Rock Infostealers                                                                         | RSS            | No               | No                |
 | Huntress Threat Intelligence                                                                     | RSS            | No               | No                |
 | IBM X-Force Threat Reports                                                                       | RSS            | No               | No                |
+| ICHI Internet Cyber Health Index                                                                 | RSS            | No               | No                |
 | Internet Crime Complaint Center Industry Alerts                                                  | RSS            | No               | No                |
 | Internet Crime Complaint Center Press Releases                                                   | RSS            | No               | No                |
 | Imperva Security Blog                                                                            | RSS            | No               | No                |
