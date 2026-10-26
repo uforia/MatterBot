@@ -1,0 +1,104 @@
+Matterbot:
+  # Container template: values written as dollar-brace names are filled in from the environment by
+  # docker-entrypoint.sh (see .env.example). Everything else mirrors config.defaults.yaml.
+  host: "${MATTERMOST_HOST}"
+  port: ${MATTERMOST_PORT}
+  scheme: "${MATTERMOST_SCHEME}"
+  basepath: "/api/v4"
+  username: "${MATTERBOT_USERNAME}"
+  password: "${MATTERBOT_TOKEN}"
+  teamname: "${MATTERMOST_TEAM}"
+  botadmins: # Can be either a Mattermost userid or role name (e.g. 'system_admin')
+    - "${MATTERBOT_ADMIN_ID}"
+    - "system_admin"
+  logfile: "matterfeed.log"
+  bindmap: "bindmap.json"
+  feedmap: "feedmap.json"
+  helpcmds: # Do not change these, or things might break
+    - "!help"
+    - "@help"
+  mapcmds: # Do not change these, or things might break
+    - "!bind"
+    - "@bind"
+    - "!unbind"
+    - "@unbind"
+    - "!map"
+    - "@map"
+  feedmode: "admin" # "admin" means only admins can use the feedcmds. Change to "user" for user-level access.
+                    # Be careful: in "user" mode, users may be able to subscribe to sensitive feed modules,
+                    # unless the feed's own settings restrict it to admin mode! Check the modules directory
+                    # for examples on how to do this.
+  feedcmds: # Do not change these, or things might break
+    - "!subscribe"
+    - "!sub"
+    - "@subscribe"
+    - "@sub"
+    - "!unsubscribe"
+    - "!unsub"
+    - "@unsubscribe"
+    - "@unsub"
+    - "!feeds"
+    - "@feeds"
+  welcome: True # Send welcome messages to new users in a welcome channel?
+  welcome_banner: "**Welcome to this Mattermost!**" # Put your single-line welcome banner here. Use the welcome_file for larger messages (e.g. ToS)
+  welcome_channel: "abc" # Set this to the channel ID where the bot will welcome users
+  welcome_file: "welcome.msg" # Optionally, add this message to the generic welcome
+  recursion: False # Is the bot allowed to respond to its own messages? Default False to prevent feedback loops.
+  msglength: 16383 # Change to '4000' if you are using Mattermost <=5.x (seriously, you should upgrade!)
+  logcmd: True
+  logcmdparams: False
+  command_workers: 8 # Max parallel module command executions. Lower (e.g. 1) effectively serializes commands
+                     # if you suspect a module is not thread-safe; raise for more parallelism on a fast host.
+  command_timeout: 30 # Seconds to wait for a command module before timing out and recycling the worker pool.
+  user_concurrency: 2 # Max concurrent commands per user. Raise for trusted teams, lower (e.g. 1) on
+                      # public-ish deployments. Excess commands queue and may hit the 30s timeout.
+
+Modules:
+  moduledir: "modules"
+  commanddir: "commands"
+  feedmap: "feedmap.json"
+  window: 20
+  timer: 600
+  timeout: 60
+  threads: 8
+
+# Optional conversational AI analyst. Leave `enabled: False` (or delete this whole
+# block) and MatterBot behaves exactly as it always has: the @ai bind is never
+# registered and nothing else changes.
+#
+# Requires an OpenAI-compatible endpoint serving a model that supports native
+# function calling. A model without tool-calling support will NOT work.
+AI:
+  enabled: ${AI_ENABLED}
+  base_url: "${AI_BASE_URL}" # Any OpenAI-compatible endpoint (Ollama shown; vLLM,
+                             # LiteLLM and the cloud APIs all speak this).
+  model: "${AI_MODEL}"
+  api_key: "${AI_API_KEY}"
+  bind: "@ai"          # The mention that starts a case. Coexists with @ioc and friends.
+  evidence: "compact"  # "compact": narrative + a one-line sources footer.
+                       # "full": narrative, then the raw module tables as follow-up posts.
+                       # An analyst overrides this per-thread with `@ai full` / `@ai brief`.
+  # Which modules the AI may use. A module must BOTH be decorated with
+  # @cmdutils.aitool on its process() (the developer saying "this is safe to
+  # expose") AND pass these lists (the operator saying "this deployment wants it
+  # exposed"). Empty `modules` = every decorated module. These lists are the
+  # operator's lever -- the way to withdraw a module at runtime without touching
+  # its code -- and they can only ever RESTRICT: they cannot expose an
+  # undecorated module, and they cannot override a user's channel ACLs.
+  modules: []          # e.g. ["abuseipdb", "circlpdns", "crtsh"]
+  blocked_modules: []  # e.g. ["threatbook"] to withhold a paid-quota module
+  max_tool_calls_per_turn: 8    # Bounds a single runaway turn.
+  max_tool_calls_per_thread: 40 # Bounds a long case. Both cap paid-API spend.
+  max_iterations: 6             # LLM <-> tool round-trips before the turn gives up.
+  max_evidence_chars: 4000      # Per-tool cap on module output, so one noisy module
+                                # cannot flood the thread or the model's context.
+  timeout: 60                   # Seconds per LLM call.
+  temperature: 0                # Analysis, not prose: same evidence, same read.
+  max_tokens: 0                 # 0 = let the endpoint decide.
+  max_history_turns: 20         # Thread-reconstruction cap. Trims the model's context
+                                # only; indicator authorization is never trimmed.
+  system_prompt: ""             # Optional override of the built-in analyst prompt. The
+                                # safety guardrails are enforced in code, not here, so
+                                # overriding this cannot widen what the AI can do.
+
+debug: False

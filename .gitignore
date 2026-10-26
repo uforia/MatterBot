@@ -161,3 +161,6 @@ dmypy.json
 .Trashes
 Thumbs.db
 desktop.ini
+
+# Private CA roots for the container build (see Dockerfile); keep ca/.gitkeep
+ca/*.crt

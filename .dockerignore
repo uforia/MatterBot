@@ -1,0 +1,16 @@
+.git
+__pycache__
+*.pyc
+# Secrets and state are mounted at runtime, never baked into the image.
+config.yaml
+.env
+commands/*/settings.py
+modules/*/settings.py
+# Disabled in the container: fetches its actor list at import time and needs a
+# cyberthreat.nl API key, and one failing command module stops the whole bot.
+commands/cyberthreat
+*.json
+*.log
+HANDOFF.md
+tests
+docs

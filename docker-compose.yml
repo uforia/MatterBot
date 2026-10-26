@@ -1,0 +1,37 @@
+# Run MatterBot in a container.
+#
+#   cp .env.example .env     # then fill it in
+#   docker compose up -d --build
+#
+# Compose reads .env from this directory and passes the values in as environment
+# variables. docker-entrypoint.sh renders them into the bot's config at start-up.
+services:
+  matterbot:
+    build: .
+    image: matterbot:local
+    container_name: matterbot
+    restart: unless-stopped
+    environment:
+      MATTERBOT_TOKEN: ${MATTERBOT_TOKEN:?set MATTERBOT_TOKEN in .env}
+      MATTERMOST_HOST: ${MATTERMOST_HOST:?set MATTERMOST_HOST in .env}
+      MATTERBOT_USERNAME: ${MATTERBOT_USERNAME:?set MATTERBOT_USERNAME in .env}
+      MATTERMOST_TEAM: ${MATTERMOST_TEAM:?set MATTERMOST_TEAM in .env}
+      MATTERMOST_PORT: ${MATTERMOST_PORT:-443}
+      MATTERMOST_SCHEME: ${MATTERMOST_SCHEME:-https}
+      MATTERBOT_ADMIN_ID: ${MATTERBOT_ADMIN_ID:-}
+      AI_ENABLED: ${AI_ENABLED:-False}
+      AI_BASE_URL: ${AI_BASE_URL:-http://localhost:11434/v1}
+      AI_MODEL: ${AI_MODEL:-}
+      AI_API_KEY: ${AI_API_KEY:-}
+    volumes:
+      # bindmap.json, feedmap.json and the log live here, so they survive a recreate.
+      - matterbot-data:/data
+      # Per-module credentials (commands/<module>/settings.py) are not baked into the
+      # image. To use a module that needs an API key, bind-mount its settings.py, e.g.:
+      # - ./commands/abuseipdb/settings.py:/app/commands/abuseipdb/settings.py:ro
+    # To reach a Mattermost container on another compose network, attach to it:
+    # networks: [mattermost]
+    # (then declare it under a top-level `networks:` key with `external: true`).
+
+volumes:
+  matterbot-data:
