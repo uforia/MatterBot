@@ -20,7 +20,7 @@ Repository = "https://github.com/uforia/matterbot/"
 Issues = "https://github.com/uforia/matterbot/issues"
 
 [tool.setuptools]
-py-modules = ["matterbot", "matterfeed", "ai_analyst"]
+py-modules = ["matterbot", "matterfeed", "ai_analyst", "feedhistory"]
 
 [tool.setuptools.dynamic]
 dependencies = { file = ["requirements.txt"] }
