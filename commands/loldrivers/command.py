@@ -84,9 +84,9 @@ def process(command, channel, username, params, files, conn):
                             found = True
                         elif 'KnownVulnerableSamples' in loldriver:
                             for KnownVulnerableSample in loldriver['KnownVulnerableSamples']:
-                                if filename == KnownVulnerableSample['Filename'] or \
-                                   filename == KnownVulnerableSample['InternalName'] or \
-                                   filename == KnownVulnerableSample['OriginalFilename']:
+                                if filename == KnownVulnerableSample.get('Filename','').lower() or \
+                                   filename == KnownVulnerableSample.get('InternalName','').lower() or \
+                                   filename == KnownVulnerableSample.get('OriginalFilename','').lower():
                                     found = True
                     if found:
                         uploads = []
